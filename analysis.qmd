@@ -1,0 +1,575 @@
+---
+title: "Analysis"
+author: "Caroline Simpson"
+format: pdf
+editor: visual
+---
+
+```{r}
+
+library(rstatix)
+library(tidyverse)
+library(haven)
+library(jtools)
+library(forcats)
+
+```
+
+# Variables
+
+```{r}
+
+
+```
+
+```{r}
+draw_interaction_plot <- function(x, trace, y, x_label, trace_label, y_label) {
+
+  
+  df<- na.omit(data.frame(x, trace, y))
+  
+  interaction.plot(x.factor = df$x, 
+                   trace.factor = df$trace, 
+                   response = df$y, 
+                   fun = mean, type = "b", 
+                   xlab = x_label, 
+                   ylab=y_label, 
+                   trace.label = trace_label,
+                   col="blue", pch=1:5)
+}
+
+simple_effects_between_anova <- function(data, tom_value, dv, between) {
+  subset_data <- data |> filter(tom == tom_value)
+  # model <- lm(as.formula(formula), data = subset_data)
+  model <- anova_test(data = subset_data, dv = dv, between = between, detailed=TRUE)
+  get_anova_table(model)
+}
+
+simple_effects_within_anova <- function(data, condition, dv, within) {
+  subset_data <- subset(data, Condition == condition)
+  model <- anova_test(data = subset_data, dv = dv, wid = ResponseId, within = within, detailed=TRUE)
+  get_anova_table(model)
+}
+
+
+violin_plot <- function(data, x, y, group, title) {
+  data |>
+    ggplot(aes(x = x, y = y)) +
+    geom_violin(alpha = 0.5, draw_quantiles = c(0.5)) +
+    ggtitle(title) 
+}
+
+```
+
+```{r}
+raw_data <- read_spss(
+  #"data/Thesis+-+Trusting+the+Machine+-+Copy+For+Testing_December+4,+2024_21.34.sav"
+  # "data/Thesis+-+Trusting+the+Machine_December+4,+2024_19.13.sav"
+  # "data/Thesis+-+Trusting+the+Machine_November+30,+2024_13.06.sav"
+  "data/Thesis+-+Trusting+the+Machine_December+6,+2024_16.22.sav"
+  )
+
+
+raw_data$Appelman_1 <- as.numeric(as.character(raw_data$Appelman_1))
+raw_data$Appelman_2 <- as.numeric(as.character(raw_data$Appelman_2))
+raw_data$Appelman_3 <- as.numeric(as.character(raw_data$Appelman_3))
+raw_data$Appelman_4 <- as.numeric(as.character(raw_data$Appelman_4))
+raw_data$Appelman_5 <- as.numeric(as.character(raw_data$Appelman_5))
+raw_data$Appelman_6 <- as.numeric(as.character(raw_data$Appelman_6))
+
+raw_data$TrustBehaviour_1 <- as.numeric(as.character(raw_data$TrustBehaviour_1))
+raw_data$TrustBehaviour_2 <- as.numeric(as.character(raw_data$TrustBehaviour_2))
+raw_data$TrustBehaviour_3 <- as.numeric(as.character(raw_data$TrustBehaviour_3))
+raw_data$TrustBehaviour_4 <- as.numeric(as.character(raw_data$TrustBehaviour_4))
+raw_data$TrustBehaviour_5 <- as.numeric(as.character(raw_data$TrustBehaviour_5))
+raw_data$TrustBehaviour_6 <- as.numeric(as.character(raw_data$TrustBehaviour_6))
+raw_data$TrustBehaviour_7 <- as.numeric(as.character(raw_data$TrustBehaviour_7))
+raw_data$TrustBehaviour_8 <- as.numeric(as.character(raw_data$TrustBehaviour_8))
+raw_data$TrustBehaviour_9 <- as.numeric(as.character(raw_data$TrustBehaviour_9))
+# raw_data <- read_csv("data/test_data.csv")
+```
+
+Number of participants = `r nrow(raw_data)`.
+
+## Clean data
+
+Filter out incomplete results
+
+```{r}
+cleaned_data <- raw_data |>
+  filter(EndDate >= "2024-12-04") |>
+  #filter(EndDate < "2024-12-04") |>
+  filter(Progress == 100) |>
+  filter(ConsentForm == 1) |>
+  filter(Status == 0) # Anonymous link
+  #filter(Status == 1) # Preview link
+```
+
+Number of participants = `r nrow(cleaned_data)`.
+
+```{r}
+cleaned_data |> filter(Reread == 1)
+```
+
+Filter out incorrect topic check
+
+```{r}
+cleaned_data <- cleaned_data |>
+  filter(TopicCheck == 1)
+```
+
+Number of participants passing topic checks = `r nrow(cleaned_data)`.
+
+```{r}
+# print_labels(cleaned_data$AgentTypeCheck)
+# print_labels(cleaned_data$AgentNameCheck)
+
+```
+
+```{r}
+cleaned_data$Condition <- as.factor(cleaned_data$Condition)
+print(cleaned_data$Condition)
+```
+
+Filter out incorrect agent check
+
+```{r}
+cleaned_data <- cleaned_data |>
+  filter((AgentTypeCheck == 1 & Condition == "Low") | (AgentTypeCheck == 1 & Condition == "Medium") | (AgentTypeCheck == 2 & Condition == "High") )
+```
+
+```{r}
+
+glimpse(select(cleaned_data, GodspeedMETI_28:GodspeedMETI_29, Condition))
+```
+
+Filter out incorrect attention check
+
+```{r}
+cleaned_data <- cleaned_data |>
+  filter(GodspeedMETI_28 == 100) |>
+  filter(GodspeedMETI_29 == 0)
+```
+
+Number of participants passing attention checks = `r nrow(cleaned_data)`.
+
+```{r}
+cleaned_data <- cleaned_data |>
+  filter(Q_RecaptchaScore == 1)
+```
+
+Number of participants with recaptcha score of 1 = `r nrow(cleaned_data)`.
+
+```{r}
+
+cleaned_data <- cleaned_data |>
+  filter(Unrealistic_2_TEXT != "A3HPLIWSXW3XV8")
+```
+
+Number of participants that didn't seem like bots on manual inspection = `r nrow(cleaned_data)`.
+
+### Reverse code items
+
+```{r}
+
+# 4, 5
+
+cleaned_data <- cleaned_data |> 
+  mutate(
+    TrustBehaviour_4r = 7 - TrustBehaviour_4,
+    TrustBehaviour_5r = 7 - TrustBehaviour_5,
+    GodspeedMETI_10r = 100 - GodspeedMETI_10,
+    GodspeedMETI_13r = 100 - GodspeedMETI_13,
+    GodspeedMETI_15r = 100 - GodspeedMETI_15,
+    GodspeedMETI_16r = 100 - GodspeedMETI_16,
+    GodspeedMETI_17r = 100 - GodspeedMETI_17,
+    GodspeedMETI_18r = 100 - GodspeedMETI_18,
+    GodspeedMETI_19r = 100 - GodspeedMETI_19,
+    GodspeedMETI_20r = 100 - GodspeedMETI_20,
+    GodspeedMETI_21r = 100 - GodspeedMETI_21,
+    GodspeedMETI_22r = 100 - GodspeedMETI_22,
+    GodspeedMETI_23r = 100 - GodspeedMETI_23,
+    GodspeedMETI_24r = 100 - GodspeedMETI_24,
+    GodspeedMETI_25r = 100 - GodspeedMETI_25,
+    GodspeedMETI_26r = 100 - GodspeedMETI_26,
+  )
+
+
+```
+
+## Calculate scores
+
+TODO: reliability analysis on Godspeed items
+
+```{r}
+
+cleaned_data <- cleaned_data |>
+  mutate(
+    content_trust_score = rowMeans(select(cleaned_data, Appelman_1:Appelman_3), na.rm = TRUE),
+    content_trust_score_2 = rowMeans(select(cleaned_data, c(TrustBehaviour_1, TrustBehaviour_2,  TrustBehaviour_3 ,TrustBehaviour_4r, TrustBehaviour_5r, TrustBehaviour_6, TrustBehaviour_9)), na.rm = TRUE),
+    author_trust_score = rowMeans(select(cleaned_data, c(TrustBehaviour_7, TrustBehaviour_8)), na.rm = TRUE),
+    anthropomorphism_score = rowMeans(select(cleaned_data, GodspeedMETI_1:GodspeedMETI_4), na.rm = TRUE),
+    likeability_score = rowMeans(select(cleaned_data, GodspeedMETI_5:GodspeedMETI_9), na.rm = TRUE),
+    competence_score = rowMeans(select(cleaned_data, GodspeedMETI_10:GodspeedMETI_14), na.rm = TRUE), 
+    expertise_score = rowSums(select(cleaned_data, c(GodspeedMETI_10, GodspeedMETI_13, GodspeedMETI_15r:GodspeedMETI_18r)), na.rm = TRUE), 
+    integrity_score = rowSums(select(cleaned_data, GodspeedMETI_19r:GodspeedMETI_22r), na.rm = TRUE), 
+    benevolence_score = rowSums(select(cleaned_data, GodspeedMETI_23r:GodspeedMETI_26r), na.rm = TRUE),
+    METI_author_trust_score = rowSums(select(cleaned_data, c(GodspeedMETI_10, GodspeedMETI_13, GodspeedMETI_15r:GodspeedMETI_18r, GodspeedMETI_19r:GodspeedMETI_22r, GodspeedMETI_23r:GodspeedMETI_26r)), na.rm = TRUE)
+  ) 
+
+
+
+```
+
+# Descriptive Statistics
+
+```{r}
+
+cleaned_data |>
+  select(Condition, anthropomorphism_score) |>
+by(cleaned_data$Condition, summary)
+
+
+```
+
+Standard Deviation
+
+```{r}
+
+tapply(cleaned_data$anthropomorphism_score, cleaned_data$Condition, sd)
+
+```
+
+Variance
+
+```{r}
+tapply(cleaned_data$anthropomorphism_score, cleaned_data$Condition, var)
+```
+
+```{r}
+library(pastecs)
+
+cleaned_data |>
+  select(Condition, ends_with("_score") ) |>
+by(cleaned_data$Condition, stat.desc)
+```
+
+# Plots of score distributions
+
+```{r}
+
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$anthropomorphism_score, cleaned_data$Condition, "Anthropomorphism Scores")
+
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$likeability_score, cleaned_data$Condition, "Likeability Scores")
+
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$competence_score, cleaned_data$Condition, "Competence Scores")
+
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$content_trust_score, cleaned_data$Condition, "Content Trust Scores")
+
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$content_trust_score_2,
+            cleaned_data$Condition, "Content Trust Scores - Custom Scale")
+
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$author_trust_score, cleaned_data$Condition, "Author Trust Scores - Custom Scale")
+
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$METI_author_trust_score, cleaned_data$Condition, "Author Trust Scores - METI")
+
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$expertise_score, cleaned_data$Condition, "Expertise Scores")
+
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$integrity_score, cleaned_data$Condition, "Integrity Scores")
+
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$benevolence_score, cleaned_data$Condition, "Benevolence Scores")
+```
+
+```{r}
+# ANOVA_anthropomorphism_score <- anova_test(data = cleaned_data, dv = anthropomorphism_score, between = Condition, detailed=TRUE)
+# get_anova_table(ANOVA_anthropomorphism_score)
+
+
+```
+
+```{r}
+library(performance)
+library(see)
+
+lm_anthropomorphism_score <- lm(anthropomorphism_score ~ Condition, data = cleaned_data)
+summ(lm_anthropomorphism_score)
+
+check_model(lm_anthropomorphism_score, panel = FALSE)
+```
+
+```{r}
+
+lm_content_trust_score <- lm(content_trust_score ~ Condition * Gender, data = cleaned_data)
+summ(lm_content_trust_score)
+
+draw_interaction_plot(cleaned_data$Gender, cleaned_data$Condition, cleaned_data$content_trust_score, "Gender", "Condition", "Content Trust")
+
+check_model(lm_content_trust_score, panel = FALSE)
+
+
+```
+
+```{r}
+longer_data <- cleaned_data |>
+  # filter(GodspeedMETI_1 != 0 | GodspeedMETI_2 != 0 | GodspeedMETI_3 != 0 | GodspeedMETI_4 != 0) |>
+  pivot_longer(GodspeedMETI_1:GodspeedMETI_14, names_to = "item", values_to = "rating")
+
+longer_data$Condition <- as.factor(longer_data$Condition)
+longer_data$item <- as.factor(longer_data$item)
+
+longer_data |>
+    ggplot(aes(x = item, y = rating, colour = Condition)) +
+    geom_jitter() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+  
+```
+
+```{r}
+high_plot <- longer_data |>
+  filter(Condition == "High") |>
+  ggplot(aes(x = item, y = rating, colour = ResponseId)) +
+    geom_jitter() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+high_plot
+
+ggsave("high.jpg", high_plot, width = 40, height = 20, units = "cm")
+
+```
+
+```{r}
+medium_plot <- longer_data |>
+  filter(Condition == "Medium") |>
+  ggplot(aes(x = item, y = rating, colour = ResponseId)) +
+    geom_jitter() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+medium_plot
+
+ggsave("medium.jpg", medium_plot, width = 40, height = 20, units = "cm")
+
+```
+
+```{r}
+low_plot <- longer_data |>
+  filter(Condition == "Low") |>
+  ggplot(aes(x = item, y = rating, colour = ResponseId)) +
+    geom_jitter() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+low_plot
+  ggsave("low.jpg", low_plot, width = 40, height = 20, units = "cm")
+```
+
+```{r}
+# cleaned_data |>
+#   select(GodspeedMETI_1:GodspeedMETI_29, Condition) |>
+#   filter(if_any(starts_with("Godspeed"), ~ . < 5)) |>
+#   glimpse()
+```
+
+```{r}
+
+# cleaned_data$GodspeedMETI_1 %>% attr('label')
+# 
+# for (i in colnames(cleaned_data)){
+#     print(paste(i, attr(cleaned_data[[i]], 'label')))
+# }
+```
+
+```{r}
+
+```
+
+```{r}
+# cleaned_data |>
+#   select(Condition, anthropomorphism_score, ResponseId) |>
+#   pivot_wider(names_from = ResponseId, values_from = anthropomorphism_score)
+# 
+
+```
+
+```{r}
+
+# anthro <- cleaned_data |>
+#   select(Condition, starts_with("GodspeedMETI"), ResponseId) |> 
+#   arrange(Condition, GodspeedMETI_1, GodspeedMETI_2, GodspeedMETI_3, GodspeedMETI_4)
+#   # select(Condition, GodspeedMETI_1, GodspeedMETI_2, GodspeedMETI_3, GodspeedMETI_4, ResponseId) |> 
+#   # arrange(Condition, GodspeedMETI_1, GodspeedMETI_2, GodspeedMETI_3, GodspeedMETI_4)
+# 
+# glimpse(anthro)
+```
+
+```{r}
+
+library(FactoMineR)
+library(factoextra) 
+
+anthro_cluster_df <- cleaned_data|> 
+  select(Gender, Education, AIChatbotsFrequency, ScienceContent, Age_1, Experience_1:Experience_11)
+  # select(anthropomorphism_score, likeability_score, author_trust_score, content_trust_score, content_trust_score_2, METI_author_trust_score, expertise_score)
+
+anthro.pca <- PCA(anthro_cluster_df,  graph = FALSE)
+get_eig(anthro.pca)
+
+
+```
+
+```{r}
+
+fviz_screeplot(anthro.pca, addlabels = TRUE, ylim = c(0, 50))
+
+```
+
+```{r}
+anthro.var <- get_pca_var(anthro.pca)
+
+head(anthro.var$coord)
+
+head(anthro.var$contrib)
+
+fviz_pca_var(anthro.pca, col.var = "black")
+```
+
+```{r}
+fviz_pca_var(anthro.pca, col.var="contrib",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE # Avoid text overlapping
+             )
+```
+
+```{r}
+
+# Contributions of variables to PC1
+fviz_contrib(anthro.pca, choice = "var", axes = 1, top = 10)
+
+# Contributions of variables to PC2
+fviz_contrib(anthro.pca, choice = "var", axes = 2, top = 10)
+```
+
+```{r}
+
+ind <- get_pca_ind(anthro.pca)
+ind
+
+head(ind$coord)
+
+
+fviz_pca_ind(anthro.pca, col.ind = "cos2",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+             repel = TRUE # Avoid text overlapping (slow if many points)
+             )
+
+```
+
+```{r}
+
+# Biplot of individuals and variables
+fviz_pca_biplot(anthro.pca, repel = TRUE)
+```
+
+# K-Means Clustering
+
+```{r}
+
+library(cluster)
+
+data_for_cluster <- cleaned_data|> 
+  select(Unrealistic, Condition, Gender) |>
+  # select(Gender, Education, AIChatbotsFrequency, ScienceContent, Age_1, Experience_1:Experience_11) |>
+  mutate(Condition = case_when(Condition == "Low" ~ 1,
+                               Condition == "Medium" ~ 2,
+                               Condition == "High" ~3)) |>
+  mutate(mutate(across(where(is.numeric), scale)))
+  
+
+
+set.seed(123)  # For reproducibility
+fviz_nbclust(data_for_cluster, kmeans, method = "wss")
+```
+
+```{r}
+set.seed(123)
+kmeans_result <- kmeans(data_for_cluster, centers = 6)  # Replace 3 with optimal clusters
+data_for_cluster$Cluster <- as.numeric(kmeans_result$cluster)
+cleaned_data$Cluster.kmeans <- as.numeric(kmeans_result$cluster)
+
+fviz_cluster(kmeans_result, data = data_for_cluster)
+
+data_for_cluster <- data_for_cluster|>
+  select(-Cluster)
+```
+
+```{r}
+cleaned_data |>
+    ggplot(aes(x = Cluster.kmeans, y = anthropomorphism_score, colour = Cluster.kmeans)) +
+  geom_jitter() + 
+    # geom_violin(alpha = 0.5, draw_quantiles = c(0.5)) +
+    ggtitle("Anthropomorphism Scores (K-Means Clustering)") +
+  facet_grid(vars(Condition))
+
+```
+
+# Hierarchical Clustering
+
+```{r}
+
+
+dist_matrix <- dist(data_for_cluster, method = "euclidean")
+
+hclust_result <- hclust(dist_matrix, method = "ward.D2")
+
+plot(hclust_result)
+rect.hclust(hclust_result, k = 8, border = "red")  # Replace 3 with desired clusters
+
+cleaned_data$Cluster.hierarchical <- cutree(hclust_result, k = 8)
+```
+
+```{r}
+
+cleaned_data |>
+    ggplot(aes(x = Cluster.hierarchical, y = anthropomorphism_score, colour = Cluster.hierarchical)) +
+  geom_jitter() + 
+    # geom_violin(alpha = 0.5, draw_quantiles = c(0.5)) +
+    ggtitle("Anthropomorphism Scores (K-Means Clustering)") +
+  facet_grid(vars(Condition))
+```
+
+```{r}
+
+pam_result <- pam(data_for_cluster, k = 3)  # Replace 3 with the optimal number of clusters
+
+fviz_cluster(pam_result, data = data_for_cluster)
+
+cleaned_data$Cluster.pam<- as.numeric(pam_result$cluster)
+```
+
+```{r}
+
+cleaned_data |>
+    ggplot(aes(x = Cluster.pam, y = anthropomorphism_score, colour = Cluster.pam)) +
+  geom_jitter() + 
+    # geom_violin(alpha = 0.5, draw_quantiles = c(0.5)) +
+    ggtitle("Content Trust Scores (K-Means Clustering)") +
+  facet_grid(vars(Condition))
+
+```
+
+```{r}
+
+
+cleaned_data |>
+    ggplot(aes(x = Condition, y = anthropomorphism_score)) +
+  geom_col() + 
+    # geom_violin(alpha = 0.5, draw_quantiles = c(0.5)) +
+    ggtitle("Anthropomorphism Scores (K-Means Clustering)") #+
+  # facet_grid(vars(Cluster.kmeans))
+
+
+```
+
+```         
+```
+
+```         
+```
