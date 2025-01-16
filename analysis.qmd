@@ -23,55 +23,21 @@ library(tidyverse)
 library(haven)
 library(jtools)
 library(forcats)
+library(FactoMineR)
 
-
-
-```
-
-# Functions
-
-todo: move to script
-
-```{r}
-draw_interaction_plot <- function(x, trace, y, x_label, trace_label, y_label) {
-
-  
-  df<- na.omit(data.frame(x, trace, y))
-  
-  interaction.plot(x.factor = df$x, 
-                   trace.factor = df$trace, 
-                   response = df$y, 
-                   fun = mean, type = "b", 
-                   xlab = x_label, 
-                   ylab=y_label, 
-                   trace.label = trace_label,
-                   col="blue", pch=1:5)
-}
-
-simple_effects_between_anova <- function(data, tom_value, dv, between) {
-  subset_data <- data |> filter(tom == tom_value)
-  # model <- lm(as.formula(formula), data = subset_data)
-  model <- anova_test(data = subset_data, dv = dv, between = between, detailed=TRUE)
-  get_anova_table(model)
-}
-
-simple_effects_within_anova <- function(data, condition, dv, within) {
-  subset_data <- subset(data, Condition == condition)
-  model <- anova_test(data = subset_data, dv = dv, wid = ResponseId, within = within, detailed=TRUE)
-  get_anova_table(model)
-}
-
-
-violin_plot <- function(data, x, y, group, title) {
-  data |>
-    ggplot(aes(x = x, y = y)) +
-    geom_violin(alpha = 0.5, draw_quantiles = c(0.25, 0.5, 0.75)) +
-    ggtitle(title) 
-}
+source("./helpers.R")
 
 ```
 
-Load the data
+# Questions
+
+**Research Question**: What effect does anthropomorphism have on level of trust in generative AI and the content it creates?  
+
+My **hypothesis** is that there will be an increase in epistemic trust with increasing levels of anthropomorphism. 
+
+## Data Analysis
+
+### Load data
 
 ```{r}
 raw_data <- read_spss(
@@ -83,128 +49,6 @@ raw_data <- read_spss(
 
 
 ```
-
-```{r}
-
-# This was used to output the column information that was then pasted back in here for making notes.
-
-# dictionary <- labelled::generate_dictionary(raw_data)
-# 
-# variables_md <- kable(dictionary, align = "c")
-# 
-# save_kable(variables_md, "variables.md")
-
-```
-
-# Variables
-
-| pos | variable | label | Reverse | Component of Scale | col_type | missing | levels | value_labels |
-|:--:|:--------------:|:--------------------------------------------:|---------|-------|:----:|:--:|:--:|:--:|
-| 1 | StartDate | Start Date |  |  | dttm | 0 | NULL | NULL |
-| 2 | EndDate | End Date |  |  | dttm | 0 | NULL | NULL |
-| 3 | Status | Response Type |  |  | dbl+lbl | 0 | NULL | 0, 1, 2, 4, 8, 9, 12, 16, 17, 32, 40, 48 |
-| 4 | Progress | Progress |  |  | dbl | 0 | NULL | NULL |
-| 5 | Duration\_*in_seconds* | Duration (in seconds) |  |  | dbl | 0 | NULL | NULL |
-| 6 | Finished | Finished |  |  | dbl+lbl | 0 | NULL | 0, 1 |
-| 7 | RecordedDate | Recorded Date |  |  | dttm | 0 | NULL | NULL |
-| 8 | ResponseId | Response ID |  |  | chr | 0 | NULL | NULL |
-| 9 | DistributionChannel | Distribution Channel |  |  | chr | 0 | NULL | NULL |
-| 10 | UserLanguage | User Language |  |  | chr | 0 | NULL | NULL |
-| 11 | Q_RecaptchaScore | Q_RecaptchaScore |  |  | dbl | 0 | NULL | NULL |
-| 12 | ConsentForm | Study Title: Perceptions of Communicated Information |  |  | dbl+lbl | 0 | NULL | 1, 2 |
-| 13 | AgentNameCheck | Which of these was the name of the author for the blog post you read? |  |  | dbl+lbl | 2 | NULL | 1, 2, 3, 6, 5, 4 |
-| 14 | AgentTypeCheck | What was the author? |  |  | dbl+lbl | 2 | NULL | 1, 2 |
-| 15 | TopicCheck | What was the blog post that you read about? |  |  | dbl+lbl | 2 | NULL | 1, 2, 3 |
-| 16 | GodspeedMETI_1 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Fake \| Natural |  |  | dbl | 3 | NULL | NULL |
-| 17 | GodspeedMETI_2 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Machinelike \| Humanlike |  |  | dbl | 3 | NULL | NULL |
-| 18 | GodspeedMETI_3 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Unconscious \| Conscious |  |  | dbl | 3 | NULL | NULL |
-| 19 | GodspeedMETI_4 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Artificial \| Lifelike |  |  | dbl | 3 | NULL | NULL |
-| 20 | GodspeedMETI_5 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Dislike \| Like |  |  | dbl | 3 | NULL | NULL |
-| 21 | GodspeedMETI_6 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Unfriendly \| Friendly |  |  | dbl | 3 | NULL | NULL |
-| 22 | GodspeedMETI_7 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Unkind \| Kind |  |  | dbl | 3 | NULL | NULL |
-| 23 | GodspeedMETI_8 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Unpleasant \| Pleasant |  |  | dbl | 3 | NULL | NULL |
-| 24 | GodspeedMETI_9 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Awful \| Nice |  |  | dbl | 3 | NULL | NULL |
-| 25 | GodspeedMETI_10 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Incompetent \| Competent |  |  | dbl | 3 | NULL | NULL |
-| 26 | GodspeedMETI_11 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Ignorant \| Knowledgeable |  |  | dbl | 3 | NULL | NULL |
-| 27 | GodspeedMETI_12 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Irresponsible \| Responsible |  |  | dbl | 3 | NULL | NULL |
-| 28 | GodspeedMETI_13 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Unintelligent \| Intelligent |  |  | dbl | 3 | NULL | NULL |
-| 29 | GodspeedMETI_14 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Foolish \| Sensible |  |  | dbl | 3 | NULL | NULL |
-| 30 | GodspeedMETI_15 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Well Educated \| Poorly Educated |  |  | dbl | 3 | NULL | NULL |
-| 31 | GodspeedMETI_16 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Professional \| Unprofessional |  |  | dbl | 3 | NULL | NULL |
-| 32 | GodspeedMETI_17 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Experienced \| Inexperienced |  |  | dbl | 3 | NULL | NULL |
-| 33 | GodspeedMETI_18 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Qualified \| Unqualified |  |  | dbl | 3 | NULL | NULL |
-| 34 | GodspeedMETI_19 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Sincere \| Insincere |  |  | dbl | 3 | NULL | NULL |
-| 35 | GodspeedMETI_20 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Honest \| Dishonest |  |  | dbl | 3 | NULL | NULL |
-| 36 | GodspeedMETI_21 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Just \| Unjust |  |  | dbl | 3 | NULL | NULL |
-| 37 | GodspeedMETI_22 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Fair \| Unfair |  |  | dbl | 3 | NULL | NULL |
-| 38 | GodspeedMETI_23 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Moral \| Immoral |  |  | dbl | 3 | NULL | NULL |
-| 39 | GodspeedMETI_24 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Ethical \| Unethical |  |  | dbl | 3 | NULL | NULL |
-| 40 | GodspeedMETI_25 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Responsible \| Irresponsible |  |  | dbl | 4 | NULL | NULL |
-| 41 | GodspeedMETI_26 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Considerate \| Inconsiderate |  |  | dbl | 3 | NULL | NULL |
-| 42 | GodspeedMETI_28 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Set the slider to the far right \| |  |  | dbl | 3 | NULL | NULL |
-| 43 | GodspeedMETI_29 | Thinking of the author for the blog post you’ve just read, set the slider to the appropriate level between each pair of adjectives. Do not spend too much time on each item, answer with your first instinct. - Set the slider to the far left \| |  |  | dbl | 3 | NULL | NULL |
-| 44 | Appelman_1 | accurate |  |  | dbl | 4 | NULL | NULL |
-| 45 | Appelman_2 | authentic |  |  | dbl | 3 | NULL | NULL |
-| 46 | Appelman_3 | believable |  |  | dbl | 3 | NULL | NULL |
-| 47 | Appelman_4 | well-written |  |  | dbl | 3 | NULL | NULL |
-| 48 | Appelman_5 | boring |  |  | dbl | 4 | NULL | NULL |
-| 49 | Appelman_6 | engaging |  |  | dbl | 3 | NULL | NULL |
-| 50 | TrustBehaviour_1 | If I were to suffer from a relevant medical condition, I am likely to use Velocerin. |  |  | dbl | 3 | NULL | NULL |
-| 51 | TrustBehaviour_2 | I would share the information in the article with a close friend or family member who may benefit from the medication described. |  |  | dbl | 3 | NULL | NULL |
-| 52 | TrustBehaviour_3 | I believe the claims made about Velocerin in this article. |  |  | dbl | 3 | NULL | NULL |
-| 53 | TrustBehaviour_4 | I do not have confidence in Velocerin based on what I have read. |  |  | dbl | 3 | NULL | NULL |
-| 54 | TrustBehaviour_5 | The blog post is not trustworthy enough for me to share on social media, if I were a person who shares links on social media. |  |  | dbl | 3 | NULL | NULL |
-| 55 | TrustBehaviour_6 | If I were suffering from a relevant medical condition, I would look into Velocerin more after reading this blog post. |  |  | dbl | 3 | NULL | NULL |
-| 56 | TrustBehaviour_7 | I would ask the author of this blog post to summarize scientific content for me in the future. |  |  | dbl | 3 | NULL | NULL |
-| 57 | TrustBehaviour_8 | I would read articles by the author of this blog post in the future if they were on a topic that was of interest to me. |  |  | dbl | 3 | NULL | NULL |
-| 58 | TrustBehaviour_9 | After reading this blog post I have enough information to make an informed decision about Velocerin. |  |  | dbl | 3 | NULL | NULL |
-| 59 | AIChatbotsFrequency | How often do you use generative AI chatbots, such as ChatGPT, Claude, Gemini, Copilot, or Grok? |  |  | dbl+lbl | 3 | NULL | 1, 2, 3, 4, 5, 6, 7, 8 |
-| 60 | ScienceContent | How often do you consume media similar to what was presented in the blog post? |  |  | dbl+lbl | 3 | NULL | 1, 2, 3, 4, 5, 6, 7, 8 |
-| 61 | AIChatbotsUsed_1 | Which generative AI chatbots have you used? ChatGPT |  |  | dbl+lbl | 49 | NULL | 1 |
-| 62 | AIChatbotsUsed_2 | Which generative AI chatbots have you used? Claude |  |  | dbl+lbl | 292 | NULL | 1 |
-| 63 | AIChatbotsUsed_3 | Which generative AI chatbots have you used? Gemini |  |  | dbl+lbl | 209 | NULL | 1 |
-| 64 | AIChatbotsUsed_4 | Which generative AI chatbots have you used? Copilot |  |  | dbl+lbl | 217 | NULL | 1 |
-| 65 | AIChatbotsUsed_5 | Which generative AI chatbots have you used? Grok |  |  | dbl+lbl | 301 | NULL | 1 |
-| 66 | AIChatbotsUsed_7 | Which generative AI chatbots have you used? Other |  |  | dbl+lbl | 296 | NULL | 1 |
-| 67 | AIChatbotsUsed_8 | Which generative AI chatbots have you used? None |  |  | dbl+lbl | 285 | NULL | 1 |
-| 68 | Experience_1 | On a scale from Strongly disagree to Strongly agree indicate how much you agree with the statements below. - I intend to use a generative AI chatbot in the future. |  |  | dbl+lbl | 3 | NULL | 1, 2, 3, 4, 5 |
-| 69 | Experience_2 | On a scale from Strongly disagree to Strongly agree indicate how much you agree with the statements below. - I would ask a generative AI chatbot to summarize scientific information for me. |  |  | dbl+lbl | 3 | NULL | 1, 2, 3, 4, 5 |
-| 70 | Experience_3 | On a scale from Strongly disagree to Strongly agree indicate how much you agree with the statements below. - I would ask a generative AI chatbot to create non-scientific content for me. |  |  | dbl+lbl | 3 | NULL | 1, 2, 3, 4, 5 |
-| 71 | Experience_4 | On a scale from Strongly disagree to Strongly agree indicate how much you agree with the statements below. - The content I read today has changed my opinion on generative AI chatbots. |  |  | dbl+lbl | 3 | NULL | 1, 2, 3, 4, 5 |
-| 72 | Experience_5 | On a scale from Strongly disagree to Strongly agree indicate how much you agree with the statements below. - I am afraid of generative AI chatbots as they exist today. |  |  | dbl+lbl | 3 | NULL | 1, 2, 3, 4, 5 |
-| 73 | Experience_6 | On a scale from Strongly disagree to Strongly agree indicate how much you agree with the statements below. - I am afraid of the potential future of generative AI. |  |  | dbl+lbl | 3 | NULL | 1, 2, 3, 4, 5 |
-| 74 | Experience_7 | On a scale from Strongly disagree to Strongly agree indicate how much you agree with the statements below. - I could write content similar to the blog post I read in this study. |  |  | dbl+lbl | 3 | NULL | 1, 2, 3, 4, 5 |
-| 75 | Experience_8 | On a scale from Strongly disagree to Strongly agree indicate how much you agree with the statements below. - I have a strong background in science. |  |  | dbl+lbl | 3 | NULL | 1, 2, 3, 4, 5 |
-| 76 | Experience_9 | On a scale from Strongly disagree to Strongly agree indicate how much you agree with the statements below. - I have professional experience related to the content of the blog post in the study. |  |  | dbl+lbl | 3 | NULL | 1, 2, 3, 4, 5 |
-| 77 | Experience_10 | On a scale from Strongly disagree to Strongly agree indicate how much you agree with the statements below. - I have professional experience writing content. |  |  | dbl+lbl | 3 | NULL | 1, 2, 3, 4, 5 |
-| 78 | Experience_11 | On a scale from Strongly disagree to Strongly agree indicate how much you agree with the statements below. - I have professional experience in a communication related field. |  |  | dbl+lbl | 3 | NULL | 1, 2, 3, 4, 5 |
-| 79 | Age_1 | How old are you? - Age |  |  | dbl | 4 | NULL | NULL |
-| 80 | Gender | How do you describe yourself? - Selected Choice |  |  | dbl+lbl | 4 | NULL | 1, 2, 3, 4, 5 |
-| 81 | Gender_4_TEXT | How do you describe yourself? - Prefer to self-describe - Text |  |  | chr | 0 | NULL | NULL |
-| 82 | Sex | Sex assigned at birth? |  |  | dbl+lbl | 4 | NULL | 1, 2, 3, 4 |
-| 83 | English | Was English your first language learned at home in childhood? |  |  | dbl+lbl | 4 | NULL | 1, 2, 3 |
-| 84 | Languages_1 | Which languages do you speak fluently? (Check all that apply) - Selected Choice English |  |  | dbl+lbl | 6 | NULL | 1 |
-| 85 | Languages_2 | Which languages do you speak fluently? (Check all that apply) - Selected Choice Mandarin |  |  | dbl+lbl | 312 | NULL | 1 |
-| 86 | Languages_3 | Which languages do you speak fluently? (Check all that apply) - Selected Choice Hindi |  |  | dbl+lbl | 316 | NULL | 1 |
-| 87 | Languages_4 | Which languages do you speak fluently? (Check all that apply) - Selected Choice Spanish |  |  | dbl+lbl | 302 | NULL | 1 |
-| 88 | Languages_5 | Which languages do you speak fluently? (Check all that apply) - Selected Choice French |  |  | dbl+lbl | 315 | NULL | 1 |
-| 89 | Languages_6 | Which languages do you speak fluently? (Check all that apply) - Selected Choice Arabic |  |  | dbl+lbl | 317 | NULL | 1 |
-| 90 | Languages_7 | Which languages do you speak fluently? (Check all that apply) - Selected Choice Bengali |  |  | dbl+lbl | 317 | NULL | 1 |
-| 91 | Languages_8 | Which languages do you speak fluently? (Check all that apply) - Selected Choice Portuguese |  |  | dbl+lbl | 317 | NULL | 1 |
-| 92 | Languages_9 | Which languages do you speak fluently? (Check all that apply) - Selected Choice Russian |  |  | dbl+lbl | 317 | NULL | 1 |
-| 93 | Languages_10 | Which languages do you speak fluently? (Check all that apply) - Selected Choice Urdu |  |  | dbl+lbl | 317 | NULL | 1 |
-| 94 | Languages_11 | Which languages do you speak fluently? (Check all that apply) - Selected Choice Other (please list) |  |  | dbl+lbl | 310 | NULL | 1 |
-| 95 | Languages_12 | Which languages do you speak fluently? (Check all that apply) - Selected Choice Prefer not to say |  |  | dbl+lbl | 315 | NULL | 1 |
-| 96 | Languages_11_TEXT | Which languages do you speak fluently? (Check all that apply) - Other (please list) - Text |  |  | chr | 0 | NULL | NULL |
-| 97 | Education | Level of Education completed (Canada) |  |  | dbl+lbl | 4 | NULL | 1, 2, 3, 4, 5, 6, 7, 8, 9 |
-| 98 | Unrealistic | Did any parts of this survey seem unrealistic or confusing to you, and if so, which ones? - Selected Choice |  |  | dbl+lbl | 4 | NULL | 1, 2 |
-| 99 | Unrealistic_2_TEXT | Did any parts of this survey seem unrealistic or confusing to you, and if so, which ones? - Yes - Text |  |  | chr | 0 | NULL | NULL |
-| 100 | TechnicalIssues | Did you experience any technical issues or interruptions during this experiment? |  |  | dbl+lbl | 4 | NULL | 1, 2 |
-| 101 | SurveyTopicCheck | In approximately 1 sentence, please tell us what you think this study is about. |  |  | chr | 0 | NULL | NULL |
-| 102 | id | id |  |  | chr | 0 | NULL | NULL |
-| 103 | Condition | Condition |  |  | chr | 0 | NULL | NULL |
-| 104 | Reread | Reread |  |  | chr | 0 | NULL | NULL |
-| 105 | completion_code | completion_code |  |  | chr | 0 | NULL | NULL |
 
 ```{r}
 
@@ -225,98 +69,33 @@ raw_data$TrustBehaviour_7 <- as.numeric(as.character(raw_data$TrustBehaviour_7))
 raw_data$TrustBehaviour_8 <- as.numeric(as.character(raw_data$TrustBehaviour_8))
 raw_data$TrustBehaviour_9 <- as.numeric(as.character(raw_data$TrustBehaviour_9))
 # raw_data <- read_csv("data/test_data.csv")
+
+raw_data$Condition <- as.factor(raw_data$Condition)
 ```
 
-Number of participants = `r nrow(raw_data)`.
+Number of participants in raw data = `r nrow(raw_data)`.
 
-## Clean data
+### Manual Processing
 
-Filter out incomplete results
+TODO
 
-```{r}
-cleaned_data <- raw_data |>
-  filter(EndDate >= "2024-12-04") |>
-  #filter(EndDate < "2024-12-04") |>
-  filter(Progress == 100) |>
-  filter(ConsentForm == 1) |>
-  filter(Status == 0) # Anonymous link
-  #filter(Status == 1) # Preview link
-```
+-   Review and code Survey purpose check (what they think this study is about, not the attention check)
 
-Number of participants = `r nrow(cleaned_data)`.
+-   Review and code Unrealistic parts of survey.
 
-```{r}
-cleaned_data |> filter(Reread == 1)
-```
+-   Check technical issues values.
 
-Filter out incorrect topic check
+-   Note that code should handle filtering free text field does not appear to be random keystrokes (Unrealistic experience in survey, study purpose) -\> update the filter code once the coding is done
 
-```{r}
-cleaned_data <- cleaned_data |>
-  filter(TopicCheck == 1)
-```
+### Reverse Coding
 
-Number of participants passing topic checks = `r nrow(cleaned_data)`.
-
-```{r}
-# print_labels(cleaned_data$AgentTypeCheck)
-# print_labels(cleaned_data$AgentNameCheck)
-
-```
-
-```{r}
-cleaned_data$Condition <- as.factor(cleaned_data$Condition)
-print(cleaned_data$Condition)
-```
-
-Filter out incorrect agent check
-
-```{r}
-cleaned_data <- cleaned_data |>
-  filter((AgentTypeCheck == 1 & Condition == "Low") | (AgentTypeCheck == 1 & Condition == "Medium") | (AgentTypeCheck == 2 & Condition == "High") )
-```
-
-```{r}
-
-glimpse(select(cleaned_data, GodspeedMETI_28:GodspeedMETI_29, Condition))
-```
-
-### Filter out incorrect attention check
-
-```{r}
-cleaned_data <- cleaned_data |>
-  filter(GodspeedMETI_28 == 100) |>
-  filter(GodspeedMETI_29 == 0)
-```
-
-Number of participants passing attention checks = `r nrow(cleaned_data)`.
-
-### Filter by Recaptcha Score
-
-```{r}
-cleaned_data <- cleaned_data |>
-  filter(Q_RecaptchaScore == 1)
-```
-
-Number of participants with recaptcha score of 1 = `r nrow(cleaned_data)`.
-
-### Filter random comment
-
-```{r}
-
-cleaned_data <- cleaned_data |>
-  filter(Unrealistic_2_TEXT != "A3HPLIWSXW3XV8")
-```
-
-Number of participants that didn't seem like bots on manual inspection = `r nrow(cleaned_data)`.
-
-### Reverse code items
+-   Reverse code items for each scale where appropriate
 
 ```{r}
 
 # 4, 5
 
-cleaned_data <- cleaned_data |> 
+recoded_data <- raw_data |> 
   mutate(
     TrustBehaviour_4r = 7 - TrustBehaviour_4,
     TrustBehaviour_5r = 7 - TrustBehaviour_5,
@@ -336,12 +115,44 @@ cleaned_data <- cleaned_data |>
     GodspeedMETI_26r = 100 - GodspeedMETI_26,
   )
 
-
 ```
 
-## Calculate scores
+### Scale Reliability Analysis
 
-TODO: reliability analysis on Godspeed items
+-   Reliability analysis on Godspeed
+
+-   Reliability Analysis for Custom vs Appelman scores - aggregate into single score
+
+-   Factor / Reliability analysis on Experience Data section items (or at least go through them and see what is there in more detail and which items likely should be grouped)
+
+### Clean Data
+
+Filter out incomplete results
+
+```{r}
+cleaned_data <- recoded_data |>
+  filter(EndDate >= "2024-12-04") |>  # Started on or after "2024-12-04" to remove test runs
+  filter(Progress == 100) |>  # Completed surveys
+  filter(ConsentForm == 1) |>  # Provided consent
+  filter(Status == 0) |> # Used anonymous link to complete survey (not preview)
+  filter(Reread != 1) |>  # Did not need to reread the instructions
+  filter(TopicCheck == 1) |>  # Passed topic check (attention check)
+  filter(
+    (AgentTypeCheck == 1 & Condition == "Low") | 
+      (AgentTypeCheck == 1 & Condition == "Medium") | 
+      (AgentTypeCheck == 2 & Condition == "High") 
+    ) |>  # Passed agent check (attention check)
+  filter(GodspeedMETI_28 == 100) |>  # Explicit item value check (attention check)
+  filter(GodspeedMETI_29 == 0) |> # Explicit item value check (attention check)
+  filter(Q_RecaptchaScore == 1) |>  # Recaptcha score from Qualtrics == 1
+  filter(Unrealistic_2_TEXT != "A3HPLIWSXW3XV8")  # Free text field does not appear to be random keystrokes (Unrealistic experience in survey, study purpose)
+```
+
+Number of participants meeting basic criteria = `r nrow(cleaned_data)`.
+
+### Calculate Scale Scores
+
+-   Calculate scores for Content Trust, Author Trust, Anthropomorphism, Likeability, Competence, Expertise, Integrity, Benevolence
 
 ```{r}
 
@@ -359,29 +170,35 @@ cleaned_data <- cleaned_data |>
     METI_author_trust_score = rowSums(select(cleaned_data, c(GodspeedMETI_10, GodspeedMETI_13, GodspeedMETI_15r:GodspeedMETI_18r, GodspeedMETI_19r:GodspeedMETI_22r, GodspeedMETI_23r:GodspeedMETI_26r)), na.rm = TRUE)
   ) 
 
-
-
 ```
 
-# Descriptive Statistics
+### Participant Statistics
 
-## Anthropomorphism Means
+-   Calculate \# participants per condition.
+
+-   Calculate demographics stats.
+
+### Manipulation Check
+
+-   Verify Anthropomorphism manipulation.
+
+#### Anthropomorphism
+
+##### Descriptive Statistics
+
+Means
 
 ```{r}
-
 cleaned_data |>
   select(Condition, anthropomorphism_score) |>
 by(cleaned_data$Condition, summary)
 
-
 ```
 
-## Standard Deviation
+Standard Deviation
 
 ```{r}
-
 tapply(cleaned_data$anthropomorphism_score, cleaned_data$Condition, sd)
-
 ```
 
 Variance
@@ -390,12 +207,78 @@ Variance
 tapply(cleaned_data$anthropomorphism_score, cleaned_data$Condition, var)
 ```
 
-```{r}
-library(pastecs)
+### Main Analysis
 
-cleaned_data |>
-  select(Condition, ends_with("_score") ) |>
-by(cleaned_data$Condition, stat.desc)
+-   Descriptive Stats
+
+-   Look for effect in content trust by anthropomorphism condition. (ANOVA + t-tests) \<- main question
+
+    -   Check for correlations with content trust
+
+    -   Check for correlations with Likeability scores
+
+    -   Check for correlations with Competence scores
+
+    -   Check for correlations with Expertise scores
+
+    -   Check for correlations with Integretiy scores
+
+    -   Check for correlations with Benevolence scores
+
+    -   Check for interactions with demographics. (Gender, sex, education, languages, age)
+
+    -   Check for interactions with AI usage experience.
+
+    -   Check for interactions with Science content experience.
+
+    -   Check for interactions with Experience data.
+
+    -   Check for interactions with survey purpose check.
+
+    -   Check for interactions with unrealistic check.
+
+-   Look for effect in author trust by anthropomorphism condition. (ANOVA + t-tests) \<- main question
+
+    -   Check for correlations with content trust
+
+    -   Check for correlations with Likeability scores
+
+    -   Check for correlations with Competence scores
+
+    -   Check for correlations with Expertise scores
+
+    -   Check for correlations with Integretiy scores
+
+    -   Check for correlations with Benevolence scores
+
+    -   Check for interactions with demographics. (Gender, sex, education, languages, age)
+
+    -   Check for interactions with AI usage experience.
+
+    -   Check for interactions with Science content experience.
+
+    -   Check for interactions with Experience data.
+
+    -   Check for interactions with survey purpose check.
+
+    -   Check for interactions with unrealistic check.
+
+# Appendix A
+
+```{r child='variables.rmd'}
+
+```
+
+## 
+
+```{r}
+# Descriptive Statistics
+
+# library(pastecs)
+# 
+# cleaned_data |>
+#   select(Condition, ends_with("_score") ) |>
+# by(cleaned_data$Condition, stat.desc)
 ```
 
 # Plots of score distributions
@@ -441,6 +324,8 @@ summ(lm_anthropomorphism_score)
 check_model(lm_anthropomorphism_score, panel = FALSE)
 ```
 
+## Trust Content By Gender
+
 ```{r}
 
 lm_content_trust_score <- lm(content_trust_score ~ Condition * Gender, data = cleaned_data)
@@ -452,6 +337,18 @@ check_model(lm_content_trust_score, panel = FALSE)
 
 
 ```
+
+1 -\> Non-binary
+
+2 -\> Man
+
+3 -\> Woman
+
+4 -\> Self-described
+
+5 -\> Prefer not to say
+
+\*\* Potential gender differences in trust? \*\*
 
 ```{r}
 longer_data <- cleaned_data |>
@@ -466,6 +363,8 @@ longer_data |>
     geom_jitter() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
   
+
+
 ```
 
 ```{r}
@@ -473,10 +372,11 @@ high_plot <- longer_data |>
   filter(Condition == "High") |>
   ggplot(aes(x = item, y = rating, colour = ResponseId)) +
     geom_jitter() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), legend.position = "none")
 high_plot
 
 ggsave("high.jpg", high_plot, width = 40, height = 20, units = "cm")
+
 
 ```
 
@@ -485,7 +385,7 @@ medium_plot <- longer_data |>
   filter(Condition == "Medium") |>
   ggplot(aes(x = item, y = rating, colour = ResponseId)) +
     geom_jitter() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), legend.position = "none")
 
 
 medium_plot
@@ -499,7 +399,7 @@ low_plot <- longer_data |>
   filter(Condition == "Low") |>
   ggplot(aes(x = item, y = rating, colour = ResponseId)) +
     geom_jitter() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), legend.position = "none")
 
 low_plot
   ggsave("low.jpg", low_plot, width = 40, height = 20, units = "cm")
@@ -546,188 +446,188 @@ low_plot
 
 ```{r}
 
-library(FactoMineR)
-library(factoextra) 
-
-anthro_cluster_df <- cleaned_data|> 
-  select(AIChatbotsFrequency, ScienceContent, Education)
-  #select(Gender, Education, AIChatbotsFrequency, ScienceContent, Age_1, Experience_1:Experience_11)
-  # select(anthropomorphism_score, likeability_score, author_trust_score, content_trust_score, content_trust_score_2, METI_author_trust_score, expertise_score)
-
-anthro.pca <- PCA(anthro_cluster_df,  graph = FALSE)
-get_eig(anthro.pca)
+# library(FactoMineR)
+# library(factoextra) 
+# 
+# anthro_cluster_df <- cleaned_data|> 
+#   select(AIChatbotsFrequency, ScienceContent, Education)
+#   #select(Gender, Education, AIChatbotsFrequency, ScienceContent, Age_1, Experience_1:Experience_11)
+#   # select(anthropomorphism_score, likeability_score, author_trust_score, content_trust_score, content_trust_score_2, METI_author_trust_score, expertise_score)
+# 
+# anthro.pca <- PCA(anthro_cluster_df,  graph = FALSE)
+# get_eig(anthro.pca)
 
 
 ```
 
 ```{r}
 
-fviz_screeplot(anthro.pca, addlabels = TRUE, ylim = c(0, 50))
+# fviz_screeplot(anthro.pca, addlabels = TRUE, ylim = c(0, 50))
 
 ```
 
 ```{r}
-anthro.var <- get_pca_var(anthro.pca)
-
-head(anthro.var$coord)
-
-head(anthro.var$contrib)
-
-fviz_pca_var(anthro.pca, col.var = "black")
+# anthro.var <- get_pca_var(anthro.pca)
+# 
+# head(anthro.var$coord)
+# 
+# head(anthro.var$contrib)
+# 
+# fviz_pca_var(anthro.pca, col.var = "black")
 ```
 
 ```{r}
-fviz_pca_var(anthro.pca, col.var="contrib",
-             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-             repel = TRUE # Avoid text overlapping
-             )
+# fviz_pca_var(anthro.pca, col.var="contrib",
+#              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+#              repel = TRUE # Avoid text overlapping
+#              )
 ```
 
 ```{r}
-
-# Contributions of variables to PC1
-fviz_contrib(anthro.pca, choice = "var", axes = 1, top = 10)
-
-# Contributions of variables to PC2
-fviz_contrib(anthro.pca, choice = "var", axes = 2, top = 10)
+# 
+# # Contributions of variables to PC1
+# fviz_contrib(anthro.pca, choice = "var", axes = 1, top = 10)
+# 
+# # Contributions of variables to PC2
+# fviz_contrib(anthro.pca, choice = "var", axes = 2, top = 10)
 ```
 
 ```{r}
-
-ind <- get_pca_ind(anthro.pca)
-ind
-
-head(ind$coord)
-
-
-fviz_pca_ind(anthro.pca, col.ind = "cos2",
-             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-             repel = TRUE # Avoid text overlapping (slow if many points)
-             )
+# 
+# ind <- get_pca_ind(anthro.pca)
+# ind
+# 
+# head(ind$coord)
+# 
+# 
+# fviz_pca_ind(anthro.pca, col.ind = "cos2",
+#              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+#              repel = TRUE # Avoid text overlapping (slow if many points)
+#              )
 
 ```
 
 ```{r}
-
-# Biplot of individuals and variables
-fviz_pca_biplot(anthro.pca, repel = TRUE)
+# 
+# # Biplot of individuals and variables
+# fviz_pca_biplot(anthro.pca, repel = TRUE)
 ```
 
 # K-Means Clustering
 
 ```{r}
-
-library(cluster)
-
-data_for_cluster <- cleaned_data|> 
-  select(AIChatbotsFrequency, ScienceContent) |>
-  # select(Gender, Education, AIChatbotsFrequency, ScienceContent, Age_1, Experience_1:Experience_11) |>
-  # mutate(Condition = case_when(Condition == "Low" ~ 1,
-  #                              Condition == "Medium" ~ 2,
-  #                              Condition == "High" ~3)) |>
-  mutate(mutate(across(where(is.numeric), scale)))
-  
-
-
-set.seed(123)  # For reproducibility
-fviz_nbclust(data_for_cluster, kmeans, method = "wss")
+# 
+# library(cluster)
+# 
+# data_for_cluster <- cleaned_data|> 
+#   select(AIChatbotsFrequency, ScienceContent) |>
+#   # select(Gender, Education, AIChatbotsFrequency, ScienceContent, Age_1, Experience_1:Experience_11) |>
+#   # mutate(Condition = case_when(Condition == "Low" ~ 1,
+#   #                              Condition == "Medium" ~ 2,
+#   #                              Condition == "High" ~3)) |>
+#   mutate(mutate(across(where(is.numeric), scale)))
+#   
+# 
+# 
+# set.seed(123)  # For reproducibility
+# fviz_nbclust(data_for_cluster, kmeans, method = "wss")
 ```
 
 ```{r}
-set.seed(123)
-kmeans_result <- kmeans(data_for_cluster, centers = 3)  # Replace 3 with optimal clusters
-data_for_cluster$Cluster <- as.numeric(kmeans_result$cluster)
-cleaned_data$Cluster.kmeans <- as.numeric(kmeans_result$cluster)
-
-fviz_cluster(kmeans_result, data = data_for_cluster)
-
-data_for_cluster <- data_for_cluster|>
-  select(-Cluster)
+# set.seed(123)
+# kmeans_result <- kmeans(data_for_cluster, centers = 3)  # Replace 3 with optimal clusters
+# data_for_cluster$Cluster <- as.numeric(kmeans_result$cluster)
+# cleaned_data$Cluster.kmeans <- as.numeric(kmeans_result$cluster)
+# 
+# fviz_cluster(kmeans_result, data = data_for_cluster)
+# 
+# data_for_cluster <- data_for_cluster|>
+#   select(-Cluster)
 ```
 
 ```{r}
-cleaned_data |>
-    ggplot(aes(x = Cluster.kmeans, y = anthropomorphism_score, colour = Cluster.kmeans)) +
-  geom_point(alpha = 0.25) + 
-    #geom_violin(alpha = 0.5, draw_quantiles = c(0.5)) +
-    ggtitle("Anthropomorphism Scores (K-Means Clustering)") +
-  facet_grid(vars(Condition))
+# cleaned_data |>
+#     ggplot(aes(x = Cluster.kmeans, y = anthropomorphism_score, colour = Cluster.kmeans)) +
+#   geom_point(alpha = 0.25) + 
+#     #geom_violin(alpha = 0.5, draw_quantiles = c(0.5)) +
+#     ggtitle("Anthropomorphism Scores (K-Means Clustering)") +
+#   facet_grid(vars(Condition))
 
 ```
 
 ```{r}
-# Contributions of variables to PC1
-fviz_contrib(kmeans_result, choice = "var", axes = 1, top = 10)
-
-# Contributions of variables to PC2
-fviz_contrib(anthro.pca, choice = "var", axes = 2, top = 10)
+# # Contributions of variables to PC1
+# fviz_contrib(kmeans_result, choice = "var", axes = 1, top = 10)
+# 
+# # Contributions of variables to PC2
+# fviz_contrib(anthro.pca, choice = "var", axes = 2, top = 10)
 ```
 
 ```{r}
-
-cleaned_data |>
-    ggplot(aes(x = Cluster.kmeans, y = content_trust_score, colour = Cluster.kmeans)) +
-  geom_jitter() + 
-    # geom_violin(alpha = 0.5, draw_quantiles = c(0.5)) +
-    ggtitle("Content Trust Scores (K-Means Clustering)") +
-  facet_grid(vars(Condition))
+# 
+# cleaned_data |>
+#     ggplot(aes(x = Cluster.kmeans, y = content_trust_score, colour = Cluster.kmeans)) +
+#   geom_jitter() + 
+#     # geom_violin(alpha = 0.5, draw_quantiles = c(0.5)) +
+#     ggtitle("Content Trust Scores (K-Means Clustering)") +
+#   facet_grid(vars(Condition))
 ```
 
 # Hierarchical Clustering
 
 ```{r}
 
+# 
+# dist_matrix <- dist(data_for_cluster, method = "euclidean")
+# 
+# hclust_result <- hclust(dist_matrix, method = "ward.D2")
+# 
+# plot(hclust_result)
+# rect.hclust(hclust_result, k = 8, border = "red")  # Replace 3 with desired clusters
+# 
+# cleaned_data$Cluster.hierarchical <- cutree(hclust_result, k = 8)
+```
 
-dist_matrix <- dist(data_for_cluster, method = "euclidean")
+```{r}
+# 
+# cleaned_data |>
+#     ggplot(aes(x = Cluster.hierarchical, y = anthropomorphism_score, colour = Cluster.hierarchical)) +
+#   geom_jitter() + 
+#     # geom_violin(alpha = 0.5, draw_quantiles = c(0.5)) +
+#     ggtitle("Anthropomorphism Scores (K-Means Clustering)") +
+#   facet_grid(vars(Condition))
+```
 
-hclust_result <- hclust(dist_matrix, method = "ward.D2")
+```{r}
+# 
+# pam_result <- pam(data_for_cluster, k = 3)  # Replace 3 with the optimal number of clusters
+# 
+# fviz_cluster(pam_result, data = data_for_cluster)
+# 
+# cleaned_data$Cluster.pam<- as.numeric(pam_result$cluster)
+```
 
-plot(hclust_result)
-rect.hclust(hclust_result, k = 8, border = "red")  # Replace 3 with desired clusters
+```{r}
+# 
+# cleaned_data |>
+#     ggplot(aes(x = Cluster.pam, y = anthropomorphism_score, colour = Cluster.pam)) +
+#   geom_jitter() + 
+#     # geom_violin(alpha = 0.5, draw_quantiles = c(0.5)) +
+#     ggtitle("Content Trust Scores (K-Means Clustering)") +
+#   facet_grid(vars(Condition))
 
-cleaned_data$Cluster.hierarchical <- cutree(hclust_result, k = 8)
 ```
 
 ```{r}
 
-cleaned_data |>
-    ggplot(aes(x = Cluster.hierarchical, y = anthropomorphism_score, colour = Cluster.hierarchical)) +
-  geom_jitter() + 
-    # geom_violin(alpha = 0.5, draw_quantiles = c(0.5)) +
-    ggtitle("Anthropomorphism Scores (K-Means Clustering)") +
-  facet_grid(vars(Condition))
-```
-
-```{r}
-
-pam_result <- pam(data_for_cluster, k = 3)  # Replace 3 with the optimal number of clusters
-
-fviz_cluster(pam_result, data = data_for_cluster)
-
-cleaned_data$Cluster.pam<- as.numeric(pam_result$cluster)
-```
-
-```{r}
-
-cleaned_data |>
-    ggplot(aes(x = Cluster.pam, y = anthropomorphism_score, colour = Cluster.pam)) +
-  geom_jitter() + 
-    # geom_violin(alpha = 0.5, draw_quantiles = c(0.5)) +
-    ggtitle("Content Trust Scores (K-Means Clustering)") +
-  facet_grid(vars(Condition))
-
-```
-
-```{r}
-
-
-cleaned_data |>
-    ggplot(aes(x = Condition, y = anthropomorphism_score)) +
-  geom_col() + 
-    # geom_violin(alpha = 0.5, draw_quantiles = c(0.5)) +
-    ggtitle("Anthropomorphism Scores (K-Means Clustering)") #+
-  # facet_grid(vars(Cluster.kmeans))
-
+# 
+# cleaned_data |>
+#     ggplot(aes(x = Condition, y = anthropomorphism_score)) +
+#   geom_col() + 
+#     # geom_violin(alpha = 0.5, draw_quantiles = c(0.5)) +
+#     ggtitle("Anthropomorphism Scores (K-Means Clustering)") #+
+#   # facet_grid(vars(Cluster.kmeans))
+# 
 
 ```
 
