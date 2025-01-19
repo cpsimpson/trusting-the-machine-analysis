@@ -53,14 +53,16 @@ My **hypothesis** is that there will be an increase in epistemic trust with incr
 #   "data/Thesis+-+Trusting+the+Machine_December+6,+2024_16.22.sav"
 #   )
 
-raw_data <- read_survey(
-  "data/Thesis+-+Trusting+the+Machine_January+18,+2025_16.09_coded.csv", 
-  col_types = readr::cols(Languages = readr::col_character())
-)
+
 
 ```
 
 ```{r}
+
+raw_data <- read_survey(
+  "data/Thesis+-+Trusting+the+Machine_January+18,+2025_16.09_coded.csv", 
+  col_types = readr::cols(Languages = readr::col_character())
+)
 
 raw_data$Appelman_1 <- as.numeric(as.character(raw_data$Appelman_1))
 raw_data$Appelman_2 <- as.numeric(as.character(raw_data$Appelman_2))
@@ -90,6 +92,15 @@ raw_data$Education <- cut(raw_data$Education, 9, labels = c(
 raw_data$English <- cut(raw_data$English, 3, labels = c("Yes", "No", "Learned English concurrently with another language"))
 
 raw_data$age_range <- cut(raw_data$Age_1, 6)
+
+raw_data$SurveyTopicCheck_coded <- factor(raw_data$SurveyTopicCheck_coded, 
+                                          labels = c("No Answer", "AI", "Non-AI Purpose", "Random", "Unsure", "Interesting", "None"))
+
+raw_data$Unrealistic <- factor(raw_data$Unrealistic, labels = c("No", "Yes"))
+raw_data$Unrealistic_coded <- factor(raw_data$Unrealistic_coded, 
+                                     labels = c("No Answer", "AI/Not AI", "AI no personality", "Realistic", "Description Not Believable", "Junk Data", "Question why AI in High"))
+
+raw_data$TechnicalIssues <- factor(raw_data$Unrealistic, labels = c("No", "Yes"))
 ```
 
 Number of participants in raw data = `r nrow(raw_data)`.
@@ -147,6 +158,10 @@ Review and code Unrealistic parts of survey.
     -   6 = unsure why they were asked questions about AI (in High condition)
 
 ```{r}
+
+raw_data |> 
+  group_by(Unrealistic) |> 
+  summarise(n=n())
 
 raw_data |> 
   group_by(Unrealistic, Unrealistic_coded) |> 
@@ -212,7 +227,7 @@ cleaned_data <- recoded_data |>
   filter(GodspeedMETI_28 == 100) |>  # Explicit item value check (attention check)
   filter(GodspeedMETI_29 == 0) |> # Explicit item value check (attention check)
   filter(Q_RecaptchaScore == 1) |>  # Recaptcha score from Qualtrics == 1
-  filter(Unrealistic_coded != 5 & SurveyTopicCheck_coded != 2)  # Free text field does not appear to be random keystrokes (Unrealistic experience in survey, study purpose)
+  filter(Unrealistic_coded != 5 & SurveyTopicCheck_coded != 2) # Free text field does not appear to be random keystrokes (Unrealistic experience in survey, study purpose)
 ```
 
 Number of participants meeting basic criteria = `r nrow(cleaned_data)`.
@@ -230,8 +245,6 @@ duplicates <- cleaned_data |>
 ```
 
 There are `r if (duplicates == 0) "no duplicate participants" else paste (duplicates, "duplicates")`
-
-***TODO***: Should we filter out the participants with technical issues?
 
 ```{r}
 
@@ -1068,36 +1081,108 @@ No effect of anthropomorphism level on Content Trust
 
 -   This implies there is a separation between the trust of the content and the trust in the source of the content.
 
+##### Post-hoc Analysis
+
+###### Age
+
+```{r}
+
+fit_i <- lm(content_trust_combined_score ~ Condition * age_range, data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = age_range,  geom = "bar")
+```
+
+Significant interaction between for age range 50 - 59.7 and 59.7 - 69.3
+
+###### Gender (Man / Woman only)
+
 ```{r}
 
 
+fit_i <- lm(content_trust_combined_score ~ Condition * Gender, 
+                    data = cleaned_data |> filter(Gender == "Man" | Gender == "Woman"))
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Gender,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="line")
+
 ```
 
--   Look for effect in content trust by anthropomorphism condition. (ANOVA + t-tests) \<- main question
+###### Sex (Male / Female only)
 
-    -   Check for correlations with content trust
+```{r}
 
-    -   Check for correlations with Likeability scores
+fit_i <- lm(content_trust_combined_score ~ Condition * Sex, 
+                    data = cleaned_data |> filter(Sex == "Male" | Sex == "Female"))
 
-    -   Check for correlations with Competence scores
+summ(fit_i)
 
-    -   Check for correlations with Expertise scores
+cat_plot(fit_i, pred = Condition, modx = Sex,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="line")
+```
 
-    -   Check for correlations with Integretiy scores
+###### Education
 
-    -   Check for correlations with Benevolence scores
+```{r}
 
-    -   Check for interactions with demographics. (Gender, sex, education, languages, age)
+fit_i <- lm(content_trust_combined_score ~ Condition * Education, 
+                    data = cleaned_data)
 
-    -   Check for interactions with AI usage experience.
+summ(fit_i)
 
-    -   Check for interactions with Science content experience.
+```
 
-    -   Check for interactions with Experience data.
+# TODO
 
-    -   Check for interactions with survey purpose check.
+###### AI Usage Experience
 
-    -   Check for interactions with unrealistic check.
+```{r}
+
+```
+
+###### Science Content Experience
+
+```{r}
+
+```
+
+###### Experience
+
+```{r}
+
+```
+
+###### Survey Purpose Check
+
+```{r}
+
+fit_i <- lm(content_trust_combined_score ~ Condition * SurveyTopicCheck_coded, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = SurveyTopicCheck_coded,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar")
+```
+
+###### Unrealistic Check
+
+```{r}
+
+fit_i <- lm(content_trust_combined_score ~ Condition * Unrealistic, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Unrealistic,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar")
+
+fit_i <- lm(content_trust_combined_score ~ Condition * Unrealistic_coded, 
+                    data = cleaned_data |> filter(Unrealistic == "Yes"))
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Unrealistic_coded,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar")
+```
 
 #### Author Trust
 
@@ -1247,8 +1332,6 @@ cat_plot(fit_i, pred = Condition, modx = age_range,  geom = "bar")
 
 Significant interaction between for age range 50 - 59.7 and 59.7 - 69.3
 
--   Thoughts: What if we did a PCA here instead of using set ranges?
-
 ###### Gender (Man / Woman only)
 
 ```{r}
@@ -1286,34 +1369,55 @@ summ(fit_i)
 
 ```
 
-AI Usage Experience
+# TODO
+
+###### AI Usage Experience
 
 ```{r}
 
 ```
 
-Science Content Experience
+###### Science Content Experience
 
 ```{r}
 
 ```
 
-Experience
+###### Experience
 
 ```{r}
 
 ```
 
-Survey Purpose Check
+###### Survey Purpose Check
 
 ```{r}
 
+fit_i <- lm(author_trust_combined_score ~ Condition * SurveyTopicCheck_coded, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = SurveyTopicCheck_coded,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar")
 ```
 
-Unrealistic Check
+###### Unrealistic Check
 
 ```{r}
 
+fit_i <- lm(author_trust_combined_score ~ Condition * Unrealistic, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Unrealistic,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar")
+
+fit_i <- lm(author_trust_combined_score ~ Condition * Unrealistic_coded, 
+                    data = cleaned_data |> filter(Unrealistic == "Yes"))
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Unrealistic_coded,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar")
 ```
 
 # Appendix A
