@@ -9,7 +9,7 @@ toc: true
 toc_float:
   collapsed: true
   smooth_scroll: false
-toc_depth: 5
+toc_depth: 7
 editor: visual
 ---
 
@@ -17,19 +17,25 @@ editor: visual
 
 library(knitr)
 library(kableExtra)
-
 library(rstatix)
 library(tidyverse)
+library(qualtRics)
 library(haven)
 library(jtools)
 library(forcats)
 library(FactoMineR)
+library(psych)
+library(interactions)
+library(corrplot)
+
+library(performance)
+library(see)
 
 source("./helpers.R")
 
 ```
 
-# Questions
+# Trusting the machine: Epistemic trust and anthropomorphism in generative artificial intelligence
 
 **Research Question**: What effect does anthropomorphism have on level of trust in generative AI and the content it creates?  
 
@@ -40,13 +46,17 @@ My **hypothesis** is that there will be an increase in epistemic trust with incr
 ### Load data
 
 ```{r}
-raw_data <- read_spss(
-  #"data/Thesis+-+Trusting+the+Machine+-+Copy+For+Testing_December+4,+2024_21.34.sav"
-  # "data/Thesis+-+Trusting+the+Machine_December+4,+2024_19.13.sav"
-  # "data/Thesis+-+Trusting+the+Machine_November+30,+2024_13.06.sav"
-  "data/Thesis+-+Trusting+the+Machine_December+6,+2024_16.22.sav"
-  )
+# raw_data <- read_spss(
+#   #"data/Thesis+-+Trusting+the+Machine+-+Copy+For+Testing_December+4,+2024_21.34.sav"
+#   # "data/Thesis+-+Trusting+the+Machine_December+4,+2024_19.13.sav"
+#   # "data/Thesis+-+Trusting+the+Machine_November+30,+2024_13.06.sav"
+#   "data/Thesis+-+Trusting+the+Machine_December+6,+2024_16.22.sav"
+#   )
 
+raw_data <- read_survey(
+  "data/Thesis+-+Trusting+the+Machine_January+18,+2025_16.09_coded.csv", 
+  col_types = readr::cols(Languages = readr::col_character())
+)
 
 ```
 
@@ -68,28 +78,93 @@ raw_data$TrustBehaviour_6 <- as.numeric(as.character(raw_data$TrustBehaviour_6))
 raw_data$TrustBehaviour_7 <- as.numeric(as.character(raw_data$TrustBehaviour_7))
 raw_data$TrustBehaviour_8 <- as.numeric(as.character(raw_data$TrustBehaviour_8))
 raw_data$TrustBehaviour_9 <- as.numeric(as.character(raw_data$TrustBehaviour_9))
-# raw_data <- read_csv("data/test_data.csv")
 
-raw_data$Condition <- as.factor(raw_data$Condition)
+# setup factor variables
+raw_data$Condition <- factor(raw_data$Condition, levels = c("Low", "Medium", "High"))
+
+raw_data$Sex <- cut(raw_data$Sex, 4, labels = c("Male", "Female", "Intersex", "Prefer not to say"))
+raw_data$Gender <- cut(raw_data$Gender, 5, labels = c("Non-binary / third gender", "Man", "Woman", "Prefer to self-describe", "Prefer not to say"))
+raw_data$Education <- cut(raw_data$Education, 9, labels = c(
+  "SomePrimary", "Primary", "SomeSecondarySchool", "Secondary", "VocationalOrSimilar", "SomeUniversity", "UniversityBachelorsDegree", "GraduateProfessionalDegree", "PreferNotToSay"
+))
+raw_data$English <- cut(raw_data$English, 3, labels = c("Yes", "No", "Learned English concurrently with another language"))
+
+raw_data$age_range <- cut(raw_data$Age_1, 6)
 ```
 
 Number of participants in raw data = `r nrow(raw_data)`.
 
 ### Manual Processing
 
-TODO
+Review and code Survey purpose check (what they think this study is about, not the attention check)
 
--   Review and code Survey purpose check (what they think this study is about, not the attention check)
+-   Manually coded the response values with the following key:
 
--   Review and code Unrealistic parts of survey.
+    -   0 = no answer provided
 
--   Check technical issues values.
+    -   1 = identified the survey was about AI content, perception of AI, human versus AI distinction
 
--   Note that code should handle filtering free text field does not appear to be random keystrokes (Unrealistic experience in survey, study purpose) -\> update the filter code once the coding is done
+    -   2 = nonsensical text
+
+    -   3 = values that describe a purpose
+
+    -   4 = random word
+
+    -   5 = unsure
+
+    -   6 = "the study was interesting" or "good" and variations of this
+
+    -   7 = None
+
+```{r}
+raw_data |> 
+  group_by(SurveyTopicCheck_coded) |> 
+  summarise(n=n())
+```
+
+Review and code Unrealistic parts of survey.
+
+-   Unrealistic
+
+    -   1 = No
+
+    -   2 = Yes
+
+-   Unrealistic_coded -\> Manually coded the response values with the following key:
+
+    -   0 = no answer provided
+
+    -   1 = believe descriptions written by AI or content written by AI when told human or content written by human when told AI
+
+    -   2 = don't believe that traits make sense to apply to AI
+
+    -   3 = it all seemed realistic
+
+    -   4 = description of AI was not believable
+
+    -   5 = random text
+
+    -   6 = unsure why they were asked questions about AI (in High condition)
+
+```{r}
+
+raw_data |> 
+  group_by(Unrealistic, Unrealistic_coded) |> 
+  summarise(n=n())
+```
+
+Check technical issues values.
+
+```{r}
+
+raw_data |> 
+  group_by(TechnicalIssues) |> 
+  summarise(n=n())
+```
 
 ### Reverse Coding
 
--   Reverse code items for each scale where appropriate
+Reverse code items for each scale where appropriate
 
 ```{r}
 
@@ -117,14 +192,6 @@ recoded_data <- raw_data |>
 
 ```
 
-### Scale Reliability Analysis
-
--   Reliability analysis on Godspeed
-
--   Reliability Analysis for Custom vs Appelman scores - aggregate into single score
-
--   Factor / Reliability analysis on Experience Data section items (or at least go through them and see what is there in more detail and which items likely should be grouped)
-
 ### Clean Data
 
 Filter out incomplete results
@@ -145,12 +212,63 @@ cleaned_data <- recoded_data |>
   filter(GodspeedMETI_28 == 100) |>  # Explicit item value check (attention check)
   filter(GodspeedMETI_29 == 0) |> # Explicit item value check (attention check)
   filter(Q_RecaptchaScore == 1) |>  # Recaptcha score from Qualtrics == 1
-  filter(Unrealistic_2_TEXT != "A3HPLIWSXW3XV8")  # Free text field does not appear to be random keystrokes (Unrealistic experience in survey, study purpose)
+  filter(Unrealistic_coded != 5 & SurveyTopicCheck_coded != 2)  # Free text field does not appear to be random keystrokes (Unrealistic experience in survey, study purpose)
 ```
 
 Number of participants meeting basic criteria = `r nrow(cleaned_data)`.
 
+#### Validate no duplicate participants
+
+```{r}
+duplicates <- cleaned_data |> 
+  group_by(ResponseId) |> 
+  summarise(n=n()) |>
+  filter(n > 1) |>
+  nrow()
+  
+
+```
+
+There are `r if (duplicates == 0) "no duplicate participants" else paste (duplicates, "duplicates")`
+
+***TODO***: Should we filter out the participants with technical issues?
+
+```{r}
+
+cleaned_data |> 
+  group_by(TechnicalIssues) |> 
+  summarise(n=n())
+
+```
+
 ### Calculate Scale Scores
+
+#### Define Score Components
+
+```{r}
+
+content_trust_score_appelman_cols = c("Appelman_1", "Appelman_2", "Appelman_3")
+
+content_trust_score_behaviour_cols = c("TrustBehaviour_1", "TrustBehaviour_2",  "TrustBehaviour_3" ,"TrustBehaviour_4r", "TrustBehaviour_5r", "TrustBehaviour_6", "TrustBehaviour_9")
+
+content_trust_score_combined_cols =  append(content_trust_score_appelman_cols, content_trust_score_behaviour_cols)
+
+author_trust_score_behaviour_cols = c("TrustBehaviour_7", "TrustBehaviour_8")
+author_trust_score_METI_cols = c("GodspeedMETI_10", "GodspeedMETI_13", "GodspeedMETI_15r", "GodspeedMETI_16r", "GodspeedMETI_17r", "GodspeedMETI_18r", "GodspeedMETI_19r", "GodspeedMETI_20r", "GodspeedMETI_21r", "GodspeedMETI_22r", "GodspeedMETI_23r", "GodspeedMETI_24r", "GodspeedMETI_25r", "GodspeedMETI_26r")
+
+author_trust_score_combined_cols = append(author_trust_score_behaviour_cols, author_trust_score_METI_cols)
+
+anthropomorphism_score_godspeed_cols = c("GodspeedMETI_1", "GodspeedMETI_2", "GodspeedMETI_3", "GodspeedMETI_4")
+likeability_score_godspeed_cols = c("GodspeedMETI_5", "GodspeedMETI_6", "GodspeedMETI_7", "GodspeedMETI_8", "GodspeedMETI_9")
+competence_score_godspeed_cols =  c("GodspeedMETI_10", "GodspeedMETI_11", "GodspeedMETI_12", "GodspeedMETI_13", "GodspeedMETI_14")
+
+expertise_score_METI_cols = c("GodspeedMETI_10", "GodspeedMETI_13", "GodspeedMETI_15r", "GodspeedMETI_16r", "GodspeedMETI_17r", "GodspeedMETI_18r")
+integrity_score_METI_cols = c("GodspeedMETI_19r", "GodspeedMETI_20r", "GodspeedMETI_21r", "GodspeedMETI_22r")
+benevolence_score_METI_cols = c("GodspeedMETI_23r", "GodspeedMETI_24r", "GodspeedMETI_25r", "GodspeedMETI_26r")
+
+
+
+```
 
 -   Calculate scores for Content Trust, Author Trust, Anthropomorphism, Likeability, Competence, Expertise, Integrity, Benevolence
 
@@ -158,35 +276,296 @@ Number of participants meeting basic criteria = `r nrow(cleaned_data)`.
 
 cleaned_data <- cleaned_data |>
   mutate(
-    content_trust_score = rowMeans(select(cleaned_data, Appelman_1:Appelman_3), na.rm = TRUE),
-    content_trust_score_2 = rowMeans(select(cleaned_data, c(TrustBehaviour_1, TrustBehaviour_2,  TrustBehaviour_3 ,TrustBehaviour_4r, TrustBehaviour_5r, TrustBehaviour_6, TrustBehaviour_9)), na.rm = TRUE),
-    author_trust_score = rowMeans(select(cleaned_data, c(TrustBehaviour_7, TrustBehaviour_8)), na.rm = TRUE),
-    anthropomorphism_score = rowMeans(select(cleaned_data, GodspeedMETI_1:GodspeedMETI_4), na.rm = TRUE),
-    likeability_score = rowMeans(select(cleaned_data, GodspeedMETI_5:GodspeedMETI_9), na.rm = TRUE),
-    competence_score = rowMeans(select(cleaned_data, GodspeedMETI_10:GodspeedMETI_14), na.rm = TRUE), 
-    expertise_score = rowSums(select(cleaned_data, c(GodspeedMETI_10, GodspeedMETI_13, GodspeedMETI_15r:GodspeedMETI_18r)), na.rm = TRUE), 
-    integrity_score = rowSums(select(cleaned_data, GodspeedMETI_19r:GodspeedMETI_22r), na.rm = TRUE), 
-    benevolence_score = rowSums(select(cleaned_data, GodspeedMETI_23r:GodspeedMETI_26r), na.rm = TRUE),
-    METI_author_trust_score = rowSums(select(cleaned_data, c(GodspeedMETI_10, GodspeedMETI_13, GodspeedMETI_15r:GodspeedMETI_18r, GodspeedMETI_19r:GodspeedMETI_22r, GodspeedMETI_23r:GodspeedMETI_26r)), na.rm = TRUE)
+    content_trust_appelman_score = rowMeans(
+      select(cleaned_data, all_of(content_trust_score_appelman_cols)), na.rm = TRUE),
+    content_trust_behaviour_score = rowMeans(
+      select(cleaned_data, all_of(content_trust_score_behaviour_cols)), na.rm = TRUE),
+    content_trust_combined_score = rowMeans(
+      select(cleaned_data, all_of(content_trust_score_combined_cols)), na.rm = TRUE),
+    author_trust_behaviour_score = rowMeans(
+      select(cleaned_data, all_of(author_trust_score_behaviour_cols)), na.rm = TRUE),
+    author_trust_METI_score = rowSums(
+      select(cleaned_data, all_of(author_trust_score_METI_cols)), na.rm = TRUE),
+    author_trust_combined_score = rowMeans(
+      select(cleaned_data, all_of(author_trust_score_combined_cols)), na.rm = TRUE),
+    anthropomorphism_score = rowMeans(
+      select(cleaned_data, all_of(anthropomorphism_score_godspeed_cols)), na.rm = TRUE),
+    likeability_score = rowMeans(
+      select(cleaned_data, all_of(likeability_score_godspeed_cols)), na.rm = TRUE),
+    competence_score = rowMeans(
+      select(cleaned_data, all_of(competence_score_godspeed_cols)), na.rm = TRUE), 
+    expertise_score = rowSums(
+      select(cleaned_data, all_of(expertise_score_METI_cols)), na.rm = TRUE), 
+    integrity_score = rowSums(
+      select(cleaned_data, all_of(integrity_score_METI_cols)), na.rm = TRUE), 
+    benevolence_score = rowSums(
+      select(cleaned_data, all_of(benevolence_score_METI_cols)), na.rm = TRUE)
   ) 
 
 ```
 
-### Participant Statistics
+### Scale Inter-item Reliability Analysis
 
--   Calculate \# participants per condition.
+#### Anthropomorphism (Godspeed Subscale)
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(anthropomorphism_score_godspeed_cols)) |>
+  psych::alpha()
+```
+
+#### Likeability (Godspeed Subscale)
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(likeability_score_godspeed_cols)) |>
+  psych::alpha()
+
+```
+
+#### Competence (Godspeed Subscale)
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(competence_score_godspeed_cols)) |>
+  psych::alpha()
+
+```
+
+#### Expertise (METI Subscale)
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(expertise_score_METI_cols)) |>
+  psych::alpha()
+
+```
+
+#### Integrity (METI Subscale)
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(integrity_score_METI_cols)) |>
+  psych::alpha()
+
+```
+
+#### Benevolence (Godspeed Subscale)
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(benevolence_score_METI_cols)) |>
+  psych::alpha()
+
+```
+
+#### METI (Author Trust)
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(author_trust_score_METI_cols)) |>
+  psych::alpha()
+
+```
+
+#### Trust Behaviour (Author Trust)
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(author_trust_score_behaviour_cols)) |>
+  psych::alpha()
+
+```
+
+#### Combine Author Trust
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(author_trust_score_combined_cols)) |>
+  psych::alpha()
+
+```
+
+#### Appelman (Content Trust)
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(content_trust_score_appelman_cols)) |>
+  psych::alpha()
+
+```
+
+#### Trust Behaviour (Content Trust)
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(content_trust_score_behaviour_cols)) |>
+  psych::alpha()
+
+```
+
+#### Combined Content Trust
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(content_trust_score_combined_cols)) |>
+  psych::alpha()
+
+```
+
+-   ***TODO:*** Factor / Reliability analysis on Experience Data section items (or at least go through them and see what is there in more detail and which items likely should be grouped)
+
+### 
+
+### Sample Characteristics
+
+```         
+N=`r length(unique(cleaned_data$ResponseId))`
+```
+
+Participants per condition.
+
+```{r}
+cleaned_data |> 
+  select(ResponseId, Condition) |>
+  group_by(Condition) |>
+  summarise(n = n())
+
+```
 
 -   Calculate demographics stats.
 
-### Manipulation Check
+#### Age
 
--   Verify Anthropomorphism manipulation.
+```         
+Age range: `r round(min(cleaned_data$Age_1, na.rm = TRUE), 2)` to `r round(max(cleaned_data$Age_1, na.rm = TRUE), 2)`
+Mean age: `r round(mean(cleaned_data$Age_1, na.rm = TRUE), 2)`
+Standard deviation: `r round(sd(cleaned_data$Age_1, na.rm = TRUE), 2)`
+```
+
+```{r}
+cleaned_data |> 
+  select(age_range) |>
+  group_by(age_range) |>
+  summarise(n = n())
+
+cleaned_data |> 
+  select(age_range, Condition) |>
+  group_by(age_range, Condition) |>
+  summarise(n = n())
+```
+
+#### Gender
+
+```{r}
+
+cleaned_data |> 
+  select(Gender) |>
+  group_by(Gender) |>
+  summarise(n = n())
+
+cleaned_data |> 
+  select(Gender, Condition) |>
+  group_by(Gender, Condition) |>
+  summarise(n = n())
+
+```
+
+Limit analysis to Man / Woman comparison given small sample size for other values.
+
+#### Sex
+
+```{r}
+
+cleaned_data |> 
+  select(Sex) |>
+  group_by(Sex) |>
+  summarise(n = n())
+
+cleaned_data |> 
+  select(Sex, Condition) |>
+  group_by(Sex, Condition) |>
+  summarise(n = n())
+```
+
+Limit analysis to Male / Female comparison given small sample size for other values.
+
+#### Education Level
+
+```{r}
+
+cleaned_data |> 
+  select(Education) |>
+  group_by(Education) |>
+  summarise(n = n())
+
+cleaned_data |> 
+  select(Education, Condition) |>
+  group_by(Education, Condition) |>
+  summarise(n = n())
+
+```
+
+#### English as a First Language
+
+```{r}
+
+cleaned_data |> 
+  select(English) |>
+  group_by(English) |>
+  summarise(n = n())
+
+cleaned_data |> 
+  select(English, Condition) |>
+  group_by(English, Condition) |>
+  summarise(n = n())
+
+```
+
+#### Other Languages
+
+```{r}
+
+cleaned_data |> 
+  select(Languages) |>
+  group_by(Languages) |>
+  summarise(n = n())
+
+cleaned_data |> 
+  select(Languages, Condition) |>
+  group_by(Languages, Condition) |>
+  summarise(n = n())
+
+
+```
+
+### Manipulation Check
 
 #### Anthropomorphism
 
+We attempted to explicitly manipulated the level of anthropomorphism. Therefore, we would expect to see a significant difference in this score across the 3 conditions.
+
+##### Plot
+
+```{r}
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$anthropomorphism_score, cleaned_data$Condition, "Anthropomorphism Scores")
+```
+
 ##### Descriptive Statistics
 
-Means
+###### Means
 
 ```{r}
 cleaned_data |>
@@ -195,21 +574,504 @@ by(cleaned_data$Condition, summary)
 
 ```
 
-Standard Deviation
+###### Standard Deviation
 
 ```{r}
 tapply(cleaned_data$anthropomorphism_score, cleaned_data$Condition, sd)
 ```
 
-Variance
+###### Variance
 
 ```{r}
 tapply(cleaned_data$anthropomorphism_score, cleaned_data$Condition, var)
 ```
 
+##### Inferential Statistics 
+
+###### ANOVA
+
+```{r}
+
+aov_model <- aov(anthropomorphism_score ~ Condition, data = cleaned_data)
+
+par(mfrow = c(2, 2))
+plot(aov_model)
+
+summary(aov_model)
+
+
+```
+
+###### T-tests
+
+```{r}
+
+t_high_medium = t.test(
+  x = cleaned_data |> filter(Condition == "High") |> select(anthropomorphism_score),
+  y = cleaned_data |> filter(Condition == "Medium") |> select(anthropomorphism_score)
+)
+
+t_high_medium
+
+t_high_low = t.test(
+  x = cleaned_data |> filter(Condition == "High") |> select(anthropomorphism_score),
+  y = cleaned_data |> filter(Condition == "Low") |> select(anthropomorphism_score)
+)
+
+t_high_low
+
+t_medium_low = t.test(
+  x = cleaned_data |> filter(Condition == "Medium") |> select(anthropomorphism_score),
+  y = cleaned_data |> filter(Condition == "Low") |> select(anthropomorphism_score)
+)
+
+t_medium_low
+
+```
+
+**The difference in anthropomorphism between Low and Medium conditions is not significant. Thus we must assume our manipulation was not effective between these conditions.**
+
+Thoughts:
+
+-   you can't just describe an AI as if it were human and get an anthropomorphic effect - why not?
+
+-   avatar image was not effective in provoking effect.
+
+-   overriding existing beliefs about AI / computers?
+
+#### Likeability
+
+We were not explicitly intending to manipulate likeability
+
+##### Plot
+
+```{r}
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$likeability_score, cleaned_data$Condition, "Likeability Scores")
+```
+
+##### 
+
+##### Descriptive Statistics
+
+###### Means
+
+```{r}
+cleaned_data |>
+  select(Condition, likeability_score) |>
+by(cleaned_data$Condition, summary)
+
+```
+
+###### Standard Deviation
+
+```{r}
+tapply(cleaned_data$likeability_score, cleaned_data$Condition, sd)
+```
+
+###### Variance
+
+```{r}
+tapply(cleaned_data$likeability_score, cleaned_data$Condition, var)
+```
+
+##### Inferential Statistics 
+
+###### ANOVA
+
+```{r}
+
+aov_model <- aov(likeability_score ~ Condition, data = cleaned_data)
+
+par(mfrow = c(2, 2))
+plot(aov_model)
+
+summary(aov_model)
+
+```
+
+###### T-tests
+
+```{r}
+
+t_high_medium = t.test(
+  x = cleaned_data |> filter(Condition == "High") |> select(likeability_score),
+  y = cleaned_data |> filter(Condition == "Medium") |> select(likeability_score)
+)
+
+t_high_medium
+
+t_high_low = t.test(
+  x = cleaned_data |> filter(Condition == "High") |> select(likeability_score),
+  y = cleaned_data |> filter(Condition == "Low") |> select(likeability_score)
+)
+
+t_high_low
+
+t_medium_low = t.test(
+  x = cleaned_data |> filter(Condition == "Medium") |> select(likeability_score),
+  y = cleaned_data |> filter(Condition == "Low") |> select(likeability_score)
+)
+
+t_medium_low
+
+```
+
+There is a significant difference in likeability between the High condition and others.
+
+#### Competence
+
+We were not explicitly intending to manipulate competence
+
+##### Plot
+
+```{r}
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$competence_score, cleaned_data$Condition, "Competence Scores")
+```
+
+##### 
+
+##### Descriptive Statistics
+
+###### Means
+
+```{r}
+cleaned_data |>
+  select(Condition, competence_score) |>
+by(cleaned_data$Condition, summary)
+
+```
+
+###### Standard Deviation
+
+```{r}
+tapply(cleaned_data$competence_score, cleaned_data$Condition, sd)
+```
+
+###### Variance
+
+```{r}
+tapply(cleaned_data$competence_score, cleaned_data$Condition, var)
+```
+
+##### Inferential Statistics 
+
+###### ANOVA
+
+```{r}
+
+aov_model <- aov(competence_score ~ Condition, data = cleaned_data)
+
+par(mfrow = c(2, 2))
+plot(aov_model)
+
+summary(aov_model)
+
+
+```
+
+###### T-tests
+
+```{r}
+
+t_high_medium = t.test(
+  x = cleaned_data |> filter(Condition == "High") |> select(competence_score),
+  y = cleaned_data |> filter(Condition == "Medium") |> select(competence_score)
+)
+
+t_high_medium
+
+t_high_low = t.test(
+  x = cleaned_data |> filter(Condition == "High") |> select(competence_score),
+  y = cleaned_data |> filter(Condition == "Low") |> select(competence_score)
+)
+
+t_high_low
+
+t_medium_low = t.test(
+  x = cleaned_data |> filter(Condition == "Medium") |> select(competence_score),
+  y = cleaned_data |> filter(Condition == "Low") |> select(competence_score)
+)
+
+t_medium_low
+
+```
+
+#### Expertise
+
+We were not explicitly intending to manipulate expertise
+
+##### Plot
+
+```{r}
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$expertise_score, cleaned_data$Condition, "Expertise Scores")
+```
+
+##### 
+
+##### Descriptive Statistics
+
+###### Means
+
+```{r}
+cleaned_data |>
+  select(Condition, expertise_score) |>
+by(cleaned_data$Condition, summary)
+
+```
+
+###### Standard Deviation
+
+```{r}
+tapply(cleaned_data$expertise_score, cleaned_data$Condition, sd)
+```
+
+###### Variance
+
+```{r}
+tapply(cleaned_data$expertise_score, cleaned_data$Condition, var)
+```
+
+##### Inferential Statistics 
+
+###### ANOVA
+
+```{r}
+
+aov_model <- aov(expertise_score ~ Condition, data = cleaned_data)
+
+par(mfrow = c(2, 2))
+plot(aov_model)
+
+summary(aov_model)
+
+
+```
+
+###### T-tests
+
+```{r}
+
+t_high_medium = t.test(
+  x = cleaned_data |> filter(Condition == "High") |> select(expertise_score),
+  y = cleaned_data |> filter(Condition == "Medium") |> select(expertise_score)
+)
+
+t_high_medium
+
+t_high_low = t.test(
+  x = cleaned_data |> filter(Condition == "High") |> select(expertise_score),
+  y = cleaned_data |> filter(Condition == "Low") |> select(expertise_score)
+)
+
+t_high_low
+
+t_medium_low = t.test(
+  x = cleaned_data |> filter(Condition == "Medium") |> select(expertise_score),
+  y = cleaned_data |> filter(Condition == "Low") |> select(expertise_score)
+)
+
+t_medium_low
+
+```
+
+#### Integrity
+
+We were not explicitly intending to manipulate integrity
+
+##### Plot
+
+```{r}
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$integrity_score, cleaned_data$Condition, "Integrity Scores")
+```
+
+##### 
+
+##### Descriptive Statistics
+
+###### Means
+
+```{r}
+cleaned_data |>
+  select(Condition, integrity_score) |>
+by(cleaned_data$Condition, summary)
+
+```
+
+###### Standard Deviation
+
+```{r}
+tapply(cleaned_data$integrity_score, cleaned_data$Condition, sd)
+```
+
+###### Variance
+
+```{r}
+tapply(cleaned_data$integrity_score, cleaned_data$Condition, var)
+```
+
+##### Inferential Statistics 
+
+###### ANOVA
+
+```{r}
+
+aov_model <- aov(integrity_score ~ Condition, data = cleaned_data)
+
+par(mfrow = c(2, 2))
+plot(aov_model)
+
+summary(aov_model)
+
+
+```
+
+###### T-tests
+
+```{r}
+
+t_high_medium = t.test(
+  x = cleaned_data |> filter(Condition == "High") |> select(integrity_score),
+  y = cleaned_data |> filter(Condition == "Medium") |> select(integrity_score)
+)
+
+t_high_medium
+
+t_high_low = t.test(
+  x = cleaned_data |> filter(Condition == "High") |> select(integrity_score),
+  y = cleaned_data |> filter(Condition == "Low") |> select(integrity_score)
+)
+
+t_high_low
+
+t_medium_low = t.test(
+  x = cleaned_data |> filter(Condition == "Medium") |> select(integrity_score),
+  y = cleaned_data |> filter(Condition == "Low") |> select(integrity_score)
+)
+
+t_medium_low
+
+```
+
+#### Benevolence
+
+We were not explicitly intending to manipulate benevolence
+
+##### Plot
+
+```{r}
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$benevolence_score, cleaned_data$Condition, "Benevolence Scores")
+```
+
+##### 
+
+##### Descriptive Statistics
+
+###### Means
+
+```{r}
+cleaned_data |>
+  select(Condition, benevolence_score) |>
+by(cleaned_data$Condition, summary)
+
+```
+
+###### Standard Deviation
+
+```{r}
+tapply(cleaned_data$benevolence_score, cleaned_data$Condition, sd)
+```
+
+###### Variance
+
+```{r}
+tapply(cleaned_data$benevolence_score, cleaned_data$Condition, var)
+```
+
+##### Inferential Statistics 
+
+###### ANOVA
+
+```{r}
+
+aov_model <- aov(benevolence_score ~ Condition, data = cleaned_data)
+
+par(mfrow = c(2, 2))
+plot(aov_model)
+
+summary(aov_model)
+
+```
+
+###### T-tests
+
+```{r}
+
+t_high_medium = t.test(
+  x = cleaned_data |> filter(Condition == "High") |> select(benevolence_score),
+  y = cleaned_data |> filter(Condition == "Medium") |> select(benevolence_score)
+)
+
+t_high_medium
+
+t_high_low = t.test(
+  x = cleaned_data |> filter(Condition == "High") |> select(benevolence_score),
+  y = cleaned_data |> filter(Condition == "Low") |> select(benevolence_score)
+)
+
+t_high_low
+
+t_medium_low = t.test(
+  x = cleaned_data |> filter(Condition == "Medium") |> select(benevolence_score),
+  y = cleaned_data |> filter(Condition == "Low") |> select(benevolence_score)
+)
+
+t_medium_low
+
+```
+
 ### Main Analysis
 
--   Descriptive Stats
+#### Content Trust
+
+##### Plot
+
+```{r}
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$content_trust_combined_score, cleaned_data$Condition, "Content Trust Scores")
+```
+
+##### 
+
+##### Descriptive Statistics
+
+```{r}
+cleaned_data |>
+  select(Condition, content_trust_combined_score) |>
+by(cleaned_data$Condition, summary)
+
+```
+
+##### Inferential Statistics
+
+Main Effect ANOVA
+
+```{r}
+
+aov_model <- aov(content_trust_combined_score ~ Condition, data = cleaned_data)
+
+par(mfrow = c(2, 2))
+plot(aov_model)
+
+summary(aov_model)
+```
+
+No effect of anthropomorphism level on Content Trust
+
+-   This implies there is a separation between the trust of the content and the trust in the source of the content.
+
+```{r}
+
+
+```
 
 -   Look for effect in content trust by anthropomorphism condition. (ANOVA + t-tests) \<- main question
 
@@ -237,402 +1099,224 @@ tapply(cleaned_data$anthropomorphism_score, cleaned_data$Condition, var)
 
     -   Check for interactions with unrealistic check.
 
--   Look for effect in author trust by anthropomorphism condition. (ANOVA + t-tests) \<- main question
+#### Author Trust
 
-    -   Check for correlations with content trust
+##### Plot
 
-    -   Check for correlations with Likeability scores
+```{r}
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$author_trust_combined_score, cleaned_data$Condition, "Author Trust Scores")
+```
 
-    -   Check for correlations with Competence scores
+##### 
 
-    -   Check for correlations with Expertise scores
+##### Descriptive Statistics
 
-    -   Check for correlations with Integretiy scores
+```{r}
+cleaned_data |>
+  select(Condition, author_trust_combined_score) |>
+by(cleaned_data$Condition, summary)
 
-    -   Check for correlations with Benevolence scores
+```
 
-    -   Check for interactions with demographics. (Gender, sex, education, languages, age)
+##### Inferential Statistics
 
-    -   Check for interactions with AI usage experience.
+```{r}
 
-    -   Check for interactions with Science content experience.
+aov_model <- aov(author_trust_combined_score ~ Condition, data = cleaned_data)
 
-    -   Check for interactions with Experience data.
+par(mfrow = c(2, 2))
+plot(aov_model)
 
-    -   Check for interactions with survey purpose check.
+summary(aov_model)
+```
 
-    -   Check for interactions with unrealistic check.
+```{r}
+
+
+t_high_medium = t.test(
+  x = cleaned_data |> filter(Condition == "High") |> select(author_trust_combined_score),
+  y = cleaned_data |> filter(Condition == "Medium") |> select(author_trust_combined_score)
+)
+
+t_high_medium
+
+t_high_low = t.test(
+  x = cleaned_data |> filter(Condition == "High") |> select(author_trust_combined_score),
+  y = cleaned_data |> filter(Condition == "Low") |> select(author_trust_combined_score)
+)
+
+t_high_low
+
+t_medium_low = t.test(
+  x = cleaned_data |> filter(Condition == "Medium") |> select(author_trust_combined_score),
+  y = cleaned_data |> filter(Condition == "Low") |> select(author_trust_combined_score)
+)
+
+t_medium_low
+```
+
+Significant effect of anthropomorphism level between High - Medium and High - Low conditions, no effect between Low - Medium as expected given the lack of significance in manipulation.
+
+##### Post-hoc Analysis
+
+###### Correlations with Content Trust
+
+```{r}
+correlation_data <- cleaned_data |> select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
+
+corr_matrix = cor(correlation_data)
+
+corr_matrix_p <- corr.test(correlation_data)
+
+kable(head(corr_matrix))
+corrplot(corr_matrix, type="upper", method = "circle", order = "hclust", 
+         addCoef.col = "white", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         p.mat = corr_matrix_p$p, sig.level = 0.01, insig = "blank", 
+         diag = FALSE)
+
+```
+
+###### Correlations at High Condition
+
+```{r}
+correlation_data_high <- cleaned_data |> 
+  filter(Condition == "High") |> 
+  select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
+
+
+corr_matrix = cor(correlation_data_high)
+corr_matrix_p <- corr.test(correlation_data_high)
+
+kable(head(corr_matrix))
+corrplot(corr_matrix, type="upper", method = "circle", order = "hclust", 
+         addCoef.col = "white", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         p.mat = corr_matrix_p$p, sig.level = 0.01, insig = "blank", 
+         diag = FALSE)
+```
+
+###### Correlations at Medium Condition
+
+```{r}
+correlation_data_high <- cleaned_data |> 
+  filter(Condition == "Medium") |> 
+  select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
+
+
+corr_matrix = cor(correlation_data_high)
+corr_matrix_p <- corr.test(correlation_data_high)
+
+kable(head(corr_matrix))
+corrplot(corr_matrix, type="upper", method = "circle", order = "hclust", 
+         addCoef.col = "white", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         p.mat = corr_matrix_p$p, sig.level = 0.01, insig = "blank", 
+         diag = FALSE)
+```
+
+###### Correlations at Low Condition
+
+```{r}
+correlation_data_high <- cleaned_data |> 
+  filter(Condition == "Low") |> 
+  select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
+
+
+corr_matrix = cor(correlation_data_high)
+corr_matrix_p <- corr.test(correlation_data_high)
+
+kable(head(corr_matrix))
+corrplot(corr_matrix, type="upper", method = "circle", order = "hclust", 
+         addCoef.col = "white", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         p.mat = corr_matrix_p$p, sig.level = 0.01, insig = "blank", 
+         diag = FALSE)
+```
+
+###### Age
+
+```{r}
+
+fit_i <- lm(author_trust_combined_score ~ Condition * age_range, data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = age_range,  geom = "bar")
+```
+
+Significant interaction between for age range 50 - 59.7 and 59.7 - 69.3
+
+-   Thoughts: What if we did a PCA here instead of using set ranges?
+
+###### Gender (Man / Woman only)
+
+```{r}
+
+
+fit_i <- lm(author_trust_combined_score ~ Condition * Gender, 
+                    data = cleaned_data |> filter(Gender == "Man" | Gender == "Woman"))
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Gender,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="line")
+
+```
+
+###### Sex (Male / Female only)
+
+```{r}
+
+fit_i <- lm(author_trust_combined_score ~ Condition * Sex, 
+                    data = cleaned_data |> filter(Sex == "Male" | Sex == "Female"))
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Sex,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="line")
+```
+
+###### Education
+
+```{r}
+
+fit_i <- lm(author_trust_combined_score ~ Condition * Education, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+```
+
+AI Usage Experience
+
+```{r}
+
+```
+
+Science Content Experience
+
+```{r}
+
+```
+
+Experience
+
+```{r}
+
+```
+
+Survey Purpose Check
+
+```{r}
+
+```
+
+Unrealistic Check
+
+```{r}
+
+```
 
 # Appendix A
 
 ```{r child='variables.rmd'}
-
-```
-
-## 
-
-```{r}
-# Descriptive Statistics
-
-# library(pastecs)
-# 
-# cleaned_data |>
-#   select(Condition, ends_with("_score") ) |>
-# by(cleaned_data$Condition, stat.desc)
-```
-
-# Plots of score distributions
-
-```{r}
-
-violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$anthropomorphism_score, cleaned_data$Condition, "Anthropomorphism Scores")
-
-violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$likeability_score, cleaned_data$Condition, "Likeability Scores")
-
-violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$competence_score, cleaned_data$Condition, "Competence Scores")
-
-violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$content_trust_score, cleaned_data$Condition, "Content Trust Scores")
-
-violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$content_trust_score_2,
-            cleaned_data$Condition, "Content Trust Scores - Custom Scale")
-
-violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$author_trust_score, cleaned_data$Condition, "Author Trust Scores - Custom Scale")
-
-violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$METI_author_trust_score, cleaned_data$Condition, "Author Trust Scores - METI")
-
-violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$expertise_score, cleaned_data$Condition, "Expertise Scores")
-
-violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$integrity_score, cleaned_data$Condition, "Integrity Scores")
-
-violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$benevolence_score, cleaned_data$Condition, "Benevolence Scores")
-```
-
-```{r}
-# ANOVA_anthropomorphism_score <- anova_test(data = cleaned_data, dv = anthropomorphism_score, between = Condition, detailed=TRUE)
-# get_anova_table(ANOVA_anthropomorphism_score)
-
-
-```
-
-```{r}
-library(performance)
-library(see)
-
-lm_anthropomorphism_score <- lm(anthropomorphism_score ~ Condition, data = cleaned_data)
-summ(lm_anthropomorphism_score)
-
-check_model(lm_anthropomorphism_score, panel = FALSE)
-```
-
-## Trust Content By Gender
-
-```{r}
-
-lm_content_trust_score <- lm(content_trust_score ~ Condition * Gender, data = cleaned_data)
-summ(lm_content_trust_score)
-
-draw_interaction_plot(cleaned_data$Gender, cleaned_data$Condition, cleaned_data$content_trust_score, "Gender", "Condition", "Content Trust")
-
-check_model(lm_content_trust_score, panel = FALSE)
-
-
-```
-
-1 -\> Non-binary
-
-2 -\> Man
-
-3 -\> Woman
-
-4 -\> Self-described
-
-5 -\> Prefer not to say
-
-\*\* Potential gender differences in trust? \*\*
-
-```{r}
-longer_data <- cleaned_data |>
-  # filter(GodspeedMETI_1 != 0 | GodspeedMETI_2 != 0 | GodspeedMETI_3 != 0 | GodspeedMETI_4 != 0) |>
-  pivot_longer(GodspeedMETI_1:GodspeedMETI_14, names_to = "item", values_to = "rating")
-
-longer_data$Condition <- as.factor(longer_data$Condition)
-longer_data$item <- as.factor(longer_data$item)
-
-longer_data |>
-    ggplot(aes(x = item, y = rating, colour = Condition)) +
-    geom_jitter() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-  
-
-
-```
-
-```{r}
-high_plot <- longer_data |>
-  filter(Condition == "High") |>
-  ggplot(aes(x = item, y = rating, colour = ResponseId)) +
-    geom_jitter() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), legend.position = "none")
-high_plot
-
-ggsave("high.jpg", high_plot, width = 40, height = 20, units = "cm")
-
-
-```
-
-```{r}
-medium_plot <- longer_data |>
-  filter(Condition == "Medium") |>
-  ggplot(aes(x = item, y = rating, colour = ResponseId)) +
-    geom_jitter() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), legend.position = "none")
-
-
-medium_plot
-
-ggsave("medium.jpg", medium_plot, width = 40, height = 20, units = "cm")
-
-```
-
-```{r}
-low_plot <- longer_data |>
-  filter(Condition == "Low") |>
-  ggplot(aes(x = item, y = rating, colour = ResponseId)) +
-    geom_jitter() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), legend.position = "none")
-
-low_plot
-  ggsave("low.jpg", low_plot, width = 40, height = 20, units = "cm")
-```
-
-```{r}
-# cleaned_data |>
-#   select(GodspeedMETI_1:GodspeedMETI_29, Condition) |>
-#   filter(if_any(starts_with("Godspeed"), ~ . < 5)) |>
-#   glimpse()
-```
-
-```{r}
-
-# cleaned_data$GodspeedMETI_1 %>% attr('label')
-# 
-# for (i in colnames(cleaned_data)){
-#     print(paste(i, attr(cleaned_data[[i]], 'label')))
-# }
-```
-
-```{r}
-
-```
-
-```{r}
-# cleaned_data |>
-#   select(Condition, anthropomorphism_score, ResponseId) |>
-#   pivot_wider(names_from = ResponseId, values_from = anthropomorphism_score)
-# 
-
-```
-
-```{r}
-
-# anthro <- cleaned_data |>
-#   select(Condition, starts_with("GodspeedMETI"), ResponseId) |> 
-#   arrange(Condition, GodspeedMETI_1, GodspeedMETI_2, GodspeedMETI_3, GodspeedMETI_4)
-#   # select(Condition, GodspeedMETI_1, GodspeedMETI_2, GodspeedMETI_3, GodspeedMETI_4, ResponseId) |> 
-#   # arrange(Condition, GodspeedMETI_1, GodspeedMETI_2, GodspeedMETI_3, GodspeedMETI_4)
-# 
-# glimpse(anthro)
-```
-
-```{r}
-
-# library(FactoMineR)
-# library(factoextra) 
-# 
-# anthro_cluster_df <- cleaned_data|> 
-#   select(AIChatbotsFrequency, ScienceContent, Education)
-#   #select(Gender, Education, AIChatbotsFrequency, ScienceContent, Age_1, Experience_1:Experience_11)
-#   # select(anthropomorphism_score, likeability_score, author_trust_score, content_trust_score, content_trust_score_2, METI_author_trust_score, expertise_score)
-# 
-# anthro.pca <- PCA(anthro_cluster_df,  graph = FALSE)
-# get_eig(anthro.pca)
-
-
-```
-
-```{r}
-
-# fviz_screeplot(anthro.pca, addlabels = TRUE, ylim = c(0, 50))
-
-```
-
-```{r}
-# anthro.var <- get_pca_var(anthro.pca)
-# 
-# head(anthro.var$coord)
-# 
-# head(anthro.var$contrib)
-# 
-# fviz_pca_var(anthro.pca, col.var = "black")
-```
-
-```{r}
-# fviz_pca_var(anthro.pca, col.var="contrib",
-#              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-#              repel = TRUE # Avoid text overlapping
-#              )
-```
-
-```{r}
-# 
-# # Contributions of variables to PC1
-# fviz_contrib(anthro.pca, choice = "var", axes = 1, top = 10)
-# 
-# # Contributions of variables to PC2
-# fviz_contrib(anthro.pca, choice = "var", axes = 2, top = 10)
-```
-
-```{r}
-# 
-# ind <- get_pca_ind(anthro.pca)
-# ind
-# 
-# head(ind$coord)
-# 
-# 
-# fviz_pca_ind(anthro.pca, col.ind = "cos2",
-#              gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-#              repel = TRUE # Avoid text overlapping (slow if many points)
-#              )
-
-```
-
-```{r}
-# 
-# # Biplot of individuals and variables
-# fviz_pca_biplot(anthro.pca, repel = TRUE)
-```
-
-# K-Means Clustering
-
-```{r}
-# 
-# library(cluster)
-# 
-# data_for_cluster <- cleaned_data|> 
-#   select(AIChatbotsFrequency, ScienceContent) |>
-#   # select(Gender, Education, AIChatbotsFrequency, ScienceContent, Age_1, Experience_1:Experience_11) |>
-#   # mutate(Condition = case_when(Condition == "Low" ~ 1,
-#   #                              Condition == "Medium" ~ 2,
-#   #                              Condition == "High" ~3)) |>
-#   mutate(mutate(across(where(is.numeric), scale)))
-#   
-# 
-# 
-# set.seed(123)  # For reproducibility
-# fviz_nbclust(data_for_cluster, kmeans, method = "wss")
-```
-
-```{r}
-# set.seed(123)
-# kmeans_result <- kmeans(data_for_cluster, centers = 3)  # Replace 3 with optimal clusters
-# data_for_cluster$Cluster <- as.numeric(kmeans_result$cluster)
-# cleaned_data$Cluster.kmeans <- as.numeric(kmeans_result$cluster)
-# 
-# fviz_cluster(kmeans_result, data = data_for_cluster)
-# 
-# data_for_cluster <- data_for_cluster|>
-#   select(-Cluster)
-```
-
-```{r}
-# cleaned_data |>
-#     ggplot(aes(x = Cluster.kmeans, y = anthropomorphism_score, colour = Cluster.kmeans)) +
-#   geom_point(alpha = 0.25) + 
-#     #geom_violin(alpha = 0.5, draw_quantiles = c(0.5)) +
-#     ggtitle("Anthropomorphism Scores (K-Means Clustering)") +
-#   facet_grid(vars(Condition))
-
-```
-
-```{r}
-# # Contributions of variables to PC1
-# fviz_contrib(kmeans_result, choice = "var", axes = 1, top = 10)
-# 
-# # Contributions of variables to PC2
-# fviz_contrib(anthro.pca, choice = "var", axes = 2, top = 10)
-```
-
-```{r}
-# 
-# cleaned_data |>
-#     ggplot(aes(x = Cluster.kmeans, y = content_trust_score, colour = Cluster.kmeans)) +
-#   geom_jitter() + 
-#     # geom_violin(alpha = 0.5, draw_quantiles = c(0.5)) +
-#     ggtitle("Content Trust Scores (K-Means Clustering)") +
-#   facet_grid(vars(Condition))
-```
-
-# Hierarchical Clustering
-
-```{r}
-
-# 
-# dist_matrix <- dist(data_for_cluster, method = "euclidean")
-# 
-# hclust_result <- hclust(dist_matrix, method = "ward.D2")
-# 
-# plot(hclust_result)
-# rect.hclust(hclust_result, k = 8, border = "red")  # Replace 3 with desired clusters
-# 
-# cleaned_data$Cluster.hierarchical <- cutree(hclust_result, k = 8)
-```
-
-```{r}
-# 
-# cleaned_data |>
-#     ggplot(aes(x = Cluster.hierarchical, y = anthropomorphism_score, colour = Cluster.hierarchical)) +
-#   geom_jitter() + 
-#     # geom_violin(alpha = 0.5, draw_quantiles = c(0.5)) +
-#     ggtitle("Anthropomorphism Scores (K-Means Clustering)") +
-#   facet_grid(vars(Condition))
-```
-
-```{r}
-# 
-# pam_result <- pam(data_for_cluster, k = 3)  # Replace 3 with the optimal number of clusters
-# 
-# fviz_cluster(pam_result, data = data_for_cluster)
-# 
-# cleaned_data$Cluster.pam<- as.numeric(pam_result$cluster)
-```
-
-```{r}
-# 
-# cleaned_data |>
-#     ggplot(aes(x = Cluster.pam, y = anthropomorphism_score, colour = Cluster.pam)) +
-#   geom_jitter() + 
-#     # geom_violin(alpha = 0.5, draw_quantiles = c(0.5)) +
-#     ggtitle("Content Trust Scores (K-Means Clustering)") +
-#   facet_grid(vars(Condition))
-
-```
-
-```{r}
-
-# 
-# cleaned_data |>
-#     ggplot(aes(x = Condition, y = anthropomorphism_score)) +
-#   geom_col() + 
-#     # geom_violin(alpha = 0.5, draw_quantiles = c(0.5)) +
-#     ggtitle("Anthropomorphism Scores (K-Means Clustering)") #+
-#   # facet_grid(vars(Cluster.kmeans))
-# 
-
-```
-
-```         
-```
-
-```         
 ```

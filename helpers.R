@@ -33,9 +33,11 @@ simple_effects_within_anova <- function(data, condition, dv, within) {
 
 violin_plot <- function(data, x, y, group, title) {
   data |>
-    ggplot(aes(x = x, y = y)) +
+    ggplot(aes(x = x, y = y, fill = group)) +
     geom_violin(alpha = 0.5, draw_quantiles = c(0.25, 0.5, 0.75)) +
-    ggtitle(title) 
+    ggtitle(title) + 
+    labs(x="Condition", y = "Score", fill = "Anthropomorphism \n Condition") +
+    scale_x_discrete(limits = c("Low", "Medium", "High"))
 }
 
 # This was used to output the column information.
