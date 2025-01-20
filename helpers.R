@@ -31,13 +31,24 @@ simple_effects_within_anova <- function(data, condition, dv, within) {
 }
 
 
-violin_plot <- function(data, x, y, group, title) {
+violin_plot <- function(data, x, y, group, title, 
+                        legend_label = "Anthropomorphism \n Condition", 
+                        x_label = "Condition", y_label = "Score") {
   data |>
     ggplot(aes(x = x, y = y, fill = group)) +
     geom_violin(alpha = 0.5, draw_quantiles = c(0.25, 0.5, 0.75)) +
     ggtitle(title) + 
-    labs(x="Condition", y = "Score", fill = "Anthropomorphism \n Condition") +
-    scale_x_discrete(limits = c("Low", "Medium", "High"))
+    labs(x=x_label, y = y_label, fill = legend_label)
+}
+
+bar_plot <- function(data, y, group, title, 
+                        legend_label = "Anthropomorphism \n Condition", 
+                        x_label = "Condition", y_label = "Score") {
+  data |>
+    ggplot(aes( y = y, fill = group)) +
+    geom_bar(alpha = 0.5) +
+    ggtitle(title) + 
+    labs(y = y_label, fill = legend_label)
 }
 
 # This was used to output the column information.
