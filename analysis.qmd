@@ -1,19 +1,20 @@
 ---
 title: "Analysis"
 author: "Caroline Simpson"
-format: html
-theme: cerulean
-df_print: kable
-code_folding: hide
-toc: true
-toc_float:
-  collapsed: true
-  smooth_scroll: false
-toc_depth: 7
+format: 
+  html:
+    theme: cerulean
+    df-print: kable
+    code-fold: true
+    toc: true
+    toc-float:
+      collapsed: true
+      smooth-scroll: false
+    toc-depth: 7
 editor: visual
 ---
 
-```{r}
+```{r include=FALSE}
 
 library(knitr)
 library(kableExtra)
@@ -52,7 +53,7 @@ My **hypothesis** is that there will be an increase in epistemic trust with incr
 
 ### Load data
 
-```{r}
+```{r include=FALSE}
 # raw_data <- read_spss(
 #   #"data/Thesis+-+Trusting+the+Machine+-+Copy+For+Testing_December+4,+2024_21.34.sav"
 #   # "data/Thesis+-+Trusting+the+Machine_December+4,+2024_19.13.sav"
@@ -196,7 +197,7 @@ raw_data <- raw_data %>%
 
 ### Manual Processing
 
-Review and code Survey purpose check (what they think this study is about, not the attention check)
+Reviewed and coded Survey purpose check (what they think this study is about, not the attention check)
 
 -   Manually coded the response values with the following key:
 
@@ -219,18 +220,18 @@ Review and code Survey purpose check (what they think this study is about, not t
 ```{r}
 raw_data |> 
   group_by(SurveyTopicCheck_coded) |> 
-  summarise(n=n())
+  summarise(n=n(), .groups = "keep")
 ```
 
-Review and code Unrealistic parts of survey.
+Reviewed and coded Unrealistic parts of survey.
 
--   Unrealistic
+-   Unrealistic field is a separate field with the values of:
 
     -   1 = No
 
     -   2 = Yes
 
--   Unrealistic_coded -\> Manually coded the response values with the following key:
+-   Unrealistic_coded -\> Manually coded the response values from Unrealistic_2_TEXT field with the following key:
 
     -   0 = no answer provided
 
@@ -250,20 +251,16 @@ Review and code Unrealistic parts of survey.
 
 raw_data |> 
   group_by(Unrealistic) |> 
-  summarise(n=n())
+  summarise(n=n(), .groups = "keep")
 
 raw_data |> 
   group_by(Unrealistic, Unrealistic_coded) |> 
-  summarise(n=n())
+  summarise(n=n(), .groups = "keep")
 ```
-
-Check technical issues values.
 
 ```{r}
 
-raw_data |> 
-  group_by(TechnicalIssues) |> 
-  summarise(n=n())
+
 ```
 
 ### Reverse Coding
@@ -326,7 +323,7 @@ Number of participants meeting basic criteria = `r nrow(cleaned_data)`.
 ```{r}
 duplicates <- cleaned_data |> 
   group_by(ResponseId) |> 
-  summarise(n=n()) |>
+  summarise(n=n(), .groups = "keep") |>
   filter(n > 1) |>
   nrow()
   
@@ -337,13 +334,15 @@ There are `r if (duplicates == 0) "no duplicate participants" else paste (duplic
 
 ```{r}
 
-cleaned_data |> 
-  group_by(TechnicalIssues) |> 
-  summarise(n=n())
+# cleaned_data |> 
+#   group_by(TechnicalIssues) |> 
+#   summarise(n=n(), .groups = "keep")
 
 ```
 
 #### Regroup data
+
+Regroup the AIChatbotsFrequency, Education, and Age columns into smaller number of categories of data for analysis. Some of the more granular categories don't have a large enough sample for meaningful comparisons.
 
 ```{r}
 
@@ -453,7 +452,7 @@ cleaned_data <- cleaned_data |>
 
 cleaned_data |> 
   select(all_of(anthropomorphism_score_godspeed_cols)) |>
-  psych::alpha()
+  psych::alpha(discrete=FALSE)
 ```
 
 #### Likeability (Godspeed Subscale)
@@ -462,7 +461,7 @@ cleaned_data |>
 
 cleaned_data |> 
   select(all_of(likeability_score_godspeed_cols)) |>
-  psych::alpha()
+  psych::alpha(discrete=FALSE)
 
 ```
 
@@ -472,7 +471,7 @@ cleaned_data |>
 
 cleaned_data |> 
   select(all_of(competence_score_godspeed_cols)) |>
-  psych::alpha()
+  psych::alpha(discrete=FALSE)
 
 ```
 
@@ -482,7 +481,7 @@ cleaned_data |>
 
 cleaned_data |> 
   select(all_of(expertise_score_METI_cols)) |>
-  psych::alpha()
+  psych::alpha(discrete=FALSE)
 
 ```
 
@@ -492,7 +491,7 @@ cleaned_data |>
 
 cleaned_data |> 
   select(all_of(integrity_score_METI_cols)) |>
-  psych::alpha()
+  psych::alpha(discrete=FALSE)
 
 ```
 
@@ -502,7 +501,7 @@ cleaned_data |>
 
 cleaned_data |> 
   select(all_of(benevolence_score_METI_cols)) |>
-  psych::alpha()
+  psych::alpha(discrete=FALSE)
 
 ```
 
@@ -512,7 +511,7 @@ cleaned_data |>
 
 cleaned_data |> 
   select(all_of(author_trust_score_METI_cols)) |>
-  psych::alpha()
+  psych::alpha(discrete=FALSE)
 
 ```
 
@@ -522,7 +521,7 @@ cleaned_data |>
 
 cleaned_data |> 
   select(all_of(author_trust_score_behaviour_cols)) |>
-  psych::alpha()
+  psych::alpha(discrete=FALSE)
 
 ```
 
@@ -532,7 +531,7 @@ cleaned_data |>
 
 cleaned_data |> 
   select(all_of(author_trust_score_combined_cols)) |>
-  psych::alpha()
+  psych::alpha(discrete=FALSE)
 
 ```
 
@@ -542,7 +541,7 @@ cleaned_data |>
 
 cleaned_data |> 
   select(all_of(content_trust_score_appelman_cols)) |>
-  psych::alpha()
+  psych::alpha(discrete=FALSE)
 
 ```
 
@@ -552,7 +551,7 @@ cleaned_data |>
 
 cleaned_data |> 
   select(all_of(content_trust_score_behaviour_cols)) |>
-  psych::alpha()
+  psych::alpha(discrete=FALSE)
 
 ```
 
@@ -562,13 +561,11 @@ cleaned_data |>
 
 cleaned_data |> 
   select(all_of(content_trust_score_combined_cols)) |>
-  psych::alpha()
+  psych::alpha(discrete=FALSE)
 
 ```
 
-# TODO
-
--   ***TODO:*** Factor / Reliability analysis on Experience Data section items (or at least go through them and see what is there in more detail and which items likely should be grouped)
+***TODO:*** Factor / Reliability analysis on Experience Data section items (or at least go through them and see what is there in more detail and which items likely should be grouped)
 
 ### Sample Characteristics
 
@@ -576,17 +573,24 @@ cleaned_data |>
 N=`r length(unique(cleaned_data$ResponseId))`
 ```
 
-Participants per condition.
+#### Participants reporting Technical Issues (Not removed in data cleaning)
+
+```{r}
+cleaned_data |> 
+  group_by(TechnicalIssues) |> 
+  summarise(n=n(), .groups = "keep")
+
+```
+
+#### Participants per condition.
 
 ```{r}
 cleaned_data |> 
   select(ResponseId, Condition) |>
   group_by(Condition) |>
-  summarise(n = n())
+  summarise(n = n(), .groups = "keep")
 
 ```
-
--   Calculate demographics stats.
 
 #### Age
 
@@ -600,12 +604,12 @@ Standard deviation: `r round(sd(cleaned_data$Age_1, na.rm = TRUE), 2)`
 cleaned_data |> 
   select(age_range) |>
   group_by(age_range) |>
-  summarise(n = n())
+  summarise(n = n(), .groups = "keep")
 
 cleaned_data |> 
   select(age_range, Condition) |>
   group_by(age_range, Condition) |>
-  summarise(n = n())
+  summarise(n = n(), .groups = "keep")
 ```
 
 #### Gender
@@ -615,12 +619,12 @@ cleaned_data |>
 cleaned_data |> 
   select(Gender) |>
   group_by(Gender) |>
-  summarise(n = n())
+  summarise(n = n(), .groups = "keep")
 
 cleaned_data |> 
   select(Gender, Condition) |>
   group_by(Gender, Condition) |>
-  summarise(n = n())
+  summarise(n = n(), .groups = "keep")
 
 ```
 
@@ -633,12 +637,12 @@ Limit analysis to Man / Woman comparison given small sample size for other value
 cleaned_data |> 
   select(Sex) |>
   group_by(Sex) |>
-  summarise(n = n())
+  summarise(n = n(), .groups = "keep")
 
 cleaned_data |> 
   select(Sex, Condition) |>
   group_by(Sex, Condition) |>
-  summarise(n = n())
+  summarise(n = n(), .groups = "keep")
 ```
 
 Limit analysis to Male / Female comparison given small sample size for other values.
@@ -650,22 +654,22 @@ Limit analysis to Male / Female comparison given small sample size for other val
 cleaned_data |> 
   select(Education) |>
   group_by(Education) |>
-  summarise(n = n())
+  summarise(n = n(), .groups = "keep")
 
 cleaned_data |> 
   select(Education, Condition) |>
   group_by(Education, Condition) |>
-  summarise(n = n())
+  summarise(n = n(), .groups = "keep")
 
 cleaned_data |> 
   select(Education_regrouped) |>
   group_by(Education_regrouped) |>
-  summarise(n = n())
+  summarise(n = n(), .groups = "keep")
 
 cleaned_data |> 
   select(Education_regrouped, Condition) |>
   group_by(Education_regrouped, Condition) |>
-  summarise(n = n())
+  summarise(n = n(), .groups = "keep")
 
 ```
 
@@ -676,12 +680,12 @@ cleaned_data |>
 cleaned_data |> 
   select(English) |>
   group_by(English) |>
-  summarise(n = n())
+  summarise(n = n(), .groups = "keep")
 
 cleaned_data |> 
   select(English, Condition) |>
   group_by(English, Condition) |>
-  summarise(n = n())
+  summarise(n = n(), .groups = "keep")
 ```
 
 #### Other Languages
@@ -693,14 +697,14 @@ cleaned_data |>
   pivot_longer(names_to = "Languages", cols = starts_with("LanguagesFluent_"),
                names_prefix = "LanguagesFluent_") |>
   group_by(Languages) |>
-  summarise(n = sum(value))
+  summarise(n = sum(value), .groups = "keep")
 
 cleaned_data |> 
   select(starts_with("LanguagesFluent_"), Condition) |>
   pivot_longer(names_to = "Languages", cols = starts_with("LanguagesFluent_"), 
                names_prefix = "LanguagesFluent_") |>
   group_by(Languages, Condition) |>
-  summarise(n = sum(value))
+  summarise(n = sum(value), .groups = "keep")
 
 
 ```
@@ -712,22 +716,22 @@ cleaned_data |>
 cleaned_data |> 
   select(AIChatbotsFrequency) |>
   group_by(AIChatbotsFrequency) |>
-  summarise(n = n())
+  summarise(n = n(), .groups = "keep")
 
 cleaned_data |> 
   select(AIChatbotsFrequency, Condition) |>
   group_by(AIChatbotsFrequency, Condition) |>
-  summarise(n = n())
+  summarise(n = n(), .groups = "keep")
 
 cleaned_data |> 
   select(AIChatbotsFrequency_regrouped) |>
   group_by(AIChatbotsFrequency_regrouped) |>
-  summarise(n = n())
+  summarise(n = n(), .groups = "keep")
 
 cleaned_data |> 
   select(AIChatbotsFrequency, Condition) |>
   group_by(AIChatbotsFrequency, Condition) |>
-  summarise(n = n())
+  summarise(n = n(), .groups = "keep")
 
 
 cleaned_data |> 
@@ -735,14 +739,14 @@ cleaned_data |>
   pivot_longer(names_to = "AIChatbotsUsed", cols = starts_with("AIChatbotsUsed_"),
                names_prefix = "AIChatbotsUsed_") |>
   group_by(AIChatbotsUsed) |>
-  summarise(n = sum(value))
+  summarise(n = sum(value), .groups = "keep")
 
 cleaned_data |> 
   select(starts_with("AIChatbotsUsed_"), Condition) |>
   pivot_longer(names_to = "AIChatbotsUsed", cols = starts_with("AIChatbotsUsed_"), 
                names_prefix = "AIChatbotsUsed_") |>
   group_by(AIChatbotsUsed, Condition) |>
-  summarise(n = sum(value))
+  summarise(n = sum(value), .groups = "keep")
 ```
 
 #### Science Content Familiarity
@@ -752,22 +756,22 @@ cleaned_data |>
 cleaned_data |> 
   select(ScienceContent) |>
   group_by(ScienceContent) |>
-  summarise(n = n())
+  summarise(n = n(), .groups = "keep")
 
 cleaned_data |> 
   select(ScienceContent, Condition) |>
   group_by(ScienceContent, Condition) |>
-  summarise(n = n())
+  summarise(n = n(), .groups = "keep")
 
 cleaned_data |> 
   select(ScienceContent_regrouped) |>
   group_by(ScienceContent_regrouped) |>
-  summarise(n = n())
+  summarise(n = n(), .groups = "keep")
 
 cleaned_data |> 
   select(ScienceContent_regrouped, Condition) |>
   group_by(ScienceContent_regrouped, Condition) |>
-  summarise(n = n())
+  summarise(n = n(), .groups = "keep")
 
 ```
 
@@ -946,7 +950,6 @@ We were not explicitly intending to manipulate competence
 violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$competence_score, cleaned_data$Condition, "Competence Scores")
 ```
 
-
 ##### Descriptive Statistics
 
 ###### Means
@@ -1022,7 +1025,6 @@ We were not explicitly intending to manipulate expertise
 ```{r}
 violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$expertise_score, cleaned_data$Condition, "Expertise Scores")
 ```
-
 
 ##### Descriptive Statistics
 
@@ -1176,7 +1178,6 @@ We were not explicitly intending to manipulate benevolence
 violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$benevolence_score, cleaned_data$Condition, "Benevolence Scores")
 ```
 
-
 ##### Descriptive Statistics
 
 ###### Means
@@ -1252,7 +1253,6 @@ t_medium_low
 violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$content_trust_combined_score, cleaned_data$Condition, "Content Trust Scores")
 ```
 
-
 ##### Descriptive Statistics
 
 ```{r}
@@ -1266,14 +1266,31 @@ by(cleaned_data$Condition, summary)
 
 Main Effect ANOVA
 
+```{r include=FALSE}
+
+data <- cleaned_data
+formula <- content_trust_combined_score ~ Condition
+x <- cleaned_data$Condition
+x_label <- "Anthropomorphism Condition"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+Assumptions for ANOVA are violated. Is it severe enough to not be able to use?
+
+{{< include "_Kruskal.qmd" >}}
+
 ```{r}
 
-aov_model <- aov(content_trust_combined_score ~ Condition, data = cleaned_data)
-
-par(mfrow = c(2, 2))
-plot(aov_model)
-
-summary(aov_model)
+# aov_model <- aov(content_trust_combined_score ~ Condition, data = cleaned_data)
+# 
+# par(mfrow = c(2, 2))
+# plot(aov_model)
+# 
+# summary(aov_model)
 ```
 
 No effect of anthropomorphism level on Content Trust
@@ -1368,7 +1385,7 @@ condition_comparisons <- list(  c("High", "Medium"),
 # Global test
 compare_means(content_trust_combined_score ~ AIChatbotsFrequency_regrouped,  data = cleaned_data, method = "anova")
 
-compare_means(content_trust_combined_score ~ AIChatbotsFrequency_regrouped, comparisons = my_comparisons, data = cleaned_data,  method = "t.test")
+compare_means(content_trust_combined_score ~ AIChatbotsFrequency_regrouped, comparisons = frequency_comparisons, data = cleaned_data,  method = "t.test")
 
 
 ggboxplot(cleaned_data, x = "AIChatbotsFrequency_regrouped", y = "content_trust_combined_score",
@@ -1415,73 +1432,49 @@ ggbarplot(cleaned_data |> filter(AIChatbotsFrequency_regrouped == "rarely"), x =
   
 ```
 
-
 ```{r}
-# Plot means with error bars
-p <- ggplot(df_summary, aes(x = AIChatbotsFrequency_regrouped, 
-                            y = mean_score, 
-                            fill = AIChatbotsFrequency_regrouped)) +
-  geom_bar(stat = "identity", position = position_dodge(width = 0.8), color = "black") +
-  geom_errorbar(aes(ymin = mean_score - sd_score, ymax = mean_score + sd_score), 
-                position = position_dodge(width = 0.8), width = 0.2) +
-  labs(
-    x = "AI Usage Frequency",
-    y = "Mean Content Trust Score",
-    fill = "AI Usage Frequency"
-  ) +
-  theme_minimal() +
-  theme(legend.position = "top") +
-  scale_fill_brewer(palette = "Set1") +
-  ggtitle("Interaction of AI Usage Frequency on Content Trust")
 
-p <- p + stat_compare_means(
-  aes(group = AIChatbotsFrequency_regrouped),
-  method = "t.test",  # Or use "wilcox.test" for non-parametric data
-  comparisons = list(
-    c("rarely", "occassionally"),
-    c("rarely", "frequently"),
-    c("occassionally", "frequently")
-  ),
-  label = "p.signif",
-  label.y = max(df_summary$mean_score + df_summary$sd_score) * 1.1
-)
-
-print(p)
-```
-
-
-```{r}
-aov_model <- aov(content_trust_combined_score ~ AIChatbotsFrequency_regrouped, data = cleaned_data)
-summary(aov_model)
-
-pairwise.t.test(cleaned_data$content_trust_combined_score, cleaned_data$AIChatbotsFrequency_regrouped,  p.adjust.method = "bonferroni")
-
-# Test assumptions for the ANOVA
-
-# Test for Normality
-hist(cleaned_data$content_trust_combined_score)
-
-qqnorm(aov_model$residuals)
-qqline(aov_model$residuals)
-
-shapiro.test(cleaned_data$content_trust_combined_score)
-
-# Test for Equal Variance
-boxplot(content_trust_combined_score ~ AIChatbotsFrequency_regrouped, xlab='AI Usage Frequency', ylab='Content Trust', data=cleaned_data)
-bartlett.test(content_trust_combined_score ~ AIChatbotsFrequency_regrouped, data=cleaned_data)
-
-kt_model <- kruskal.test(content_trust_combined_score ~ AIChatbotsFrequency_regrouped, data = cleaned_data) 
-
-summary(kt_model)
-
-dunnTest(content_trust_combined_score ~ AIChatbotsFrequency_regrouped,
-         data=cleaned_data,
-         method="bonferroni")
+data <- cleaned_data
+formula <- content_trust_combined_score ~ AIChatbotsFrequency_regrouped
+x <- cleaned_data$AIChatbotsFrequency_regrouped
+x_label <- "AI Usage Frequency"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
 
 ```
 
+{{< include "_ANOVA.qmd" >}}
 
+```{r}
+# run_variance_analysis(data = cleaned_data, formula = content_trust_combined_score ~ AIChatbotsFrequency_regrouped, x = cleaned_data$AIChatbotsFrequency_regrouped, y = cleaned_data$content_trust_combined_score)
+# aov_model <- aov(content_trust_combined_score ~ AIChatbotsFrequency_regrouped, data = cleaned_data)
+# summary(aov_model)
+# 
+# pairwise.t.test(cleaned_data$content_trust_combined_score, cleaned_data$AIChatbotsFrequency_regrouped,  p.adjust.method = "bonferroni")
+# 
+# # Test assumptions for the ANOVA
+# 
+# # Test for Normality
+# hist(cleaned_data$content_trust_combined_score)
+# 
+# qqnorm(aov_model$residuals)
+# qqline(aov_model$residuals)
+# 
+# shapiro.test(cleaned_data$content_trust_combined_score)
+# 
+# # Test for Equal Variance
+# boxplot(content_trust_combined_score ~ AIChatbotsFrequency_regrouped, xlab='AI Usage Frequency', ylab='Content Trust', data=cleaned_data)
+# bartlett.test(content_trust_combined_score ~ AIChatbotsFrequency_regrouped, data=cleaned_data)
+# 
+# kt_model <- kruskal.test(content_trust_combined_score ~ AIChatbotsFrequency_regrouped, data = cleaned_data)
+# 
+# summary(kt_model)
+# 
+# dunnTest(content_trust_combined_score ~ AIChatbotsFrequency_regrouped,
+#          data=cleaned_data,
+#          method="bonferroni")
 
+```
 
 ```{r}
 
@@ -1817,5 +1810,5 @@ cat_plot(fit_i, pred = Condition, modx = Unrealistic_coded,  plot.points = TRUE,
 
 # Appendix A
 
-```{r child='variables.rmd'}
+```{r child='_variables.rmd'}
 ```

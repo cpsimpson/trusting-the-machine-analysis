@@ -1,0 +1,16 @@
+If the assumptions for ANOVA fail we'll use the non-parametric Kruskal-Wallis test
+
+```{r}
+kt_model <- kruskal.test(formula, data = data)
+
+summary(kt_model)
+```
+
+With Dunn's tests to follow-up if significant
+
+```{r}
+dunnTest(formula,
+         data = data,
+         method = "bonferroni")
+
+```

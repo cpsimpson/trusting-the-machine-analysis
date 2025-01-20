@@ -1,0 +1,39 @@
+
+Analysis of Variance of `r y_label` by `r x_label`
+
+Let's try with an ANOVA
+
+```{r}
+aov_model <- aov(formula = formula, data = data)
+summary(aov_model)
+```
+
+
+Follow-up tests to identify where variance is located
+
+```{r}
+pairwise.t.test(y, x,  p.adjust.method = "bonferroni")
+```
+
+But we should test assumptions for the ANOVA before we use these results
+
+First test for normality
+
+```{r}
+# Test for Normality
+hist(y)
+
+qqnorm(aov_model$residuals)
+qqline(aov_model$residuals)
+
+shapiro.test(y)
+```
+
+Next test for equal variance
+
+```{r}
+# Test for Equal Variance
+boxplot(formula, xlab = x_label, ylab = y_label, data = data)
+bartlett.test(formula, data = data)
+```
+

@@ -59,5 +59,3 @@ export_variables_as_markdown <- function(raw_data){
 }
 
 
-
-
