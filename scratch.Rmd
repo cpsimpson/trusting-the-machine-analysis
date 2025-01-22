@@ -21,19 +21,23 @@ Using 5 levels for the anthropomorphism condition.
 Four levels of anthropomorphism (none, low, high, human) + condition with no vignette
 
 Small Effect
+
 ```{r}
 pwr.anova.test(k=5,f=.1,sig.level=.05,power=.8)
 ```
 
 Medium Effect
+
 ```{r}
 pwr.anova.test(k=5,f=.3,sig.level=.05,power=.8)
 ```
+
 Large Effect
 
 ```{r}
 pwr.anova.test(k=5,f=.5,sig.level=.05,power=.8)
 ```
+
 ## Power analysis for proposal
 
 Using 3 levels for the anthropomorphism condition.
@@ -41,26 +45,28 @@ Using 3 levels for the anthropomorphism condition.
 Three levels of anthropomorphism (computer, anthropomorphized computer, human)
 
 Small Effect
+
 ```{r}
 pwr.anova.test(k=3,f=.1,sig.level=.05,power=.8)
 ```
 
 Medium Effect
+
 ```{r}
 pwr.anova.test(k=3,f=.3,sig.level=.05,power=.8)
 ```
+
 Large Effect
 
 ```{r}
 pwr.anova.test(k=3,f=.5,sig.level=.05,power=.8)
 ```
 
-
 Set Number participants
+
 ```{r}
 pwr.anova.test(k=3, n=80, power=.8)
 ```
-
 
 ```{r}
 
@@ -76,25 +82,24 @@ ANOVA_power(design_result = design_result)
 ```
 
 Small Effect
+
 ```{r}
 pwrss.f.ancova(eta2 = 0.01, n.levels = c(2,3),
                alpha = 0.05, power = 0.80)
 ```
 
 Medium Effect
+
 ```{r}
 pwrss.f.ancova(eta2 = 0.06, n.levels = c(2,3),
                alpha = 0.05, power = 0.80)
 ```
 
 Large Effect
+
 ```{r}
 design2 <- pwrss.f.ancova(eta2 = 0.14, n.levels = c(2,3),
                alpha = 0.05, power = 0.80)
 
 plot(design2)
 ```
-
-
-
-

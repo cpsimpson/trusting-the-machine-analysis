@@ -88,33 +88,9 @@ My **hypothesis** is that there will be an increase in epistemic trust with incr
 
 -   Main effect on Author Trust for rating of "Engaging". Perception of more engaging correlates to higher Author Trust.
 
--   
-
 -   Additionally, main effects of changed opinion of ai based on study experience, fear of AI rating, belief they could write the content on Content Trust and Author Trust, but need to look at this data more still to verify. No effect of professional writing or content area expertise on Content Trust and Author Trust.
 
 -   
-
-## Questions for Jonathan:
-
--   How much violation of assumptions for ANOVA is too much?
-
-    -   Should I be switching to non-parametric tests? (I ran a few here as a sample, since this data does violate the assumptions)
-
-    -   Is there a different adjustment to the data that would be better?
-
-    -   I could use some help interpreting some of the linear model data for interactions. For example, see Age under Content Trust and Author Trust analysis. There are a few pairings that have significant p-values, but I'm having trouble seeing if it means anything. Which kind of makes me think it isn't really meaningful...
-
--   Is there a good way to check whether the variance in correlations across conditions is significant? Is this just done by doing an ANOVA?
-
--   I don't really understand what is going on with Author Trust by Frequency of AI Chatbot usage, it seems like there is an effect at all Condition levels, in the same directions, but no overall effect. How is that possible? (maybe I did something wrong...) Maybe it is because of the outliers that are spread across all the conditions?
-
-## Still To Do:
-
--   Fix the "Changed Opinion" section - I think it should use interaction_plot instead of cat_plot
-
--   Fix the spelling of occasionally
-
--   Check the significance of correlation differences across conditions.
 
 ## Next Steps
 
@@ -487,7 +463,7 @@ cleaned_data$AIChatbotsFrequency_regrouped <- fct_collapse(cleaned_data$AIChatbo
                                        frequently = c("More than once a day",
                                                   "About once a day",
                                                   "About once a week"),
-                                       occassionally = c(
+                                       occasionally = c(
                                                   "About once every two weeks",
                                                   "Less than once a month",
                                                   "About once a month"),
@@ -500,7 +476,7 @@ cleaned_data$ScienceContent_regrouped <- fct_collapse(cleaned_data$ScienceConten
                                        frequently = c("More than once a day",
                                                   "About once a day",
                                                   "About once a week"),
-                                       occassionally = c(
+                                       occasionally = c(
                                                   "About once every two weeks",
                                                   "Less than once a month",
                                                   "About once a month"),
@@ -1524,6 +1500,81 @@ No effect of anthropomorphism level on Content Trust
 
 ##### Post-hoc Analysis
 
+###### Correlations with Content Trust
+
+```{r}
+correlation_data <- cleaned_data |> select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
+
+corr_matrix = cor(correlation_data)
+
+corr_matrix_p <- corr.test(correlation_data)
+
+kable(head(corr_matrix))
+corrplot(corr_matrix, type="upper", method = "circle", order = "hclust", 
+         addCoef.col = "white", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         p.mat = corr_matrix_p$p, sig.level = 0.01, insig = "blank", 
+         diag = FALSE)
+
+```
+
+###### Correlations at High Condition
+
+```{r}
+correlation_data_high <- cleaned_data |> 
+  filter(Condition == "High") |> 
+  select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
+
+
+corr_matrix = cor(correlation_data_high)
+corr_matrix_p <- corr.test(correlation_data_high)
+
+kable(head(corr_matrix))
+corrplot(corr_matrix, type="upper", method = "circle", order = "hclust", 
+         addCoef.col = "white", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         p.mat = corr_matrix_p$p, sig.level = 0.01, insig = "blank", 
+         diag = FALSE)
+```
+
+###### Correlations at Medium Condition
+
+```{r}
+correlation_data_high <- cleaned_data |> 
+  filter(Condition == "Medium") |> 
+  select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
+
+
+corr_matrix = cor(correlation_data_high)
+corr_matrix_p <- corr.test(correlation_data_high)
+
+kable(head(corr_matrix))
+corrplot(corr_matrix, type="upper", method = "circle", order = "hclust", 
+         addCoef.col = "white", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         p.mat = corr_matrix_p$p, sig.level = 0.01, insig = "blank", 
+         diag = FALSE)
+```
+
+###### Correlations at Low Condition
+
+```{r}
+correlation_data_high <- cleaned_data |> 
+  filter(Condition == "Low") |> 
+  select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
+
+
+corr_matrix = cor(correlation_data_high)
+corr_matrix_p <- corr.test(correlation_data_high)
+
+kable(head(corr_matrix))
+corrplot(corr_matrix, type="upper", method = "circle", order = "hclust", 
+         addCoef.col = "white", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         p.mat = corr_matrix_p$p, sig.level = 0.01, insig = "blank", 
+         diag = FALSE)
+```
+
 ###### Age
 
 ```{r}
@@ -1670,9 +1721,9 @@ violin_plot(data = cleaned_data,
 
 ```{r}
 
-frequency_comparisons <- list(  c("rarely", "occassionally"),
+frequency_comparisons <- list(  c("rarely", "occasionally"),
     c("rarely", "frequently"),
-    c("occassionally", "frequently") )
+    c("occasionally", "frequently") )
 
 condition_comparisons <- list(  c("High", "Medium"),
     c("High", "Low"),
@@ -1710,7 +1761,7 @@ ggbarplot(cleaned_data |> filter(AIChatbotsFrequency_regrouped == "frequently"),
     labs(x="Antropomorphism Condition", y = "Content Trust", fill = "Antropomorphism Condition")
   
 
-ggbarplot(cleaned_data |> filter(AIChatbotsFrequency_regrouped == "occassionally"), x = "Condition", y = "content_trust_combined_score",
+ggbarplot(cleaned_data |> filter(AIChatbotsFrequency_regrouped == "occasionally"), x = "Condition", y = "content_trust_combined_score",
           add = "mean_sd",        
           color = "Condition", palette = safe_pal, position = position_dodge(0.8))+ 
   stat_compare_means(comparisons = condition_comparisons, method = "t.test", label = "p.signif") +
@@ -2282,9 +2333,9 @@ violin_plot(data = cleaned_data,
 
 ```{r}
 
-frequency_comparisons <- list(  c("rarely", "occassionally"),
+frequency_comparisons <- list(  c("rarely", "occasionally"),
     c("rarely", "frequently"),
-    c("occassionally", "frequently") )
+    c("occasionally", "frequently") )
 
 condition_comparisons <- list(  c("High", "Medium"),
     c("High", "Low"),
@@ -2322,7 +2373,7 @@ ggbarplot(cleaned_data |> filter(AIChatbotsFrequency_regrouped == "frequently"),
     labs(x="Antropomorphism Condition", y = "Author Trust", fill = "Antropomorphism Condition")
   
 
-ggbarplot(cleaned_data |> filter(AIChatbotsFrequency_regrouped == "occassionally"), x = "Condition", y = "author_trust_combined_score",
+ggbarplot(cleaned_data |> filter(AIChatbotsFrequency_regrouped == "occasionally"), x = "Condition", y = "author_trust_combined_score",
           add = "mean_sd",        
           color = "Condition", palette = safe_pal, position = position_dodge(0.8))+ 
   stat_compare_means(comparisons = condition_comparisons, method = "t.test", label = "p.signif") +
@@ -2697,7 +2748,139 @@ summ(fit_i)
 cat_plot(fit_i, pred = Condition, modx = Unrealistic_coded,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", , colors = safe_pal)
 ```
 
-#### 
+#### Correlations
+
+```{r}
+correlation_data <- cleaned_data |> select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
+
+corr_matrix = cor(correlation_data)
+
+corr_matrix_p <- corr.test(correlation_data)
+
+kable(head(corr_matrix))
+corrplot(corr_matrix, type="upper", method = "circle", order = "hclust", 
+         addCoef.col = "white", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         p.mat = corr_matrix_p$p, sig.level = 0.01, insig = "blank", 
+         diag = FALSE)
+
+```
+
+##### Correlations at High Condition
+
+```{r}
+correlation_data_high <- cleaned_data |> 
+  filter(Condition == "High") |> 
+  select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
+
+
+corr_matrix_high = cor(correlation_data_high)
+corr_matrix_p_high <- corr.test(correlation_data_high)
+
+kable(head(corr_matrix_high))
+corrplot(corr_matrix_high, type="upper", method = "circle", order = "hclust", 
+         addCoef.col = "white", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         p.mat = corr_matrix_p_high$p, sig.level = 0.01, insig = "blank", 
+         diag = FALSE)
+```
+
+##### Correlations at Medium Condition
+
+```{r}
+correlation_data_medium <- cleaned_data |> 
+  filter(Condition == "Medium") |> 
+  select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
+
+
+corr_matrix_medium = cor(correlation_data_medium)
+corr_matrix_p_medium <- corr.test(correlation_data_medium)
+
+kable(head(corr_matrix_medium))
+corrplot(corr_matrix_medium, type="upper", method = "circle", order = "hclust", 
+         addCoef.col = "white", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         p.mat = corr_matrix_p_medium$p, sig.level = 0.01, insig = "blank", 
+         diag = FALSE)
+```
+
+##### Correlations at Low Condition
+
+```{r}
+correlation_data_low <- cleaned_data |> 
+  filter(Condition == "Low") |> 
+  select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
+
+
+corr_matrix_low = cor(correlation_data_low)
+corr_matrix_p_low <- corr.test(correlation_data_low)
+
+
+kable(head(corr_matrix_low))
+corrplot(corr_matrix_low, type="upper", method = "circle", order = "hclust", 
+         addCoef.col = "white", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         p.mat = corr_matrix_p_low$p, sig.level = 0.01, insig = "blank", 
+         diag = FALSE)
+```
+
+```{r}
+library(cocor)
+
+cocor(~ `content_trust_combined_score` + `expertise_score` | `content_trust_combined_score` + `expertise_score`, 
+      data = list(
+        as.data.frame(cleaned_data |> filter(Condition == "High")), 
+        as.data.frame(cleaned_data |> filter(Condition == "Low"))
+      )
+)
+
+```
+
+```{r}
+cocor(~ `content_trust_combined_score` + `competence_score` | `content_trust_combined_score` + `competence_score`, 
+      data = list(
+        as.data.frame(cleaned_data |> filter(Condition == "High")), 
+        as.data.frame(cleaned_data |> filter(Condition == "Low"))
+      )
+)
+
+```
+
+```{r}
+cocor(~ `content_trust_combined_score` + `likeability_score` | `content_trust_combined_score` + `likeability_score`, 
+      data = list(
+        as.data.frame(cleaned_data |> filter(Condition == "High")), 
+        as.data.frame(cleaned_data |> filter(Condition == "Low"))
+      )
+)
+```
+
+```{r}
+cocor(~ `content_trust_combined_score` + `benevolence_score` | `content_trust_combined_score` + `benevolence_score`, 
+      data = list(
+        as.data.frame(cleaned_data |> filter(Condition == "High")), 
+        as.data.frame(cleaned_data |> filter(Condition == "Low"))
+      )
+)
+```
+
+```{r}
+cocor(~ `content_trust_combined_score` + `integrity_score` | `content_trust_combined_score` + `integrity_score`, 
+      data = list(
+        as.data.frame(cleaned_data |> filter(Condition == "High")), 
+        as.data.frame(cleaned_data |> filter(Condition == "Low"))
+      )
+)
+```
+
+```{r}
+cocor(~ `content_trust_combined_score` + `author_trust_combined_score` | `content_trust_combined_score` + `author_trust_combined_score`, 
+      data = list(
+        as.data.frame(cleaned_data |> filter(Condition == "High")), 
+        as.data.frame(cleaned_data |> filter(Condition == "Low"))
+      )
+)
+```
 
 # Appendix A
 
