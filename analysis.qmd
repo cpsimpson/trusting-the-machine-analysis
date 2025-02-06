@@ -5,7 +5,7 @@ format:
   html:
     theme: cerulean
     df-print: kable
-    code-fold: true
+    code-fold: false
     toc: true
     toc-float:
       collapsed: true
@@ -93,6 +93,8 @@ My **hypothesis** is that there will be an increase in epistemic trust with incr
 -   
 
 ## Next Steps
+
+-   Look at correlation between anthropomorphism and trust scores ignoring groups
 
 -   Address anthropomorphism manipulation not working?
 
@@ -500,7 +502,12 @@ content_trust_score_behaviour_cols = c("TrustBehaviour_1", "TrustBehaviour_2",  
 content_trust_score_combined_cols =  append(content_trust_score_appelman_cols, content_trust_score_behaviour_cols)
 
 author_trust_score_behaviour_cols = c("TrustBehaviour_7", "TrustBehaviour_8")
-author_trust_score_METI_cols = c("GodspeedMETI_10", "GodspeedMETI_13", "GodspeedMETI_15r", "GodspeedMETI_16r", "GodspeedMETI_17r", "GodspeedMETI_18r", "GodspeedMETI_19r", "GodspeedMETI_20r", "GodspeedMETI_21r", "GodspeedMETI_22r", "GodspeedMETI_23r", "GodspeedMETI_24r", "GodspeedMETI_25r", "GodspeedMETI_26r")
+
+expertise_score_METI_cols = c("GodspeedMETI_10", "GodspeedMETI_13", "GodspeedMETI_15r", "GodspeedMETI_16r", "GodspeedMETI_17r", "GodspeedMETI_18r")
+integrity_score_METI_cols = c("GodspeedMETI_19r", "GodspeedMETI_20r", "GodspeedMETI_21r", "GodspeedMETI_22r")
+benevolence_score_METI_cols = c("GodspeedMETI_23r", "GodspeedMETI_24r", "GodspeedMETI_25r", "GodspeedMETI_26r")
+
+author_trust_score_METI_cols = append(append(expertise_score_METI_cols, integrity_score_METI_cols), benevolence_score_METI_cols)
 
 author_trust_score_combined_cols = append(author_trust_score_behaviour_cols, author_trust_score_METI_cols)
 
@@ -508,9 +515,7 @@ anthropomorphism_score_godspeed_cols = c("GodspeedMETI_1", "GodspeedMETI_2", "Go
 likeability_score_godspeed_cols = c("GodspeedMETI_5", "GodspeedMETI_6", "GodspeedMETI_7", "GodspeedMETI_8", "GodspeedMETI_9")
 competence_score_godspeed_cols =  c("GodspeedMETI_10", "GodspeedMETI_11", "GodspeedMETI_12", "GodspeedMETI_13", "GodspeedMETI_14")
 
-expertise_score_METI_cols = c("GodspeedMETI_10", "GodspeedMETI_13", "GodspeedMETI_15r", "GodspeedMETI_16r", "GodspeedMETI_17r", "GodspeedMETI_18r")
-integrity_score_METI_cols = c("GodspeedMETI_19r", "GodspeedMETI_20r", "GodspeedMETI_21r", "GodspeedMETI_22r")
-benevolence_score_METI_cols = c("GodspeedMETI_23r", "GodspeedMETI_24r", "GodspeedMETI_25r", "GodspeedMETI_26r")
+
 
 # intention to use AI 
 intention_cols = c("Experience_1", "Experience_2", "Experience_3")
@@ -1064,6 +1069,55 @@ Thoughts:
 
 -   overriding existing beliefs about AI / computers?
 
+# TODO
+
+```{r}
+violin_plot(data = cleaned_data, 
+            x = cleaned_data$AIChatbotsFrequency_regrouped, 
+            y = cleaned_data$anthropomorphism_score, 
+            group = cleaned_data$AIChatbotsFrequency_regrouped, 
+            title = "Anthropomorphism Scores by AI Usage Frequency", 
+            legend_label = "AI Usage Frequency", 
+            y_label = "Anthropomorphism Score", x_label = "AI Usage Frequency")
+
+```
+
+```{r}
+
+frequency_comparisons <- list(  c("rarely", "occasionally"),
+    c("rarely", "frequently"),
+    c("occasionally", "frequently") )
+
+# condition_comparisons <- list(  c("High", "Medium"),
+#     c("High", "Low"),
+#     c("Medium", "Low") )
+
+# Global test
+compare_means(anthropomorphism_score ~ AIChatbotsFrequency_regrouped,  data = cleaned_data, method = "anova")
+
+compare_means(anthropomorphism_score ~ AIChatbotsFrequency_regrouped, comparisons = frequency_comparisons, data = cleaned_data,  method = "t.test")
+
+
+ggboxplot(cleaned_data, x = "AIChatbotsFrequency_regrouped", y = "anthropomorphism_score",
+          color = "AIChatbotsFrequency_regrouped", palette = safe_pal)+ 
+  stat_compare_means(comparisons = frequency_comparisons, method = "t.test", label = "p.signif") + # Add pairwise comparisons p-value
+  stat_compare_means(label.y = 12, method = "anova")        +     # Add global p-value
+  ggtitle("Mean Anthropomorphism by Frequency of AI Chatbot Use") + 
+    labs(x="Frequency of Use", y = "Anthropomorphism", fill = "Frequency of Use")
+  
+
+ggbarplot(cleaned_data, x = "AIChatbotsFrequency_regrouped", y = "anthropomorphism_score",
+          add = "mean_sd",        
+          color = "AIChatbotsFrequency_regrouped", palette = safe_pal, position = position_dodge(0.8))+ 
+  stat_compare_means(comparisons = frequency_comparisons, method = "t.test", label = "p.signif") + # Add pairwise comparisons p-value
+  stat_compare_means(label.y = 12, method = "anova")      +     # Add global p-value
+  ggtitle("Mean Anthropomorphism by Frequency of AI Chatbot Use") + 
+    labs(x="Frequency of Use", y = "Anthropomorphism", fill = "Frequency of Use")
+  
+
+
+```
+
 #### Likeability
 
 We were not explicitly intending to manipulate likeability
@@ -1500,79 +1554,36 @@ No effect of anthropomorphism level on Content Trust
 
 ##### Post-hoc Analysis
 
-###### Correlations with Content Trust
+###### Anthropomorphism
 
 ```{r}
-correlation_data <- cleaned_data |> select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
 
-corr_matrix = cor(correlation_data)
+fit_i <- lm(content_trust_combined_score ~ anthropomorphism_score , data = cleaned_data)
 
-corr_matrix_p <- corr.test(correlation_data)
+summ(fit_i)
 
-kable(head(corr_matrix))
-corrplot(corr_matrix, type="upper", method = "circle", order = "hclust", 
-         addCoef.col = "white", # Add coefficient of correlation
-         tl.col="black", tl.srt=45, #Text label color and rotation
-         p.mat = corr_matrix_p$p, sig.level = 0.01, insig = "blank", 
-         diag = FALSE)
+df <- cleaned_data |>
+  select(content_trust_combined_score, anthropomorphism_score)
+
+cor(df)
+corrplot(cor(df),
+         method = "number",
+  sig.level = 0.05,
+  type = "upper", # show only upper side
+)
+
+# 
+# cat_plot(fit_i, pred = Condition, modx = age_range,  geom = "bar", colors = safe_pal)
 
 ```
 
-###### Correlations at High Condition
-
 ```{r}
-correlation_data_high <- cleaned_data |> 
-  filter(Condition == "High") |> 
-  select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
-
-
-corr_matrix = cor(correlation_data_high)
-corr_matrix_p <- corr.test(correlation_data_high)
-
-kable(head(corr_matrix))
-corrplot(corr_matrix, type="upper", method = "circle", order = "hclust", 
-         addCoef.col = "white", # Add coefficient of correlation
-         tl.col="black", tl.srt=45, #Text label color and rotation
-         p.mat = corr_matrix_p$p, sig.level = 0.01, insig = "blank", 
-         diag = FALSE)
-```
-
-###### Correlations at Medium Condition
-
-```{r}
-correlation_data_high <- cleaned_data |> 
-  filter(Condition == "Medium") |> 
-  select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
-
-
-corr_matrix = cor(correlation_data_high)
-corr_matrix_p <- corr.test(correlation_data_high)
-
-kable(head(corr_matrix))
-corrplot(corr_matrix, type="upper", method = "circle", order = "hclust", 
-         addCoef.col = "white", # Add coefficient of correlation
-         tl.col="black", tl.srt=45, #Text label color and rotation
-         p.mat = corr_matrix_p$p, sig.level = 0.01, insig = "blank", 
-         diag = FALSE)
-```
-
-###### Correlations at Low Condition
-
-```{r}
-correlation_data_high <- cleaned_data |> 
-  filter(Condition == "Low") |> 
-  select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
-
-
-corr_matrix = cor(correlation_data_high)
-corr_matrix_p <- corr.test(correlation_data_high)
-
-kable(head(corr_matrix))
-corrplot(corr_matrix, type="upper", method = "circle", order = "hclust", 
-         addCoef.col = "white", # Add coefficient of correlation
-         tl.col="black", tl.srt=45, #Text label color and rotation
-         p.mat = corr_matrix_p$p, sig.level = 0.01, insig = "blank", 
-         diag = FALSE)
+cleaned_data |>
+  ggplot(aes(x = anthropomorphism_score, y = content_trust_combined_score)) +
+  geom_point() +
+        stat_smooth(method = "lm",
+        col = "#C42126", se = FALSE, size = 1
+)
 ```
 
 ###### Age
@@ -2186,6 +2197,38 @@ Assumptions for ANOVA are violated. Is it severe enough to not be able to use?
 ```
 
 ##### Post-hoc Analysis
+
+###### Anthropomorphism
+
+```{r}
+
+fit_i <- lm(author_trust_combined_score ~ anthropomorphism_score , data = cleaned_data)
+
+summ(fit_i)
+
+df <- cleaned_data |>
+  select(author_trust_combined_score, anthropomorphism_score)
+
+cor(df)
+corrplot(cor(df),
+         method = "number",
+  sig.level = 0.05,
+  type = "upper", # show only upper side
+)
+
+# 
+# cat_plot(fit_i, pred = Condition, modx = age_range,  geom = "bar", colors = safe_pal)
+
+```
+
+```{r}
+cleaned_data |>
+  ggplot(aes(x = anthropomorphism_score, y = author_trust_combined_score)) +
+  geom_point() +
+        stat_smooth(method = "lm",
+        col = "#C42126", se = FALSE, size = 1
+)
+```
 
 ###### Age
 
