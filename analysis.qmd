@@ -2206,9 +2206,21 @@ fit_i <- lm(author_trust_combined_score ~ anthropomorphism_score , data = cleane
 
 summ(fit_i)
 
-df <- cleaned_data |>
-  select(author_trust_combined_score, anthropomorphism_score)
+```
 
+```{r}
+
+```
+
+```{r}
+df <- cleaned_data |>
+  select(content_trust_combined_score, author_trust_combined_score, anthropomorphism_score)
+
+
+
+```
+
+```{r}
 cor(df)
 corrplot(cor(df),
          method = "number",
@@ -2794,7 +2806,18 @@ cat_plot(fit_i, pred = Condition, modx = Unrealistic_coded,  plot.points = TRUE,
 #### Correlations
 
 ```{r}
-correlation_data <- cleaned_data |> select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
+correlation_data <- cleaned_data |> select(author_trust_combined_score,
+                                           content_trust_combined_score,
+                                           likeability_score, 
+                                           competence_score, 
+                                           expertise_score, 
+                                           integrity_score, 
+                                           benevolence_score, 
+                                           anthropomorphism_score, 
+                                           content_trust_appelman_score,
+                                           content_trust_behaviour_score,
+                                           author_trust_METI_score,
+                                           author_trust_behaviour_score)
 
 corr_matrix = cor(correlation_data)
 
