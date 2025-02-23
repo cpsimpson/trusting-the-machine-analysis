@@ -68,6 +68,40 @@ Set Number participants
 pwr.anova.test(k=3, n=80, power=.8)
 ```
 
+## Power analysis for proposal
+
+Using 2 levels for the anthropomorphism condition.
+
+Three levels of anthropomorphism (computer, anthropomorphized computer, human)
+
+Small Effect
+
+```{r}
+pwr.anova.test(k=2,f=.1,sig.level=.05,power=.8)
+```
+
+Medium Effect
+
+```{r}
+pwr.anova.test(k=2,f=.3,sig.level=.05,power=.8)
+```
+
+Large Effect
+
+```{r}
+pwr.anova.test(k=2,f=.5,sig.level=.05,power=.8)
+```
+
+Set Number participants
+
+```{r}
+pwr.anova.test(k=2, n=80, power=.8)
+```
+
+```{r}
+pwr.anova.test(k=2, n=100, power=.8)
+```
+
 ```{r}
 
 design = "2b*3b"
