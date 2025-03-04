@@ -1,0 +1,2778 @@
+---
+title: "Analysis"
+author: "Caroline Simpson"
+format: 
+  html:
+    theme: cerulean
+    df-print: kable
+    code-fold: false
+    toc: true
+    toc-float:
+      collapsed: true
+      smooth-scroll: false
+    toc-depth: 7
+
+editor: visual
+---
+
+```{r include=FALSE}
+
+library(knitr)
+library(kableExtra)
+library(rstatix)
+library(tidyverse)
+library(forcats)
+library(qualtRics)
+library(haven)
+library(jtools)
+library(forcats)
+library(FactoMineR)
+library(psych)
+library(interactions)
+library(corrplot)
+library(rcartocolor)
+library(ggpubr)
+
+library(FSA)
+
+library(performance)
+library(see)
+
+source("./helpers.R")
+
+safe_pal <- carto_pal(12, "Safe")
+
+```
+
+# Trusting the machine: Epistemic trust and anthropomorphism in generative artificial intelligence
+
+**Research Question**: What effect does anthropomorphism have on level of trust in generative AI and the content it creates?
+
+My **hypothesis** is that there will be an increase in epistemic trust with increasing levels of anthropomorphism.
+
+## Highlights
+
+## Next Steps
+
+## Data Analysis
+
+### Load data
+
+```{r include=FALSE}
+# raw_data <- read_spss(
+#   #"data/Thesis+-+Trusting+the+Machine+-+Copy+For+Testing_December+4,+2024_21.34.sav"
+#   # "data/Thesis+-+Trusting+the+Machine_December+4,+2024_19.13.sav"
+#   # "data/Thesis+-+Trusting+the+Machine_November+30,+2024_13.06.sav"
+#   "data/Thesis+-+Trusting+the+Machine_December+6,+2024_16.22.sav"
+#   )
+
+
+
+```
+
+```{r}
+
+raw_data <- read_survey(
+  "data/s2/Thesis+-+Trusting+the+Machine+-+Interactive_March+3,+2025_20.27.csv", 
+  col_types = readr::cols(AIChatbotsUsed = readr::col_character())
+)
+
+cols <- c(SurveyTopicCheck_coded = 0, Unrealistic_coded = 0)
+raw_data <- raw_data %>% 
+  add_column(!!!cols[!names(cols) %in% names(.)])
+
+raw_data$Appelman_1 <- as.numeric(as.character(raw_data$Appelman_1))
+raw_data$Appelman_2 <- as.numeric(as.character(raw_data$Appelman_2))
+raw_data$Appelman_3 <- as.numeric(as.character(raw_data$Appelman_3))
+raw_data$Appelman_4 <- as.numeric(as.character(raw_data$Appelman_4))
+raw_data$Appelman_5 <- as.numeric(as.character(raw_data$Appelman_5))
+raw_data$Appelman_6 <- as.numeric(as.character(raw_data$Appelman_6))
+
+raw_data$TrustBehaviour_1 <- as.numeric(as.character(raw_data$TrustBehaviour_1))
+raw_data$TrustBehaviour_2 <- as.numeric(as.character(raw_data$TrustBehaviour_2))
+raw_data$TrustBehaviour_3 <- as.numeric(as.character(raw_data$TrustBehaviour_3))
+raw_data$TrustBehaviour_4 <- as.numeric(as.character(raw_data$TrustBehaviour_4))
+raw_data$TrustBehaviour_5 <- as.numeric(as.character(raw_data$TrustBehaviour_5))
+raw_data$TrustBehaviour_6 <- as.numeric(as.character(raw_data$TrustBehaviour_6))
+raw_data$TrustBehaviour_7 <- as.numeric(as.character(raw_data$TrustBehaviour_7))
+raw_data$TrustBehaviour_8 <- as.numeric(as.character(raw_data$TrustBehaviour_8))
+raw_data$TrustBehaviour_9 <- as.numeric(as.character(raw_data$TrustBehaviour_9))
+
+
+raw_data$Experience_1 <- as.numeric(as.character(raw_data$Experience_1))
+raw_data$Experience_2 <- as.numeric(as.character(raw_data$Experience_2))
+raw_data$Experience_3 <- as.numeric(as.character(raw_data$Experience_3))
+raw_data$Experience_4 <- as.numeric(as.character(raw_data$Experience_4))
+raw_data$Experience_5 <- as.numeric(as.character(raw_data$Experience_5))
+raw_data$Experience_6 <- as.numeric(as.character(raw_data$Experience_6))
+raw_data$Experience_7 <- as.numeric(as.character(raw_data$Experience_7))
+raw_data$Experience_8 <- as.numeric(as.character(raw_data$Experience_8))
+raw_data$Experience_9 <- as.numeric(as.character(raw_data$Experience_9))
+raw_data$Experience_10 <- as.numeric(as.character(raw_data$Experience_10))
+raw_data$Experience_11 <- as.numeric(as.character(raw_data$Experience_11))
+
+
+raw_data$Appelman_4 <- as.factor(raw_data$Appelman_4)
+raw_data$Appelman_5 <- as.factor(raw_data$Appelman_5)
+raw_data$Appelman_6 <- as.factor(raw_data$Appelman_6)
+
+# setup factor variables
+raw_data$Condition <- factor(raw_data$Condition, 
+                             levels = c("Low", "High"))
+
+raw_data$Sex <- factor(raw_data$Sex, 
+                       levels = c(1,2,3,4), 
+                       labels = c("Male", "Female", "Intersex", "Prefer not to say"))
+
+raw_data$Gender <- factor(raw_data$Gender, 
+                          levels = c(1,2,3,4,5), 
+                          labels = c("Non-binary / third gender", "Man", "Woman", "Prefer to self-describe", "Prefer not to say"))
+
+raw_data$Education <- factor(raw_data$Education, 
+                             levels = c(1,2,3,4,5,6,7,8,9), 
+                             labels = c("SomePrimary", "Primary", "SomeSecondarySchool", 
+                                        "Secondary", "VocationalOrSimilar", "SomeUniversity", 
+                                        "UniversityBachelorsDegree", "GraduateProfessionalDegree", 
+                                        "PreferNotToSay"))
+
+# raw_data$English <- factor(raw_data$English, 
+#                            levels = c(1,2,3), 
+#                            labels = c("Yes", "No", "Learned English concurrently with another language"))
+
+
+raw_data$SurveyTopicCheck_coded <- factor(raw_data$SurveyTopicCheck_coded,
+                                          levels = c(0,1,2,3,4,5,6,7),
+                                          labels = c("No Answer", "AI", "Junk Data", "Non-AI Purpose", "Random", "Unsure", "Interesting", "None"))
+
+raw_data$Unrealistic <- factor(raw_data$Unrealistic, labels = c("No", "Yes"))
+
+raw_data$Unrealistic_coded <- factor(raw_data$Unrealistic_coded,
+                                     levels = c(0,1,2,3,4,5,6),
+                                     labels = c("No Answer", "AI/Not AI", "AI no personality", "Realistic", "Description Not Believable", "Junk Data", "Question why AI in High"))
+
+raw_data$TechnicalIssues <- factor(raw_data$Unrealistic, labels = c("No", "Yes"))
+
+raw_data$AIChatbotsFrequency <- factor(raw_data$AIChatbotsFrequency,
+                                       levels = c(1,2,3,4,5,6,7,8),
+                                       labels = c("More than once a day",
+                                                  "About once a day",
+                                                  "About once a week", 
+                                                  "About once every two weeks",
+                                                  "Less than once a month",
+                                                  "About once a month",
+                                                  "I've only tried these a couple of times",
+                                                  "I've never used these") )
+
+
+raw_data$ScienceContent <- factor(raw_data$ScienceContent,
+                                       levels = c(1,2,3,4,5,6,7,8),
+                                       labels = c("More than once a day",
+                                                  "About once a day",
+                                                  "About once a week", 
+                                                  "About once every two weeks",
+                                                  "Less than once a month",
+                                                  "About once a month",
+                                                  "I've only tried these a couple of times",
+                                                  "I've never used these") )
+
+
+five_point_likert_labels = c("Strongly disagree",
+                                                  "Disagree",
+                                                  "Neither agree or disagree", 
+                                                  "Agree",
+                                                  "Strongly agree")
+# raw_data$Experience_1 <- factor(raw_data$Experience_1,
+#                                        levels = c(1,2,3,4,5),
+#                                        labels = five_point_likert_labels)
+# raw_data$Experience_2 <- factor(raw_data$Experience_2,
+#                                        levels = c(1,2,3,4,5),
+#                                        labels = five_point_likert_labels)
+# raw_data$Experience_3 <- factor(raw_data$Experience_3,
+#                                        levels = c(1,2,3,4,5),
+#                                        labels = five_point_likert_labels)
+# raw_data$Experience_4 <- factor(raw_data$Experience_4,
+#                                        levels = c(1,2,3,4,5),
+#                                        labels = five_point_likert_labels)
+# raw_data$Experience_5 <- factor(raw_data$Experience_5,
+#                                        levels = c(1,2,3,4,5),
+#                                        labels = five_point_likert_labels)
+# raw_data$Experience_6 <- factor(raw_data$Experience_6,
+#                                        levels = c(1,2,3,4,5),
+#                                        labels = five_point_likert_labels)
+# raw_data$Experience_7 <- factor(raw_data$Experience_7,
+#                                        levels = c(1,2,3,4,5),
+#                                        labels = five_point_likert_labels)
+# raw_data$Experience_8 <- factor(raw_data$Experience_8,
+#                                        levels = c(1,2,3,4,5),
+#                                        labels = five_point_likert_labels)
+# raw_data$Experience_9 <- factor(raw_data$Experience_9,
+#                                        levels = c(1,2,3,4,5),
+#                                        labels = five_point_likert_labels)
+# raw_data$Experience_10 <- factor(raw_data$Experience_10,
+#                                        levels = c(1,2,3,4,5),
+#                                        labels = five_point_likert_labels)
+# raw_data$Experience_11 <- factor(raw_data$Experience_11,
+#                                        levels = c(1,2,3,4,5),
+#                                        labels = five_point_likert_labels)
+
+
+```
+
+Number of participants in raw data = `r nrow(raw_data)`.
+
+```{r}
+# Explode comma-separated list fields
+
+# AIChatbotsUsed
+
+# Define AI Chatbot labels
+chatbot_labels <- c("1" = "ChatGPT", "2" = "Claude", "3" = "Gemini", 
+                     "4" = "Copilot", "5" = "Grok", "7" = "Other", "8" = "None")
+
+raw_data <- raw_data %>%
+  # Step 1: Split AIChatbotsUsed into separate rows
+  separate_rows(AIChatbotsUsed, sep = ",") %>%
+  # Step 2: Map chatbot codes to labels
+  mutate(AIChatbotsUsed = chatbot_labels[AIChatbotsUsed]) %>%
+  # Step 3: Create indicator variables for each language
+  mutate(value = 1) %>%
+  # Step 4: Pivot to wide format
+  pivot_wider(names_from = AIChatbotsUsed, values_from = value, 
+              names_prefix = "AIChatbotsUsed_", values_fill = 0)
+
+
+```
+
+### Manual Processing
+
+Reviewed and coded Survey purpose check (what they think this study is about, not the attention check)
+
+-   Manually coded the response values with the following key:
+
+    -   0 = no answer provided
+
+    -   1 = identified the survey was about AI content, perception of AI, human versus AI distinction
+
+    -   2 = nonsensical text
+
+    -   3 = values that describe a purpose
+
+    -   4 = random word
+
+    -   5 = unsure
+
+    -   6 = "the study was interesting" or "good" and variations of this
+
+    -   7 = None
+
+```{r}
+raw_data |> 
+  group_by(SurveyTopicCheck_coded) |> 
+  summarise(n=n(), .groups = "keep")
+```
+
+Reviewed and coded Unrealistic parts of survey.
+
+-   Unrealistic field is a separate field with the values of:
+
+    -   1 = No
+
+    -   2 = Yes
+
+-   Unrealistic_coded -\> Manually coded the response values from Unrealistic_2_TEXT field with the following key:
+
+    -   0 = no answer provided
+
+    -   1 = believe descriptions written by AI or content written by AI when told human or content written by human when told AI
+
+    -   2 = don't believe that traits make sense to apply to AI
+
+    -   3 = it all seemed realistic
+
+    -   4 = description of AI was not believable
+
+    -   5 = random text
+
+    -   6 = unsure why they were asked questions about AI (in High condition)
+
+```{r}
+
+raw_data |> 
+  group_by(Unrealistic) |> 
+  summarise(n=n(), .groups = "keep")
+
+raw_data |> 
+  group_by(Unrealistic, Unrealistic_coded) |> 
+  summarise(n=n(), .groups = "keep")
+```
+
+#### Replace NA values with mean
+
+```{r}
+meaned_data <- raw_data %>% mutate(across(where(is.numeric), ~replace_na(., mean(., na.rm=TRUE))))
+
+```
+
+### Reverse Coding
+
+Reverse code items for each scale where appropriate
+
+```{r}
+
+# 4, 5
+
+recoded_data <- meaned_data |> 
+  mutate(
+    TrustBehaviour_4r = 7 - TrustBehaviour_4,
+    TrustBehaviour_5r = 7 - TrustBehaviour_5,
+    GodspeedMETI_12 = 100 - GodspeedMETI_25, # double check this.
+    GodspeedMETI_10r = 100 - GodspeedMETI_10,
+    GodspeedMETI_13r = 100 - GodspeedMETI_13,
+    GodspeedMETI_15r = 100 - GodspeedMETI_15,
+    GodspeedMETI_16r = 100 - GodspeedMETI_16,
+    GodspeedMETI_17r = 100 - GodspeedMETI_17,
+    GodspeedMETI_18r = 100 - GodspeedMETI_18,
+    GodspeedMETI_19r = 100 - GodspeedMETI_19,
+    GodspeedMETI_20r = 100 - GodspeedMETI_20,
+    GodspeedMETI_21r = 100 - GodspeedMETI_21,
+    GodspeedMETI_22r = 100 - GodspeedMETI_22,
+    GodspeedMETI_23r = 100 - GodspeedMETI_23,
+    GodspeedMETI_24r = 100 - GodspeedMETI_24,
+    GodspeedMETI_25r = 100 - GodspeedMETI_25,
+    GodspeedMETI_26r = 100 - GodspeedMETI_26,
+  )
+
+
+```
+
+### Clean Data
+
+Filter out incomplete results
+
+```{r}
+cleaned_data <- recoded_data |>
+  filter(EndDate >= "2024-12-04") |>  # Started on or after "2024-12-04" to remove test runs
+  # filter(Progress == 100) |>  # Completed surveys
+  # filter(ConsentForm == 1) |>  # Provided consent
+  filter(Status == 0) # Used anonymous link to complete survey (not preview)
+
+```
+
+Number of participants recruited = `r nrow(cleaned_data)`.
+
+```{r}
+cleaned_data <- recoded_data |>
+  filter(Progress == 100) |>  # Completed surveys
+  filter(ConsentForm == 1) |>  # Provided consent
+  filter(Status == 0) |> # Used anonymous link to complete survey (not preview)
+  filter(`Duration (in seconds)` >= (mean(`Duration (in seconds)`)) / 3) |>
+  filter(TopicCheck == 1) |>  # Passed topic check (attention check)
+  filter(GodspeedMETI_28 == 20) |>  # Explicit item value check (attention check)
+  filter(GodspeedMETI_29 == 67) |> # Explicit item value check (attention check)
+  filter(Q_RecaptchaScore >= 0.5) |>  # Recaptcha score from Qualtrics == 1
+  filter(id != 472759) # didn't read the blog post and didn't get answers from bot
+  #filter(Unrealistic_coded != 5 & SurveyTopicCheck_coded != 2) # Free text field does not appear to be random keystrokes (Unrealistic experience in survey, study purpose)
+```
+
+Number of participants after basic filtering = `r nrow(cleaned_data)`.
+
+#### Validate no duplicate participants
+
+```{r}
+duplicates <- cleaned_data |> 
+  group_by(ResponseId) |> 
+  summarise(n=n(), .groups = "keep") |>
+  filter(n > 1) |>
+  nrow()
+  
+
+```
+
+There are `r if (duplicates == 0) "no duplicate participants" else paste (duplicates, "duplicates")`
+
+```{r}
+
+# cleaned_data |> 
+#   group_by(TechnicalIssues) |> 
+#   summarise(n=n(), .groups = "keep")
+
+```
+
+#### Regroup data
+
+Regroup the AIChatbotsFrequency, Education, and Age columns into smaller number of categories of data for analysis. Some of the more granular categories don't have a large enough sample for meaningful comparisons.
+
+```{r}
+
+cleaned_data$age_range <- cut(cleaned_data$Age_1, 6)
+
+cleaned_data <- cleaned_data |>
+  mutate(Education_regrouped = Education)
+
+cleaned_data$Education_regrouped <- fct_collapse(cleaned_data$Education_regrouped,
+                                                 non_post_secondary = c("SomePrimary",
+                                                                    "Primary",
+                                                                    "SomeSecondarySchool",
+                                                                    "Secondary",
+                                                                    "PreferNotToSay"),
+                                                 post_secondary = c( "VocationalOrSimilar",
+                                                                 "SomeUniversity",
+                                                                 "UniversityBachelorsDegree",
+                                                                 "GraduateProfessionalDegree"))
+
+cleaned_data$AIChatbotsFrequency_regrouped <- fct_collapse(cleaned_data$AIChatbotsFrequency,
+                                       frequently = c("More than once a day",
+                                                  "About once a day",
+                                                  "About once a week"),
+                                       occasionally = c(
+                                                  "About once every two weeks",
+                                                  "Less than once a month",
+                                                  "About once a month"),
+                                       rarely = c("I've only tried these a couple of times",
+                                                  "I've never used these") 
+                                       
+                                       )
+
+cleaned_data$ScienceContent_regrouped <- fct_collapse(cleaned_data$ScienceContent,
+                                       frequently = c("More than once a day",
+                                                  "About once a day",
+                                                  "About once a week"),
+                                       occasionally = c(
+                                                  "About once every two weeks",
+                                                  "Less than once a month",
+                                                  "About once a month"),
+                                       rarely = c("I've only tried these a couple of times",
+                                                  "I've never used these") 
+                                       
+                                       )
+
+```
+
+### Calculate Scale Scores
+
+#### Define Score Components
+
+```{r}
+
+content_trust_score_appelman_cols = c("Appelman_1", "Appelman_2", "Appelman_3")
+
+content_trust_score_behaviour_cols = c("TrustBehaviour_1", "TrustBehaviour_2",  "TrustBehaviour_3" ,"TrustBehaviour_4r", "TrustBehaviour_5r", "TrustBehaviour_6", "TrustBehaviour_9")
+
+content_trust_score_combined_cols =  append(content_trust_score_appelman_cols, content_trust_score_behaviour_cols)
+
+author_trust_score_behaviour_cols = c("TrustBehaviour_7", "TrustBehaviour_8")
+
+expertise_score_METI_cols = c("GodspeedMETI_10", "GodspeedMETI_13", "GodspeedMETI_15r", "GodspeedMETI_16r", "GodspeedMETI_17r", "GodspeedMETI_18r")
+integrity_score_METI_cols = c("GodspeedMETI_19r", "GodspeedMETI_20r", "GodspeedMETI_21r", "GodspeedMETI_22r")
+benevolence_score_METI_cols = c("GodspeedMETI_23r", "GodspeedMETI_24r", "GodspeedMETI_25r", "GodspeedMETI_26r")
+
+author_trust_score_METI_cols = append(append(expertise_score_METI_cols, integrity_score_METI_cols), benevolence_score_METI_cols)
+
+author_trust_score_combined_cols = append(author_trust_score_behaviour_cols, author_trust_score_METI_cols)
+
+anthropomorphism_score_godspeed_cols = c("GodspeedMETI_1", "GodspeedMETI_2", "GodspeedMETI_3", "GodspeedMETI_4")
+likeability_score_godspeed_cols = c("GodspeedMETI_5", "GodspeedMETI_6", "GodspeedMETI_7", "GodspeedMETI_8", "GodspeedMETI_9")
+competence_score_godspeed_cols =  c("GodspeedMETI_10", "GodspeedMETI_11", "GodspeedMETI_12", "GodspeedMETI_13", "GodspeedMETI_14")
+
+
+
+# intention to use AI 
+intention_cols = c("Experience_1", "Experience_2", "Experience_3")
+
+# changed opinion Experience_4
+
+fear_cols = c("Experience_5", "Experience_6")
+
+# could write this Experience_7
+
+participant_expertise_cols = c("Experience_8", "Experience_9", "Experience_10", "Experience_11")
+
+
+```
+
+-   Calculate scores for Content Trust, Author Trust, Anthropomorphism, Likeability, Competence, Expertise, Integrity, Benevolence
+
+```{r}
+
+cleaned_data <- cleaned_data |>
+  mutate(
+    content_trust_appelman_score = rowMeans(
+      select(cleaned_data, all_of(content_trust_score_appelman_cols)), na.rm = TRUE),
+    content_trust_behaviour_score = rowMeans(
+      select(cleaned_data, all_of(content_trust_score_behaviour_cols)), na.rm = TRUE),
+    content_trust_combined_score = rowMeans(
+      select(cleaned_data, all_of(content_trust_score_combined_cols)), na.rm = TRUE),
+    author_trust_behaviour_score = rowMeans(
+      select(cleaned_data, all_of(author_trust_score_behaviour_cols)), na.rm = TRUE),
+    author_trust_METI_score = rowSums(
+      select(cleaned_data, all_of(author_trust_score_METI_cols)), na.rm = TRUE),
+    author_trust_combined_score = rowMeans(
+      select(cleaned_data, all_of(author_trust_score_combined_cols)), na.rm = TRUE),
+    anthropomorphism_score = rowMeans(
+      select(cleaned_data, all_of(anthropomorphism_score_godspeed_cols)), na.rm = TRUE),
+    likeability_score = rowMeans(
+      select(cleaned_data, all_of(likeability_score_godspeed_cols)), na.rm = TRUE),
+    competence_score = rowMeans(
+      select(cleaned_data, all_of(competence_score_godspeed_cols)), na.rm = TRUE), 
+    expertise_score = rowSums(
+      select(cleaned_data, all_of(expertise_score_METI_cols)), na.rm = TRUE), 
+    integrity_score = rowSums(
+      select(cleaned_data, all_of(integrity_score_METI_cols)), na.rm = TRUE), 
+    benevolence_score = rowSums(
+      select(cleaned_data, all_of(benevolence_score_METI_cols)), na.rm = TRUE), 
+    intention_to_use_score = rowMeans(
+      select(cleaned_data, all_of(intention_cols)), na.rm = TRUE), 
+    fear_of_ai_score = rowMeans(
+      select(cleaned_data, all_of(fear_cols)), na.rm = TRUE), 
+    professional_content_expertise = rowMeans(
+      select(cleaned_data, all_of(participant_expertise_cols)), na.rm = TRUE), 
+  ) 
+
+```
+
+### Scale Inter-item Reliability Analysis
+
+#### Anthropomorphism (Godspeed Subscale)
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(anthropomorphism_score_godspeed_cols)) |>
+  psych::alpha(discrete=FALSE)
+```
+
+#### Likeability (Godspeed Subscale)
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(likeability_score_godspeed_cols)) |>
+  psych::alpha(discrete=FALSE)
+
+```
+
+#### Competence (Godspeed Subscale)
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(competence_score_godspeed_cols)) |>
+  psych::alpha(discrete=FALSE)
+
+```
+
+#### Expertise (METI Subscale)
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(expertise_score_METI_cols)) |>
+  psych::alpha(discrete=FALSE)
+
+```
+
+#### Integrity (METI Subscale)
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(integrity_score_METI_cols)) |>
+  psych::alpha(discrete=FALSE)
+
+```
+
+#### Benevolence (Godspeed Subscale)
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(benevolence_score_METI_cols)) |>
+  psych::alpha(discrete=FALSE)
+
+```
+
+#### METI (Author Trust)
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(author_trust_score_METI_cols)) |>
+  psych::alpha(discrete=FALSE)
+
+```
+
+#### Trust Behaviour (Author Trust)
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(author_trust_score_behaviour_cols)) |>
+  psych::alpha(discrete=FALSE)
+
+```
+
+#### Combine Author Trust
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(author_trust_score_combined_cols)) |>
+  psych::alpha(discrete=FALSE)
+
+```
+
+#### Appelman (Content Trust)
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(content_trust_score_appelman_cols)) |>
+  psych::alpha(discrete=FALSE)
+
+```
+
+#### Trust Behaviour (Content Trust)
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(content_trust_score_behaviour_cols)) |>
+  psych::alpha(discrete=FALSE)
+
+```
+
+#### Combined Content Trust
+
+```{r}
+
+cleaned_data |> 
+  select(all_of(content_trust_score_combined_cols)) |>
+  psych::alpha(discrete=FALSE)
+
+```
+
+#### Expertise / Intentions
+
+```{r}
+
+
+cleaned_data |> 
+  select(all_of(intention_cols)) |>
+  psych::alpha(discrete=FALSE)
+
+cleaned_data |> 
+  select(all_of(fear_cols)) |>
+  psych::alpha(discrete=FALSE)
+
+
+cleaned_data |> 
+  select(all_of(participant_expertise_cols)) |>
+  psych::alpha(discrete=FALSE)
+
+```
+
+***TODO:*** Factor / Reliability analysis on Experience Data section items (or at least go through them and see what is there in more detail and which items likely should be grouped)
+
+### Sample Characteristics
+
+```         
+N=`r length(unique(cleaned_data$ResponseId))`
+```
+
+#### Participants reporting Technical Issues (Not removed in data cleaning)
+
+```{r}
+cleaned_data |> 
+  group_by(TechnicalIssues) |> 
+  summarise(n=n(), .groups = "keep")
+
+```
+
+#### Participants per condition.
+
+```{r}
+cleaned_data |> 
+  select(ResponseId, Condition) |>
+  group_by(Condition) |>
+  summarise(n = n(), .groups = "keep")
+
+```
+
+#### Age
+
+```         
+Age range: `r round(min(cleaned_data$Age_1, na.rm = TRUE), 2)` to `r round(max(cleaned_data$Age_1, na.rm = TRUE), 2)`
+Mean age: `r round(mean(cleaned_data$Age_1, na.rm = TRUE), 2)`
+Standard deviation: `r round(sd(cleaned_data$Age_1, na.rm = TRUE), 2)`
+```
+
+```{r}
+cleaned_data |> 
+  select(age_range) |>
+  group_by(age_range) |>
+  summarise(n = n(), .groups = "keep")
+
+cleaned_data |> 
+  select(age_range, Condition) |>
+  group_by(age_range, Condition) |>
+  summarise(n = n(), .groups = "keep")
+```
+
+#### Gender
+
+```{r}
+
+cleaned_data |> 
+  select(Gender) |>
+  group_by(Gender) |>
+  summarise(n = n(), .groups = "keep")
+
+cleaned_data |> 
+  select(Gender, Condition) |>
+  group_by(Gender, Condition) |>
+  summarise(n = n(), .groups = "keep")
+
+```
+
+Limit analysis to Man / Woman comparison given small sample size for other values.
+
+#### Sex
+
+```{r}
+
+cleaned_data |> 
+  select(Sex) |>
+  group_by(Sex) |>
+  summarise(n = n(), .groups = "keep")
+
+cleaned_data |> 
+  select(Sex, Condition) |>
+  group_by(Sex, Condition) |>
+  summarise(n = n(), .groups = "keep")
+```
+
+Limit analysis to Male / Female comparison given small sample size for other values.
+
+#### Education Level
+
+```{r}
+
+cleaned_data |> 
+  select(Education) |>
+  group_by(Education) |>
+  summarise(n = n(), .groups = "keep")
+
+cleaned_data |> 
+  select(Education, Condition) |>
+  group_by(Education, Condition) |>
+  summarise(n = n(), .groups = "keep")
+
+cleaned_data |> 
+  select(Education_regrouped) |>
+  group_by(Education_regrouped) |>
+  summarise(n = n(), .groups = "keep")
+
+cleaned_data |> 
+  select(Education_regrouped, Condition) |>
+  group_by(Education_regrouped, Condition) |>
+  summarise(n = n(), .groups = "keep")
+
+```
+
+#### AI Chatbot Usage
+
+```{r}
+
+cleaned_data |> 
+  select(AIChatbotsFrequency) |>
+  group_by(AIChatbotsFrequency) |>
+  summarise(n = n(), .groups = "keep")
+
+cleaned_data |> 
+  select(AIChatbotsFrequency, Condition) |>
+  group_by(AIChatbotsFrequency, Condition) |>
+  summarise(n = n(), .groups = "keep")
+
+cleaned_data |> 
+  select(AIChatbotsFrequency_regrouped) |>
+  group_by(AIChatbotsFrequency_regrouped) |>
+  summarise(n = n(), .groups = "keep")
+
+cleaned_data |> 
+  select(AIChatbotsFrequency, Condition) |>
+  group_by(AIChatbotsFrequency, Condition) |>
+  summarise(n = n(), .groups = "keep")
+
+
+cleaned_data |> 
+  select(starts_with("AIChatbotsUsed_")) |>
+  pivot_longer(names_to = "AIChatbotsUsed", cols = starts_with("AIChatbotsUsed_"),
+               names_prefix = "AIChatbotsUsed_") |>
+  group_by(AIChatbotsUsed) |>
+  summarise(n = sum(value), .groups = "keep")
+
+cleaned_data |> 
+  select(starts_with("AIChatbotsUsed_"), Condition) |>
+  pivot_longer(names_to = "AIChatbotsUsed", cols = starts_with("AIChatbotsUsed_"), 
+               names_prefix = "AIChatbotsUsed_") |>
+  group_by(AIChatbotsUsed, Condition) |>
+  summarise(n = sum(value), .groups = "keep")
+```
+
+#### Science Content Familiarity
+
+```{r}
+
+cleaned_data |> 
+  select(ScienceContent) |>
+  group_by(ScienceContent) |>
+  summarise(n = n(), .groups = "keep")
+
+cleaned_data |> 
+  select(ScienceContent, Condition) |>
+  group_by(ScienceContent, Condition) |>
+  summarise(n = n(), .groups = "keep")
+
+cleaned_data |> 
+  select(ScienceContent_regrouped) |>
+  group_by(ScienceContent_regrouped) |>
+  summarise(n = n(), .groups = "keep")
+
+cleaned_data |> 
+  select(ScienceContent_regrouped, Condition) |>
+  group_by(ScienceContent_regrouped, Condition) |>
+  summarise(n = n(), .groups = "keep")
+
+```
+
+#### Expertise
+
+```{r}
+
+cleaned_data |> 
+  select(intention_to_use_score) |>
+  group_by(intention_to_use_score) |>
+  summarise(n = n(), .groups = "keep")
+
+cleaned_data |> 
+  select(intention_to_use_score, Condition) |>
+  group_by(intention_to_use_score, Condition) |>
+  summarise(n = n(), .groups = "keep")
+
+cleaned_data |> 
+  select(fear_of_ai_score) |>
+  group_by(fear_of_ai_score) |>
+  summarise(n = n(), .groups = "keep")
+
+cleaned_data |> 
+  select(fear_of_ai_score, Condition) |>
+  group_by(fear_of_ai_score, Condition) |>
+  summarise(n = n(), .groups = "keep")
+
+cleaned_data |> 
+  select(professional_content_expertise) |>
+  group_by(professional_content_expertise) |>
+  summarise(n = n(), .groups = "keep")
+
+cleaned_data |> 
+  select(professional_content_expertise, Condition) |>
+  group_by(professional_content_expertise, Condition) |>
+  summarise(n = n(), .groups = "keep")
+
+
+cleaned_data |> 
+  select(Experience_4) |>
+  group_by(Experience_4) |>
+  summarise(n = n(), .groups = "keep")
+
+cleaned_data |> 
+  select(Experience_4, Condition) |>
+  group_by(Experience_4, Condition) |>
+  summarise(n = n(), .groups = "keep")
+
+
+cleaned_data |> 
+  select(Experience_7) |>
+  group_by(Experience_7) |>
+  summarise(n = n(), .groups = "keep")
+
+cleaned_data |> 
+  select(Experience_7, Condition) |>
+  group_by(Experience_7, Condition) |>
+  summarise(n = n(), .groups = "keep")
+
+
+```
+
+### Manipulation Check
+
+#### Anthropomorphism
+
+We attempted to explicitly manipulated the level of anthropomorphism. Therefore, we would expect to see a significant difference in this score across the 3 conditions.
+
+##### Plot
+
+```{r}
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$anthropomorphism_score, cleaned_data$Condition, "Anthropomorphism Scores")
+```
+
+##### Descriptive Statistics
+
+###### Means
+
+```{r}
+cleaned_data |>
+  select(Condition, anthropomorphism_score) |>
+by(cleaned_data$Condition, summary)
+
+```
+
+###### Standard Deviation
+
+```{r}
+tapply(cleaned_data$anthropomorphism_score, cleaned_data$Condition, sd)
+```
+
+###### Variance
+
+```{r}
+tapply(cleaned_data$anthropomorphism_score, cleaned_data$Condition, var)
+```
+
+##### Inferential Statistics
+
+###### ANOVA
+
+```{r}
+
+aov_model <- aov(anthropomorphism_score ~ Condition, data = cleaned_data)
+
+par(mfrow = c(2, 2))
+plot(aov_model)
+
+summary(aov_model)
+
+
+```
+
+###### T-tests
+
+```{r}
+
+t_high_low = t.test(
+  x = cleaned_data |> filter(Condition == "High") |> select(anthropomorphism_score),
+  y = cleaned_data |> filter(Condition == "Low") |> select(anthropomorphism_score)
+)
+
+t_high_low
+
+```
+
+# TODO
+
+```{r}
+violin_plot(data = cleaned_data, 
+            x = cleaned_data$AIChatbotsFrequency_regrouped, 
+            y = cleaned_data$anthropomorphism_score, 
+            group = cleaned_data$AIChatbotsFrequency_regrouped, 
+            title = "Anthropomorphism Scores by AI Usage Frequency", 
+            legend_label = "AI Usage Frequency", 
+            y_label = "Anthropomorphism Score", x_label = "AI Usage Frequency")
+
+```
+
+```{r}
+
+frequency_comparisons <- list(  c("rarely", "occasionally"),
+    c("rarely", "frequently"),
+    c("occasionally", "frequently") )
+
+# condition_comparisons <- list(  c("High", "Medium"),
+#     c("High", "Low"),
+#     c("Medium", "Low") )
+
+# Global test
+compare_means(anthropomorphism_score ~ AIChatbotsFrequency_regrouped,  data = cleaned_data, method = "anova")
+
+compare_means(anthropomorphism_score ~ AIChatbotsFrequency_regrouped, comparisons = frequency_comparisons, data = cleaned_data,  method = "t.test")
+
+
+ggboxplot(cleaned_data, x = "AIChatbotsFrequency_regrouped", y = "anthropomorphism_score",
+          color = "AIChatbotsFrequency_regrouped", palette = safe_pal)+ 
+  stat_compare_means(comparisons = frequency_comparisons, method = "t.test", label = "p.signif") + # Add pairwise comparisons p-value
+  stat_compare_means(label.y = 12, method = "anova")        +     # Add global p-value
+  ggtitle("Mean Anthropomorphism by Frequency of AI Chatbot Use") + 
+    labs(x="Frequency of Use", y = "Anthropomorphism", fill = "Frequency of Use")
+  
+
+ggbarplot(cleaned_data, x = "AIChatbotsFrequency_regrouped", y = "anthropomorphism_score",
+          add = "mean_sd",        
+          color = "AIChatbotsFrequency_regrouped", palette = safe_pal, position = position_dodge(0.8))+ 
+  stat_compare_means(comparisons = frequency_comparisons, method = "t.test", label = "p.signif") + # Add pairwise comparisons p-value
+  stat_compare_means(label.y = 12, method = "anova")      +     # Add global p-value
+  ggtitle("Mean Anthropomorphism by Frequency of AI Chatbot Use") + 
+    labs(x="Frequency of Use", y = "Anthropomorphism", fill = "Frequency of Use")
+  
+
+
+```
+
+#### Likeability
+
+We were not explicitly intending to manipulate likeability
+
+##### Plot
+
+```{r}
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$likeability_score, cleaned_data$Condition, "Likeability Scores")
+```
+
+##### Descriptive Statistics
+
+###### Means
+
+```{r}
+cleaned_data |>
+  select(Condition, likeability_score) |>
+by(cleaned_data$Condition, summary)
+
+```
+
+###### Standard Deviation
+
+```{r}
+tapply(cleaned_data$likeability_score, cleaned_data$Condition, sd)
+```
+
+###### Variance
+
+```{r}
+tapply(cleaned_data$likeability_score, cleaned_data$Condition, var)
+```
+
+##### Inferential Statistics
+
+###### ANOVA
+
+```{r}
+
+aov_model <- aov(likeability_score ~ Condition, data = cleaned_data)
+
+par(mfrow = c(2, 2))
+plot(aov_model)
+
+summary(aov_model)
+
+```
+
+###### T-tests
+
+```{r}
+
+
+t_high_low = t.test(
+  x = cleaned_data |> filter(Condition == "High") |> select(likeability_score),
+  y = cleaned_data |> filter(Condition == "Low") |> select(likeability_score)
+)
+
+t_high_low
+
+
+```
+
+There is a significant difference in likeability between the High condition and others.
+
+#### Competence
+
+We were not explicitly intending to manipulate competence
+
+##### Plot
+
+```{r}
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$competence_score, cleaned_data$Condition, "Competence Scores")
+```
+
+##### Descriptive Statistics
+
+###### Means
+
+```{r}
+cleaned_data |>
+  select(Condition, competence_score) |>
+by(cleaned_data$Condition, summary)
+
+```
+
+###### Standard Deviation
+
+```{r}
+tapply(cleaned_data$competence_score, cleaned_data$Condition, sd)
+```
+
+###### Variance
+
+```{r}
+tapply(cleaned_data$competence_score, cleaned_data$Condition, var)
+```
+
+##### Inferential Statistics
+
+###### ANOVA
+
+```{r}
+
+aov_model <- aov(competence_score ~ Condition, data = cleaned_data)
+
+par(mfrow = c(2, 2))
+plot(aov_model)
+
+summary(aov_model)
+
+
+```
+
+###### T-tests
+
+```{r}
+
+
+t_high_low = t.test(
+  x = cleaned_data |> filter(Condition == "High") |> select(competence_score),
+  y = cleaned_data |> filter(Condition == "Low") |> select(competence_score)
+)
+
+t_high_low
+
+
+```
+
+#### Expertise
+
+We were not explicitly intending to manipulate expertise
+
+##### Plot
+
+```{r}
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$expertise_score, cleaned_data$Condition, "Expertise Scores")
+```
+
+##### Descriptive Statistics
+
+###### Means
+
+```{r}
+cleaned_data |>
+  select(Condition, expertise_score) |>
+by(cleaned_data$Condition, summary)
+
+```
+
+###### Standard Deviation
+
+```{r}
+tapply(cleaned_data$expertise_score, cleaned_data$Condition, sd)
+```
+
+###### Variance
+
+```{r}
+tapply(cleaned_data$expertise_score, cleaned_data$Condition, var)
+```
+
+##### Inferential Statistics
+
+###### ANOVA
+
+```{r}
+
+aov_model <- aov(expertise_score ~ Condition, data = cleaned_data)
+
+par(mfrow = c(2, 2))
+plot(aov_model)
+
+summary(aov_model)
+
+
+```
+
+###### T-tests
+
+```{r}
+
+
+t_high_low = t.test(
+  x = cleaned_data |> filter(Condition == "High") |> select(expertise_score),
+  y = cleaned_data |> filter(Condition == "Low") |> select(expertise_score)
+)
+
+t_high_low
+
+
+```
+
+#### Integrity
+
+We were not explicitly intending to manipulate integrity
+
+##### Plot
+
+```{r}
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$integrity_score, cleaned_data$Condition, "Integrity Scores")
+```
+
+##### Descriptive Statistics
+
+###### Means
+
+```{r}
+cleaned_data |>
+  select(Condition, integrity_score) |>
+by(cleaned_data$Condition, summary)
+
+```
+
+###### Standard Deviation
+
+```{r}
+tapply(cleaned_data$integrity_score, cleaned_data$Condition, sd)
+```
+
+###### Variance
+
+```{r}
+tapply(cleaned_data$integrity_score, cleaned_data$Condition, var)
+```
+
+##### Inferential Statistics
+
+###### ANOVA
+
+```{r}
+
+aov_model <- aov(integrity_score ~ Condition, data = cleaned_data)
+
+par(mfrow = c(2, 2))
+plot(aov_model)
+
+summary(aov_model)
+
+
+```
+
+###### T-tests
+
+```{r}
+
+
+t_high_low = t.test(
+  x = cleaned_data |> filter(Condition == "High") |> select(integrity_score),
+  y = cleaned_data |> filter(Condition == "Low") |> select(integrity_score)
+)
+
+t_high_low
+
+
+```
+
+#### Benevolence
+
+We were not explicitly intending to manipulate benevolence
+
+##### Plot
+
+```{r}
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$benevolence_score, cleaned_data$Condition, "Benevolence Scores")
+```
+
+##### Descriptive Statistics
+
+###### Means
+
+```{r}
+cleaned_data |>
+  select(Condition, benevolence_score) |>
+by(cleaned_data$Condition, summary)
+
+```
+
+###### Standard Deviation
+
+```{r}
+tapply(cleaned_data$benevolence_score, cleaned_data$Condition, sd)
+```
+
+###### Variance
+
+```{r}
+tapply(cleaned_data$benevolence_score, cleaned_data$Condition, var)
+```
+
+##### Inferential Statistics
+
+###### ANOVA
+
+```{r}
+
+aov_model <- aov(benevolence_score ~ Condition, data = cleaned_data)
+
+par(mfrow = c(2, 2))
+plot(aov_model)
+
+summary(aov_model)
+
+```
+
+###### T-tests
+
+```{r}
+
+
+
+t_high_low = t.test(
+  x = cleaned_data |> filter(Condition == "High") |> select(benevolence_score),
+  y = cleaned_data |> filter(Condition == "Low") |> select(benevolence_score)
+)
+
+t_high_low
+
+
+```
+
+### Main Analysis
+
+#### Content Trust
+
+##### Plot
+
+```{r}
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$content_trust_combined_score, cleaned_data$Condition, "Content Trust Scores")
+```
+
+##### Descriptive Statistics
+
+```{r}
+cleaned_data |>
+  select(Condition, content_trust_combined_score) |>
+by(cleaned_data$Condition, summary)
+
+```
+
+##### Inferential Statistics
+
+Main Effect ANOVA
+
+```{r include=FALSE}
+
+data <- cleaned_data |> group_by(Condition) |> filter(n() > 3) |> ungroup()
+formula <- content_trust_combined_score ~ Condition
+x <- cleaned_data$Condition
+x_label <- "Anthropomorphism Condition"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+Assumptions for ANOVA are violated. Is it severe enough to not be able to use?
+
+{{< include "_Kruskal.qmd" >}}
+
+```{r}
+
+# aov_model <- aov(content_trust_combined_score ~ Condition, data = cleaned_data)
+# 
+# par(mfrow = c(2, 2))
+# plot(aov_model)
+# 
+# summary(aov_model)
+```
+
+No effect of anthropomorphism level on Content Trust
+
+-   This implies there is a separation between the trust of the content and the trust in the source of the content.
+
+##### Post-hoc Analysis
+
+###### Anthropomorphism
+
+```{r}
+
+fit_i <- lm(content_trust_combined_score ~ anthropomorphism_score , data = cleaned_data)
+
+summ(fit_i)
+
+df <- cleaned_data |>
+  select(content_trust_combined_score, anthropomorphism_score)
+
+cor(df)
+corrplot(cor(df),
+         method = "number",
+  sig.level = 0.05,
+  type = "upper", # show only upper side
+)
+
+# 
+# cat_plot(fit_i, pred = Condition, modx = age_range,  geom = "bar", colors = safe_pal)
+
+```
+
+```{r}
+cleaned_data |>
+  ggplot(aes(x = anthropomorphism_score, y = content_trust_combined_score)) +
+  geom_point() +
+        stat_smooth(method = "lm",
+        col = "#C42126", se = FALSE, size = 1
+)
+```
+
+###### Age
+
+```{r}
+
+data <- cleaned_data |> group_by(age_range) |> filter(n() > 3) |> ungroup()
+formula <- content_trust_combined_score ~ age_range
+x <- cleaned_data$age_range
+x_label <- "Age range"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+Age / Condition Interaction
+
+```{r}
+
+fit_i <- lm(content_trust_combined_score ~ Condition * age_range, data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = age_range,  geom = "bar", colors = safe_pal)
+```
+
+Significant interaction between for age range 50 - 59.7 and 59.7 - 69.3
+
+###### Gender (Man / Woman only)
+
+```{r}
+
+data <- cleaned_data |> group_by(Gender) |> filter(n() > 3) |> ungroup()
+formula <- content_trust_combined_score ~ Gender
+x <- cleaned_data$Gender
+x_label <- "Gender"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+Gender / Condition Interaction
+
+```{r}
+
+
+fit_i <- lm(content_trust_combined_score ~ Condition * Gender, 
+                    data = cleaned_data |> filter(Gender == "Man" | Gender == "Woman"))
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Gender,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="line", colors = safe_pal)
+
+```
+
+###### Sex (Male / Female only)
+
+```{r}
+
+data <- cleaned_data |> group_by(Sex) |> filter(n() > 3) |> ungroup()
+formula <- content_trust_combined_score ~ Sex
+x <- cleaned_data$Sex
+x_label <- "Sex"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+Sex / Condition Interaction
+
+```{r}
+
+fit_i <- lm(content_trust_combined_score ~ Condition * Sex, 
+                    data = cleaned_data |> filter(Sex == "Male" | Sex == "Female"))
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Sex,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="line", colors = safe_pal)
+```
+
+###### Education
+
+```{r}
+
+data <- cleaned_data |> group_by(Education) |> filter(n() > 3) |> ungroup()
+formula <- content_trust_combined_score ~ Education
+x <- cleaned_data$Education
+x_label <- "Education"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+data <- cleaned_data |> group_by(Education_regrouped) |> filter(n() > 3) |> ungroup()
+formula <- content_trust_combined_score ~ Education_regrouped
+x <- cleaned_data$Education_regrouped
+x_label <- "Education"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+Education / Condition Interaction
+
+```{r}
+
+fit_i <- lm(content_trust_combined_score ~ Condition * Education, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Education,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+
+fit_i <- lm(content_trust_combined_score ~ Condition * Education_regrouped, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Education_regrouped,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+
+```
+
+###### AI Usage Experience
+
+```{r}
+violin_plot(data = cleaned_data, 
+            x = cleaned_data$AIChatbotsFrequency_regrouped, 
+            y = cleaned_data$content_trust_combined_score, 
+            group = cleaned_data$AIChatbotsFrequency_regrouped, 
+            title = "Content Trust Scores by AI Usage Frequency", 
+            legend_label = "AI Usage Frequency", 
+            y_label = "Content Trust Score", x_label = "AI Usage Frequency")
+```
+
+```{r}
+
+frequency_comparisons <- list(  c("rarely", "occasionally"),
+    c("rarely", "frequently"),
+    c("occasionally", "frequently") )
+
+condition_comparisons <- list(
+    c("High", "Low") )
+
+# Global test
+compare_means(content_trust_combined_score ~ AIChatbotsFrequency_regrouped,  data = cleaned_data, method = "anova")
+
+compare_means(content_trust_combined_score ~ AIChatbotsFrequency_regrouped, comparisons = frequency_comparisons, data = cleaned_data,  method = "t.test")
+
+
+ggboxplot(cleaned_data, x = "AIChatbotsFrequency_regrouped", y = "content_trust_combined_score",
+          color = "AIChatbotsFrequency_regrouped", palette = safe_pal)+ 
+  stat_compare_means(comparisons = frequency_comparisons, method = "t.test", label = "p.signif") + # Add pairwise comparisons p-value
+  stat_compare_means(label.y = 12, method = "anova")        +     # Add global p-value
+  ggtitle("Mean Content Trust by Frequency of AI Chatbot Use") + 
+    labs(x="Frequency of Use", y = "Content Trust", fill = "Frequency of Use")
+  
+
+ggbarplot(cleaned_data, x = "AIChatbotsFrequency_regrouped", y = "content_trust_combined_score",
+          add = "mean_sd",        
+          color = "AIChatbotsFrequency_regrouped", palette = safe_pal, position = position_dodge(0.8))+ 
+  stat_compare_means(comparisons = frequency_comparisons, method = "t.test", label = "p.signif") + # Add pairwise comparisons p-value
+  stat_compare_means(label.y = 12, method = "anova")      +     # Add global p-value
+  ggtitle("Mean Content Trust by Frequency of AI Chatbot Use") + 
+    labs(x="Frequency of Use", y = "Content Trust", fill = "Frequency of Use")
+  
+
+ggbarplot(cleaned_data |> filter(AIChatbotsFrequency_regrouped == "frequently"), x = "Condition", y = "content_trust_combined_score",
+          add = "mean_sd",        
+          color = "Condition", palette = safe_pal, position = position_dodge(0.8))+ 
+  stat_compare_means(comparisons = condition_comparisons, method = "t.test", label = "p.signif") +
+  stat_compare_means(label.y = 12, method = "anova")  +     # Add global p-value
+  ggtitle("Mean Content Trust by Condition for Frequent Users of AI Chatbots") + 
+    labs(x="Antropomorphism Condition", y = "Content Trust", fill = "Antropomorphism Condition")
+  
+
+ggbarplot(cleaned_data |> filter(AIChatbotsFrequency_regrouped == "occasionally"), x = "Condition", y = "content_trust_combined_score",
+          add = "mean_sd",        
+          color = "Condition", palette = safe_pal, position = position_dodge(0.8))+ 
+  stat_compare_means(comparisons = condition_comparisons, method = "t.test", label = "p.signif") +
+  stat_compare_means(label.y = 12, method = "anova")  +     # Add global p-value
+  ggtitle("Mean Content Trust by Condition for Occassional Users of AI Chatbots") + 
+    labs(x="Antropomorphism Condition", y = "Content Trust", fill = "Antropomorphism Condition")
+  
+ggbarplot(cleaned_data |> filter(AIChatbotsFrequency_regrouped == "rarely"), x = "Condition", y = "content_trust_combined_score",
+          add = "mean_sd",        
+          color = "Condition", palette = safe_pal, position = position_dodge(0.8))+ 
+  stat_compare_means(comparisons = condition_comparisons, method = "t.test", label = "p.signif") +
+  stat_compare_means(label.y = 12, method = "anova") +     # Add global p-value
+  ggtitle("Mean Content Trust by Condition for Rare Users of AI Chatbots") + 
+    labs(x="Antropomorphism Condition", y = "Content Trust", fill = "Antropomorphism Condition")
+  
+```
+
+```{r}
+
+data <- cleaned_data |> group_by(AIChatbotsFrequency_regrouped) |> filter(n() > 3) |> ungroup()
+formula <- content_trust_combined_score ~ AIChatbotsFrequency_regrouped
+x <- cleaned_data$AIChatbotsFrequency_regrouped
+x_label <- "AI Usage Frequency"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+fit_i <- lm(content_trust_combined_score ~ Condition * AIChatbotsFrequency, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = AIChatbotsFrequency,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+
+fit_i <- lm(content_trust_combined_score ~ Condition * AIChatbotsFrequency_regrouped, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = AIChatbotsFrequency_regrouped,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+
+```
+
+Main effect of AI Chatbot Usage Frequency
+
+Interaction effect? I think so, but could be iffy given sample sizes in conditions?
+
+###### Science Content Experience
+
+```{r}
+
+data <- cleaned_data |> group_by(ScienceContent) |> filter(n() > 3) |> ungroup()
+formula <- content_trust_combined_score ~ ScienceContent
+x <- cleaned_data$ScienceContent
+x_label <- "Science Content Consumption Frequency"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+data <- cleaned_data |> group_by(ScienceContent_regrouped) |> filter(n() > 3) |> ungroup()
+formula <- content_trust_combined_score ~ ScienceContent_regrouped
+x <- cleaned_data$ScienceContent_regrouped
+x_label <- "Science Content Consumption Frequency"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+# aov_model <- aov(content_trust_combined_score ~ ScienceContent, data = cleaned_data)
+# 
+# par(mfrow = c(2, 2))
+# plot(aov_model)
+# 
+# summary(aov_model)
+
+fit_i <- lm(content_trust_combined_score ~ Condition * ScienceContent, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = ScienceContent,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+
+fit_i <- lm(content_trust_combined_score ~ Condition * ScienceContent_regrouped, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = ScienceContent_regrouped,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+
+```
+
+###### Intention to Use AI
+
+```{r}
+data <- cleaned_data |> group_by(intention_to_use_score) |> filter(n() > 3) |> ungroup()
+formula <- content_trust_combined_score ~ intention_to_use_score
+x <- cleaned_data$intention_to_use_score
+x_label <- "Intention to Use AI"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+fit_i <- lm(content_trust_combined_score ~ Condition * intention_to_use_score, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = intention_to_use_score,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+```
+
+###### Changed Opinion
+
+```{r}
+data <- cleaned_data |> group_by(Experience_4) |> filter(n() > 3) |> ungroup()
+formula <- content_trust_combined_score ~ Experience_4
+x <- cleaned_data$Experience_4
+x_label <- "Study Changed Opinion of AI"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+fit_i <- lm(content_trust_combined_score ~ Condition * Experience_4, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Experience_4,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+```
+
+###### Fear of AI
+
+```{r}
+data <- cleaned_data |> group_by(fear_of_ai_score) |> filter(n() > 3) |> ungroup()
+formula <- content_trust_combined_score ~ fear_of_ai_score
+x <- cleaned_data$fear_of_ai_score
+x_label <- "Fear of AI"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+fit_i <- lm(content_trust_combined_score ~ Condition * fear_of_ai_score, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = fear_of_ai_score,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+```
+
+###### Could Write
+
+```{r}
+data <- cleaned_data |> group_by(Experience_7) |> filter(n() > 3) |> ungroup()
+formula <- content_trust_combined_score ~ Experience_7
+x <- cleaned_data$Experience_7
+x_label <- "Belief could write content"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+fit_i <- lm(content_trust_combined_score ~ Condition * Experience_7, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Experience_7,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+```
+
+###### Professional Content / Writing Expertise
+
+```{r}
+data <- cleaned_data |> group_by(professional_content_expertise) |> filter(n() > 3) |> ungroup()
+formula <- content_trust_combined_score ~ professional_content_expertise
+x <- cleaned_data$professional_content_expertise
+x_label <- "Professional Experience with Content or Writing"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+fit_i <- lm(content_trust_combined_score ~ Condition * professional_content_expertise, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = professional_content_expertise,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+```
+
+###### Content Properties
+
+Well-written
+
+```{r}
+data <- cleaned_data |> group_by(Appelman_4) |> filter(n() > 3) |> ungroup()
+formula <- content_trust_combined_score ~ Appelman_4
+x <- cleaned_data$Appelman_4
+x_label <- "Well-written"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+fit_i <- lm(content_trust_combined_score ~ Condition * Appelman_4, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Appelman_4,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+```
+
+Boring
+
+```{r}
+data <- cleaned_data |> group_by(Appelman_5) |> filter(n() > 3) |> ungroup()
+formula <- content_trust_combined_score ~ Appelman_5
+x <- cleaned_data$Appelman_5
+x_label <- "Boring"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+fit_i <- lm(content_trust_combined_score ~ Condition * Appelman_5, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Appelman_5,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+```
+
+Engaging
+
+```{r}
+data <- cleaned_data |> group_by(Appelman_6) |> filter(n() > 3) |> ungroup()
+formula <- content_trust_combined_score ~ Appelman_6
+x <- cleaned_data$Appelman_6
+x_label <- "Engaging"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+fit_i <- lm(content_trust_combined_score ~ Condition * Appelman_6, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Appelman_6,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+```
+
+###### Survey Purpose Check
+
+```{r}
+
+data <- cleaned_data |> group_by(SurveyTopicCheck_coded) |> filter(n() > 3) |> ungroup()
+formula <- content_trust_combined_score ~ SurveyTopicCheck_coded
+x <- cleaned_data$SurveyTopicCheck_coded
+x_label <- "Perceived Survey Purpose"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+Survey Purpose / Condition Interaction
+
+```{r}
+
+#TODO: put this back when coding is complete
+# fit_i <- lm(content_trust_combined_score ~ Condition * SurveyTopicCheck_coded, 
+#                     data = cleaned_data)
+# 
+# summ(fit_i)
+# 
+# cat_plot(fit_i, pred = Condition, modx = SurveyTopicCheck_coded,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+```
+
+###### Unrealistic Check
+
+```{r}
+
+data <- cleaned_data |> group_by(Unrealistic) |> filter(n() > 3) |> ungroup()
+formula <- content_trust_combined_score ~ Unrealistic
+x <- cleaned_data$Unrealistic
+x_label <- "Perceived Unrealistic"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+data <- cleaned_data |> group_by(Unrealistic_coded) |> filter(n() > 3) |> ungroup()
+formula <- content_trust_combined_score ~ Unrealistic_coded
+x <- cleaned_data$Unrealistic_coded
+x_label <- "Perceived Unrealistic Reason"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+Survey Purpose / Condition Interaction
+
+```{r}
+
+fit_i <- lm(content_trust_combined_score ~ Condition * Unrealistic, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Unrealistic,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+
+
+#TODO: put this back when coding is complete
+# fit_i <- lm(content_trust_combined_score ~ Condition * Unrealistic_coded, 
+#                     data = cleaned_data |> filter(Unrealistic == "Yes"))
+# 
+# summ(fit_i)
+# 
+# cat_plot(fit_i, pred = Condition, modx = Unrealistic_coded,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", , colors = safe_pal)
+```
+
+#### Author Trust
+
+##### Plot
+
+```{r}
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$author_trust_combined_score, cleaned_data$Condition, "Author Trust Scores")
+```
+
+##### Descriptive Statistics
+
+```{r}
+cleaned_data |>
+  select(Condition, author_trust_combined_score) |>
+by(cleaned_data$Condition, summary)
+
+```
+
+##### Inferential Statistics
+
+Main Effect ANOVA
+
+```{r include=FALSE}
+
+data <- cleaned_data |> group_by(Condition) |> filter(n() > 3) |> ungroup()
+formula <- author_trust_combined_score ~ Condition
+x <- cleaned_data$Condition
+x_label <- "Anthropomorphism Condition"
+y <- cleaned_data$author_trust_combined_score
+y_label <- "Author Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+Assumptions for ANOVA are violated. Is it severe enough to not be able to use?
+
+{{< include "_Kruskal.qmd" >}}
+
+```{r}
+
+# aov_model <- aov(author_trust_combined_score ~ Condition, data = cleaned_data)
+# 
+# par(mfrow = c(2, 2))
+# plot(aov_model)
+# 
+# summary(aov_model)
+```
+
+##### Post-hoc Analysis
+
+###### Anthropomorphism
+
+```{r}
+
+fit_i <- lm(author_trust_combined_score ~ anthropomorphism_score , data = cleaned_data)
+
+summ(fit_i)
+
+```
+
+```{r}
+
+```
+
+```{r}
+df <- cleaned_data |>
+  select(content_trust_combined_score, author_trust_combined_score, anthropomorphism_score)
+
+
+
+```
+
+```{r}
+cor(df)
+corrplot(cor(df),
+         method = "number",
+  sig.level = 0.05,
+  type = "upper", # show only upper side
+)
+
+# 
+# cat_plot(fit_i, pred = Condition, modx = age_range,  geom = "bar", colors = safe_pal)
+
+```
+
+```{r}
+cleaned_data |>
+  ggplot(aes(x = anthropomorphism_score, y = author_trust_combined_score)) +
+  geom_point() +
+        stat_smooth(method = "lm",
+        col = "#C42126", se = FALSE, size = 1
+)
+```
+
+###### Age
+
+```{r}
+
+data <- cleaned_data |> group_by(age_range) |> filter(n() > 3) |> ungroup()
+formula <- author_trust_combined_score ~ age_range
+x <- cleaned_data$age_range
+x_label <- "Age range"
+y <- cleaned_data$author_trust_combined_score
+y_label <- "Author Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+Age / Condition Interaction
+
+```{r}
+
+fit_i <- lm(author_trust_combined_score ~ Condition * age_range, data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = age_range,  geom = "bar", colors = safe_pal)
+```
+
+Significant interaction between for age range 50 - 59.7 and 59.7 - 69.3
+
+###### Gender (Man / Woman only)
+
+```{r}
+
+data <- cleaned_data |> group_by(Gender) |> filter(n() > 3) |> ungroup()
+formula <- author_trust_combined_score ~ Gender
+x <- cleaned_data$Gender
+x_label <- "Gender"
+y <- cleaned_data$author_trust_combined_score
+y_label <- "Author Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+Gender / Condition Interaction
+
+```{r}
+
+
+fit_i <- lm(author_trust_combined_score ~ Condition * Gender, 
+                    data = cleaned_data |> filter(Gender == "Man" | Gender == "Woman"))
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Gender,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="line", colors = safe_pal)
+
+```
+
+###### Sex (Male / Female only)
+
+```{r}
+
+data <- cleaned_data |> group_by(Sex) |> filter(n() > 3) |> ungroup()
+formula <- author_trust_combined_score ~ Sex
+x <- cleaned_data$Sex
+x_label <- "Sex"
+y <- cleaned_data$author_trust_combined_score
+y_label <- "Author Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+Sex / Condition Interaction
+
+```{r}
+
+fit_i <- lm(author_trust_combined_score ~ Condition * Sex, 
+                    data = cleaned_data |> filter(Sex == "Male" | Sex == "Female"))
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Sex,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="line", colors = safe_pal)
+```
+
+###### Education
+
+```{r}
+
+data <- cleaned_data |> group_by(Education) |> filter(n() > 3) |> ungroup()
+formula <- author_trust_combined_score ~ Education
+x <- cleaned_data$Education
+x_label <- "Education"
+y <- cleaned_data$author_trust_combined_score
+y_label <- "Author Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+data <- cleaned_data |> group_by(Education_regrouped) |> filter(n() > 3) |> ungroup()
+formula <- author_trust_combined_score ~ Education_regrouped
+x <- cleaned_data$Education_regrouped
+x_label <- "Education"
+y <- cleaned_data$author_trust_combined_score
+y_label <- "Author Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+Education / Condition Interaction
+
+```{r}
+
+fit_i <- lm(author_trust_combined_score ~ Condition * Education, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Education,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+
+fit_i <- lm(author_trust_combined_score ~ Condition * Education_regrouped, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Education_regrouped,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+
+```
+
+###### AI Usage Experience
+
+```{r}
+violin_plot(data = cleaned_data, 
+            x = cleaned_data$AIChatbotsFrequency_regrouped, 
+            y = cleaned_data$author_trust_combined_score, 
+            group = cleaned_data$AIChatbotsFrequency_regrouped, 
+            title = "Author Trust Scores by AI Usage Frequency", 
+            legend_label = "AI Usage Frequency", 
+            y_label = "Author Trust Score", x_label = "AI Usage Frequency")
+```
+
+```{r}
+
+frequency_comparisons <- list(  c("rarely", "occasionally"),
+    c("rarely", "frequently"),
+    c("occasionally", "frequently") )
+
+condition_comparisons <- list( 
+    c("High", "Low") )
+
+# Global test
+compare_means(author_trust_combined_score ~ AIChatbotsFrequency_regrouped,  data = cleaned_data, method = "anova")
+
+compare_means(author_trust_combined_score ~ AIChatbotsFrequency_regrouped, comparisons = frequency_comparisons, data = cleaned_data,  method = "t.test")
+
+
+ggboxplot(cleaned_data, x = "AIChatbotsFrequency_regrouped", y = "author_trust_combined_score",
+          color = "AIChatbotsFrequency_regrouped", palette = safe_pal)+ 
+  stat_compare_means(comparisons = frequency_comparisons, method = "t.test", label = "p.signif") + # Add pairwise comparisons p-value
+  stat_compare_means(label.y = 12, method = "anova")        +     # Add global p-value
+  ggtitle("Mean Author Trust by Frequency of AI Chatbot Use") + 
+    labs(x="Frequency of Use", y = "Author Trust", fill = "Frequency of Use")
+  
+
+ggbarplot(cleaned_data, x = "AIChatbotsFrequency_regrouped", y = "author_trust_combined_score",
+          add = "mean_sd",        
+          color = "AIChatbotsFrequency_regrouped", palette = safe_pal, position = position_dodge(0.8))+ 
+  stat_compare_means(comparisons = frequency_comparisons, method = "t.test", label = "p.signif") + # Add pairwise comparisons p-value
+  stat_compare_means(label.y = 12, method = "anova")      +     # Add global p-value
+  ggtitle("Mean Author Trust by Frequency of AI Chatbot Use") + 
+    labs(x="Frequency of Use", y = "Author Trust", fill = "Frequency of Use")
+  
+
+ggbarplot(cleaned_data |> filter(AIChatbotsFrequency_regrouped == "frequently"), x = "Condition", y = "author_trust_combined_score",
+          add = "mean_sd",        
+          color = "Condition", palette = safe_pal, position = position_dodge(0.8))+ 
+  stat_compare_means(comparisons = condition_comparisons, method = "t.test", label = "p.signif") +
+  stat_compare_means(label.y = 12, method = "anova")  +     # Add global p-value
+  ggtitle("Mean Author Trust by Condition for Frequent Users of AI Chatbots") + 
+    labs(x="Antropomorphism Condition", y = "Author Trust", fill = "Antropomorphism Condition")
+  
+
+ggbarplot(cleaned_data |> filter(AIChatbotsFrequency_regrouped == "occasionally"), x = "Condition", y = "author_trust_combined_score",
+          add = "mean_sd",        
+          color = "Condition", palette = safe_pal, position = position_dodge(0.8))+ 
+  stat_compare_means(comparisons = condition_comparisons, method = "t.test", label = "p.signif") +
+  stat_compare_means(label.y = 12, method = "anova")  +     # Add global p-value
+  ggtitle("Mean Author Trust by Condition for Occassional Users of AI Chatbots") + 
+    labs(x="Antropomorphism Condition", y = "Author Trust", fill = "Antropomorphism Condition")
+  
+ggbarplot(cleaned_data |> filter(AIChatbotsFrequency_regrouped == "rarely"), x = "Condition", y = "author_trust_combined_score",
+          add = "mean_sd",        
+          color = "Condition", palette = safe_pal, position = position_dodge(0.8))+ 
+  stat_compare_means(comparisons = condition_comparisons, method = "t.test", label = "p.signif") +
+  stat_compare_means(label.y = 12, method = "anova") +     # Add global p-value
+  ggtitle("Mean Author Trust by Condition for Rare Users of AI Chatbots") + 
+    labs(x="Antropomorphism Condition", y = "Author Trust", fill = "Antropomorphism Condition")
+  
+```
+
+```{r}
+
+data <- cleaned_data |> group_by(AIChatbotsFrequency_regrouped) |> filter(n() > 3) |> ungroup()
+formula <- author_trust_combined_score ~ AIChatbotsFrequency_regrouped
+x <- cleaned_data$AIChatbotsFrequency_regrouped
+x_label <- "AI Usage Frequency"
+y <- cleaned_data$author_trust_combined_score
+y_label <- "Author Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+fit_i <- lm(author_trust_combined_score ~ Condition * AIChatbotsFrequency, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = AIChatbotsFrequency,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+```
+
+```{fit_i <- lm(author_trust_combined_score ~ Condition * AIChatbotsFrequency_regrouped,}
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = AIChatbotsFrequency_regrouped,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+
+```
+
+###### Science Content Experience
+
+```{r}
+
+data <- cleaned_data |> group_by(ScienceContent) |> filter(n() > 3) |> ungroup()
+formula <- author_trust_combined_score ~ ScienceContent
+x <- cleaned_data$ScienceContent
+x_label <- "Science Content Consumption Frequency"
+y <- cleaned_data$author_trust_combined_score
+y_label <- "Author Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+data <- cleaned_data |> group_by(ScienceContent_regrouped) |> filter(n() > 3) |> ungroup()
+formula <- author_trust_combined_score ~ ScienceContent_regrouped
+x <- cleaned_data$ScienceContent_regrouped
+x_label <- "Science Content Consumption Frequency"
+y <- cleaned_data$author_trust_combined_score
+y_label <- "Author Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+# aov_model <- aov(author_trust_combined_score ~ ScienceContent, data = cleaned_data)
+# 
+# par(mfrow = c(2, 2))
+# plot(aov_model)
+# 
+# summary(aov_model)
+
+fit_i <- lm(author_trust_combined_score ~ Condition * ScienceContent, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = ScienceContent,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+
+fit_i <- lm(author_trust_combined_score ~ Condition * ScienceContent_regrouped, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = ScienceContent_regrouped,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+
+```
+
+###### Intention to Use AI
+
+```{r}
+data <- cleaned_data |> group_by(intention_to_use_score) |> filter(n() > 3) |> ungroup()
+formula <- author_trust_combined_score ~ intention_to_use_score
+x <- cleaned_data$intention_to_use_score
+x_label <- "Intention to Use AI"
+y <- cleaned_data$author_trust_combined_score
+y_label <- "Author Trust"
+
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+fit_i <- lm(author_trust_combined_score ~ Condition * intention_to_use_score, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = intention_to_use_score,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+```
+
+###### Changed Opinion
+
+```{r}
+data <- cleaned_data |> group_by(Experience_4) |> filter(n() > 3) |> ungroup()
+formula <- author_trust_combined_score ~ Experience_4
+x <- cleaned_data$Experience_4
+x_label <- "Study Changed Opinion of AI"
+y <- cleaned_data$author_trust_combined_score
+y_label <- "Author Trust"
+
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+fit_i <- lm(author_trust_combined_score ~ Condition * Experience_4, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Experience_4,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+```
+
+###### Fear of AI
+
+```{r}
+data <- cleaned_data |> group_by(fear_of_ai_score) |> filter(n() > 3) |> ungroup()
+formula <- author_trust_combined_score ~ fear_of_ai_score
+x <- cleaned_data$fear_of_ai_score
+x_label <- "Fear of AI"
+y <- cleaned_data$author_trust_combined_score
+y_label <- "Author Trust"
+
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+fit_i <- lm(author_trust_combined_score ~ Condition * fear_of_ai_score, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = fear_of_ai_score,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+```
+
+###### Could Write
+
+```{r}
+data <- cleaned_data |> group_by(Experience_7) |> filter(n() > 3) |> ungroup()
+formula <- author_trust_combined_score ~ Experience_7
+x <- cleaned_data$Experience_7
+x_label <- "Belief could write content"
+y <- cleaned_data$author_trust_combined_score
+y_label <- "Author Trust"
+
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+fit_i <- lm(author_trust_combined_score ~ Condition * Experience_7, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Experience_7,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+```
+
+###### Professional Content / Writing Expertise
+
+```{r}
+data <- cleaned_data |> group_by(professional_content_expertise) |> filter(n() > 3) |> ungroup()
+formula <- author_trust_combined_score ~ professional_content_expertise
+x <- cleaned_data$professional_content_expertise
+x_label <- "Professional Experience with Content or Writing"
+y <- cleaned_data$author_trust_combined_score
+y_label <- "Author Trust"
+
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+fit_i <- lm(author_trust_combined_score ~ Condition * professional_content_expertise, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = professional_content_expertise,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+```
+
+###### Content Properties
+
+Well-written
+
+```{r}
+data <- cleaned_data |> group_by(Appelman_4) |> filter(n() > 3) |> ungroup()
+formula <- author_trust_combined_score ~ Appelman_4
+x <- cleaned_data$Appelman_4
+x_label <- "Well-written"
+y <- cleaned_data$author_trust_combined_score
+y_label <- "Author Trust"
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+fit_i <- lm(author_trust_combined_score ~ Condition * Appelman_4, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Appelman_4,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+```
+
+Boring
+
+```{r}
+data <- cleaned_data |> group_by(Appelman_5) |> filter(n() > 3) |> ungroup()
+formula <- author_trust_combined_score ~ Appelman_5
+x <- cleaned_data$Appelman_5
+x_label <- "Boring"
+y <- cleaned_data$author_trust_combined_score
+y_label <- "Author Trust"
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+fit_i <- lm(author_trust_combined_score ~ Condition * Appelman_5, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Appelman_5,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+```
+
+###### 
+
+Engaging
+
+```{r}
+data <- cleaned_data |> group_by(Appelman_6) |> filter(n() > 3) |> ungroup()
+formula <- author_trust_combined_score ~ Appelman_6
+x <- cleaned_data$Appelman_6
+x_label <- "Engaging"
+y <- cleaned_data$author_trust_combined_score
+y_label <- "Author Trust"
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+fit_i <- lm(author_trust_combined_score ~ Condition * Appelman_6, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Appelman_6,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+```
+
+###### Survey Purpose Check
+
+```{r}
+
+data <- cleaned_data |> group_by(SurveyTopicCheck_coded) |> filter(n() > 3) |> ungroup()
+formula <- author_trust_combined_score ~ SurveyTopicCheck_coded
+x <- cleaned_data$SurveyTopicCheck_coded
+x_label <- "Perceived Survey Purpose"
+y <- cleaned_data$author_trust_combined_score
+y_label <- "Author Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+Survey Purpose / Condition Interaction
+
+```{r}
+
+#TODO: put this back when coding is complete
+# fit_i <- lm(author_trust_combined_score ~ Condition * SurveyTopicCheck_coded, 
+#                     data = cleaned_data)
+# 
+# summ(fit_i)
+# 
+# cat_plot(fit_i, pred = Condition, modx = SurveyTopicCheck_coded,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+```
+
+###### Unrealistic Check
+
+```{r}
+
+data <- cleaned_data |> group_by(Unrealistic) |> filter(n() > 3) |> ungroup()
+formula <- author_trust_combined_score ~ Unrealistic
+x <- cleaned_data$Unrealistic
+x_label <- "Perceived Unrealistic"
+y <- cleaned_data$author_trust_combined_score
+y_label <- "Author Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+```{r}
+
+data <- cleaned_data |> group_by(Unrealistic_coded) |> filter(n() > 3) |> ungroup()
+formula <- author_trust_combined_score ~ Unrealistic_coded
+x <- cleaned_data$Unrealistic_coded
+x_label <- "Perceived Unrealistic Reason"
+y <- cleaned_data$author_trust_combined_score
+y_label <- "Author Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+Survey Purpose / Condition Interaction
+
+```{r}
+
+fit_i <- lm(author_trust_combined_score ~ Condition * Unrealistic, 
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Unrealistic,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+
+#TODO: put this back when coding is complete
+# fit_i <- lm(author_trust_combined_score ~ Condition * Unrealistic_coded, 
+#                     data = cleaned_data |> filter(Unrealistic == "Yes"))
+# 
+# summ(fit_i)
+# 
+# cat_plot(fit_i, pred = Condition, modx = Unrealistic_coded,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", , colors = safe_pal)
+```
+
+#### Correlations
+
+```{r}
+correlation_data <- cleaned_data |> select(author_trust_combined_score,
+                                           content_trust_combined_score,
+                                           likeability_score, 
+                                           competence_score, 
+                                           expertise_score, 
+                                           integrity_score, 
+                                           benevolence_score, 
+                                           anthropomorphism_score, 
+                                           content_trust_appelman_score,
+                                           content_trust_behaviour_score,
+                                           author_trust_METI_score,
+                                           author_trust_behaviour_score)
+
+corr_matrix = cor(correlation_data)
+
+corr_matrix_p <- corr.test(correlation_data)
+
+kable(head(corr_matrix))
+corrplot(corr_matrix, type="upper", method = "circle", order = "hclust", 
+         addCoef.col = "white", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         p.mat = corr_matrix_p$p, sig.level = 0.01, insig = "blank", 
+         diag = FALSE)
+
+```
+
+##### Correlations at High Condition
+
+```{r}
+correlation_data_high <- cleaned_data |> 
+  filter(Condition == "High") |> 
+  select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
+
+
+corr_matrix_high = cor(correlation_data_high)
+corr_matrix_p_high <- corr.test(correlation_data_high)
+
+kable(head(corr_matrix_high))
+corrplot(corr_matrix_high, type="upper", method = "circle", order = "hclust", 
+         addCoef.col = "white", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         p.mat = corr_matrix_p_high$p, sig.level = 0.01, insig = "blank", 
+         diag = FALSE)
+```
+
+##### Correlations at Low Condition
+
+```{r}
+correlation_data_low <- cleaned_data |> 
+  filter(Condition == "Low") |> 
+  select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
+
+
+corr_matrix_low = cor(correlation_data_low)
+corr_matrix_p_low <- corr.test(correlation_data_low)
+
+
+kable(head(corr_matrix_low))
+corrplot(corr_matrix_low, type="upper", method = "circle", order = "hclust", 
+         addCoef.col = "white", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         p.mat = corr_matrix_p_low$p, sig.level = 0.01, insig = "blank", 
+         diag = FALSE)
+```
+
+```{r}
+library(cocor)
+
+cocor(~ `content_trust_combined_score` + `expertise_score` | `content_trust_combined_score` + `expertise_score`, 
+      data = list(
+        as.data.frame(cleaned_data |> filter(Condition == "High")), 
+        as.data.frame(cleaned_data |> filter(Condition == "Low"))
+      )
+)
+
+```
+
+```{r}
+cocor(~ `content_trust_combined_score` + `competence_score` | `content_trust_combined_score` + `competence_score`, 
+      data = list(
+        as.data.frame(cleaned_data |> filter(Condition == "High")), 
+        as.data.frame(cleaned_data |> filter(Condition == "Low"))
+      )
+)
+
+```
+
+```{r}
+cocor(~ `content_trust_combined_score` + `likeability_score` | `content_trust_combined_score` + `likeability_score`, 
+      data = list(
+        as.data.frame(cleaned_data |> filter(Condition == "High")), 
+        as.data.frame(cleaned_data |> filter(Condition == "Low"))
+      )
+)
+```
+
+```{r}
+cocor(~ `content_trust_combined_score` + `benevolence_score` | `content_trust_combined_score` + `benevolence_score`, 
+      data = list(
+        as.data.frame(cleaned_data |> filter(Condition == "High")), 
+        as.data.frame(cleaned_data |> filter(Condition == "Low"))
+      )
+)
+```
+
+```{r}
+cocor(~ `content_trust_combined_score` + `integrity_score` | `content_trust_combined_score` + `integrity_score`, 
+      data = list(
+        as.data.frame(cleaned_data |> filter(Condition == "High")), 
+        as.data.frame(cleaned_data |> filter(Condition == "Low"))
+      )
+)
+```
+
+```{r}
+cocor(~ `content_trust_combined_score` + `author_trust_combined_score` | `content_trust_combined_score` + `author_trust_combined_score`, 
+      data = list(
+        as.data.frame(cleaned_data |> filter(Condition == "High")), 
+        as.data.frame(cleaned_data |> filter(Condition == "Low"))
+      )
+)
+```
+
+# Appendix A
+
+```{r child='_variables.rmd'}
+```
