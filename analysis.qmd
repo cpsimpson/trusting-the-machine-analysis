@@ -367,7 +367,7 @@ raw_data |>
 ```
 
 ```{r}
-
+meaned_data <- raw_data %>% mutate(across(where(is.numeric), ~replace_na(., mean(., na.rm=TRUE))))
 
 ```
 
@@ -379,7 +379,7 @@ Reverse code items for each scale where appropriate
 
 # 4, 5
 
-recoded_data <- raw_data |> 
+recoded_data <- meaned_data |>
   mutate(
     TrustBehaviour_4r = 7 - TrustBehaviour_4,
     TrustBehaviour_5r = 7 - TrustBehaviour_5,
@@ -408,9 +408,21 @@ Filter out incomplete results
 ```{r}
 cleaned_data <- recoded_data |>
   filter(EndDate >= "2024-12-04") |>  # Started on or after "2024-12-04" to remove test runs
+  # filter(Progress == 100) |>  # Completed surveys
+  # filter(ConsentForm == 1) |>  # Provided consent
+  filter(Status == 0) # Used anonymous link to complete survey (not preview)
+  
+```
+
+Number of participants recruited = `r nrow(cleaned_data)`.
+
+```{r}
+cleaned_data <- recoded_data |>
+  filter(EndDate >= "2024-12-04") |>  # Started on or after "2024-12-04" to remove test runs
   filter(Progress == 100) |>  # Completed surveys
   filter(ConsentForm == 1) |>  # Provided consent
   filter(Status == 0) |> # Used anonymous link to complete survey (not preview)
+  filter(`Duration (in seconds)` >= (mean(`Duration (in seconds)`)) / 3) |>
   filter(Reread != 1) |>  # Did not need to reread the instructions
   filter(TopicCheck == 1) |>  # Passed topic check (attention check)
   filter(
@@ -420,11 +432,12 @@ cleaned_data <- recoded_data |>
     ) |>  # Passed agent check (attention check)
   filter(GodspeedMETI_28 == 100) |>  # Explicit item value check (attention check)
   filter(GodspeedMETI_29 == 0) |> # Explicit item value check (attention check)
-  filter(Q_RecaptchaScore == 1) |>  # Recaptcha score from Qualtrics == 1
-  filter(Unrealistic_coded != 5 & SurveyTopicCheck_coded != 2) # Free text field does not appear to be random keystrokes (Unrealistic experience in survey, study purpose)
+  filter(Q_RecaptchaScore >= 0.5) #|>  # Recaptcha score from Qualtrics == 1
+  #filter(Unrealistic_coded != 5 & SurveyTopicCheck_coded != 2) # Free text field does not appear to be random keystrokes (Unrealistic experience in survey, study purpose)
+
 ```
 
-Number of participants meeting basic criteria = `r nrow(cleaned_data)`.
+Number of participants after basic filtering = `r nrow(cleaned_data)`.
 
 #### Validate no duplicate participants
 
@@ -459,7 +472,16 @@ cleaned_data$age_range <- cut(cleaned_data$Age_1, 6)
 cleaned_data <- cleaned_data |>
   mutate(Education_regrouped = Education)
 
-cleaned_data$Education_regrouped <- fct_collapse(cleaned_data$Education_regrouped, non_university = c("SomePrimary", "Primary", "SomeSecondarySchool", "Secondary", "VocationalOrSimilar", "PreferNotToSay"), university = c( "SomeUniversity", "UniversityBachelorsDegree", "GraduateProfessionalDegree"))
+cleaned_data$Education_regrouped <- fct_collapse(cleaned_data$Education_regrouped, 
+                                                 non_post_secondary = c("SomePrimary", 
+                                                                    "Primary", 
+                                                                    "SomeSecondarySchool", 
+                                                                    "Secondary",  
+                                                                    "PreferNotToSay"), 
+                                                 post_secondary = c( "VocationalOrSimilar", 
+                                                                 "SomeUniversity", 
+                                                                 "UniversityBachelorsDegree", 
+                                                                 "GraduateProfessionalDegree"))
 
 cleaned_data$AIChatbotsFrequency_regrouped <- fct_collapse(cleaned_data$AIChatbotsFrequency,
                                        frequently = c("More than once a day",
@@ -784,12 +806,14 @@ Limit analysis to Man / Woman comparison given small sample size for other value
 cleaned_data |> 
   select(Sex) |>
   group_by(Sex) |>
-  summarise(n = n(), .groups = "keep")
+  summarise(n = n()) |>
+  mutate(freq = n / sum(n))
 
 cleaned_data |> 
   select(Sex, Condition) |>
   group_by(Sex, Condition) |>
-  summarise(n = n(), .groups = "keep")
+  summarise(n = n()) |>
+  mutate(freq = n / sum(n))
 ```
 
 Limit analysis to Male / Female comparison given small sample size for other values.
