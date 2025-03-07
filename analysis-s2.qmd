@@ -16,6 +16,7 @@ editor: visual
 ---
 
 ```{r include=FALSE}
+#| label: setup
 
 library(knitr)
 library(kableExtra)
@@ -71,13 +72,14 @@ My **hypothesis** is that there will be an increase in epistemic trust with incr
 ```
 
 ```{r}
+#| label: load-data
 
 raw_data <- read_survey(
-  "data/s2/Thesis+-+Trusting+the+Machine+-+Interactive_March+3,+2025_20.27.csv", 
+  "data/s2/Thesis+-+Trusting+the+Machine+-+Interactive_March+6,+2025_20.24.csv", 
   col_types = readr::cols(AIChatbotsUsed = readr::col_character())
 )
 
-cols <- c(SurveyTopicCheck_coded = 0, Unrealistic_coded = 0)
+cols <- c(SurveyTopicCheck_coded = runif(n=1, min=0, max=5), Unrealistic_coded = runif(n=1, min=0, max=5))
 raw_data <- raw_data %>% 
   add_column(!!!cols[!names(cols) %in% names(.)])
 
@@ -221,6 +223,7 @@ five_point_likert_labels = c("Strongly disagree",
 Number of participants in raw data = `r nrow(raw_data)`.
 
 ```{r}
+#| label: explode-chatbots-used
 # Explode comma-separated list fields
 
 # AIChatbotsUsed
@@ -266,6 +269,7 @@ Reviewed and coded Survey purpose check (what they think this study is about, no
     -   7 = None
 
 ```{r}
+#| label: participant-survey-topic-check
 raw_data |> 
   group_by(SurveyTopicCheck_coded) |> 
   summarise(n=n(), .groups = "keep")
@@ -351,9 +355,6 @@ Filter out incomplete results
 
 ```{r}
 cleaned_data <- recoded_data |>
-  filter(EndDate >= "2024-12-04") |>  # Started on or after "2024-12-04" to remove test runs
-  # filter(Progress == 100) |>  # Completed surveys
-  # filter(ConsentForm == 1) |>  # Provided consent
   filter(Status == 0) # Used anonymous link to complete survey (not preview)
 
 ```
@@ -365,13 +366,13 @@ cleaned_data <- recoded_data |>
   filter(Progress == 100) |>  # Completed surveys
   filter(ConsentForm == 1) |>  # Provided consent
   filter(Status == 0) |> # Used anonymous link to complete survey (not preview)
-  filter(`Duration (in seconds)` >= (mean(`Duration (in seconds)`)) / 3) |>
+  filter(`Duration (in seconds)` >= (median(`Duration (in seconds)`)) / 3) |>
   filter(TopicCheck == 1) |>  # Passed topic check (attention check)
   filter(GodspeedMETI_28 == 20) |>  # Explicit item value check (attention check)
   filter(GodspeedMETI_29 == 67) |> # Explicit item value check (attention check)
   filter(Q_RecaptchaScore >= 0.5) |>  # Recaptcha score from Qualtrics == 1
   filter(id != 472759) # didn't read the blog post and didn't get answers from bot
-  #filter(Unrealistic_coded != 5 & SurveyTopicCheck_coded != 2) # Free text field does not appear to be random keystrokes (Unrealistic experience in survey, study purpose)
+  # #filter(Unrealistic_coded != 5 & SurveyTopicCheck_coded != 2) # Free text field does not appear to be random keystrokes (Unrealistic experience in survey, study purpose)
 ```
 
 Number of participants after basic filtering = `r nrow(cleaned_data)`.
@@ -597,7 +598,7 @@ cleaned_data |>
 
 cleaned_data |> 
   select(all_of(author_trust_score_METI_cols)) |>
-  psych::alpha(discrete=FALSE)
+  psych::alpha(discrete = FALSE)
 
 ```
 
@@ -607,7 +608,7 @@ cleaned_data |>
 
 cleaned_data |> 
   select(all_of(author_trust_score_behaviour_cols)) |>
-  psych::alpha(discrete=FALSE)
+  psych::alpha(discrete = FALSE)
 
 ```
 
@@ -906,7 +907,40 @@ cleaned_data |>
 
 ### Manipulation Check
 
-#### Anthropomorphism
+#### Chat Analysis
+
+```{r}
+library(chatlogr)
+
+chatdata <- parse_users_chat_data(
+    dat = cleaned_data,  # data file (or provide a dataframe via dat parameter)
+    idcol = "ResponseId",  # unique id column in data
+    chat_col_patterns = c("ChatHistory"),  # columns containing chat history
+    nrows = 10  # number of rows to parse (fewer for debugging/testing)
+    )
+
+
+cd_s <- chatdata$df_success
+cd_i <- chatdata$df_info
+```
+
+```{r}
+# library(claudeR)
+# library(keyring)
+# 
+# claude_key = key_get("anthropic_api_key")
+# 
+# response <- claudeR(
+#   system_prompt =  "Given the conversation in",
+#   model = "claude-3-7-sonnet-latest",
+#   max_tokens = 50, 
+#   api_key = claude_key
+# )
+# 
+# cat(response)
+```
+
+#### sonaAnthropomorphism
 
 We attempted to explicitly manipulated the level of anthropomorphism. Therefore, we would expect to see a significant difference in this score across the 3 conditions.
 
@@ -967,8 +1001,6 @@ t_high_low = t.test(
 t_high_low
 
 ```
-
-# TODO
 
 ```{r}
 violin_plot(data = cleaned_data, 
@@ -1525,19 +1557,6 @@ y_label <- "Content Trust"
 
 {{< include "_ANOVA.qmd" >}}
 
-```{r}
-
-data <- cleaned_data |> group_by(Education_regrouped) |> filter(n() > 3) |> ungroup()
-formula <- content_trust_combined_score ~ Education_regrouped
-x <- cleaned_data$Education_regrouped
-x_label <- "Education"
-y <- cleaned_data$content_trust_combined_score
-y_label <- "Content Trust"
-
-```
-
-{{< include "_ANOVA.qmd" >}}
-
 Education / Condition Interaction
 
 ```{r}
@@ -1549,12 +1568,6 @@ summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = Education,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 
-fit_i <- lm(content_trust_combined_score ~ Condition * Education_regrouped, 
-                    data = cleaned_data)
-
-summ(fit_i)
-
-cat_plot(fit_i, pred = Condition, modx = Education_regrouped,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 
 ```
 
@@ -1571,6 +1584,7 @@ violin_plot(data = cleaned_data,
 ```
 
 ```{r}
+#| label: frequency
 
 frequency_comparisons <- list(  c("rarely", "occasionally"),
     c("rarely", "frequently"),
@@ -2183,19 +2197,6 @@ y_label <- "Author Trust"
 
 {{< include "_ANOVA.qmd" >}}
 
-```{r}
-
-data <- cleaned_data |> group_by(Education_regrouped) |> filter(n() > 3) |> ungroup()
-formula <- author_trust_combined_score ~ Education_regrouped
-x <- cleaned_data$Education_regrouped
-x_label <- "Education"
-y <- cleaned_data$author_trust_combined_score
-y_label <- "Author Trust"
-
-```
-
-{{< include "_ANOVA.qmd" >}}
-
 Education / Condition Interaction
 
 ```{r}
@@ -2207,12 +2208,6 @@ summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = Education,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 
-fit_i <- lm(author_trust_combined_score ~ Condition * Education_regrouped, 
-                    data = cleaned_data)
-
-summ(fit_i)
-
-cat_plot(fit_i, pred = Condition, modx = Education_regrouped,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 
 ```
 
@@ -2776,3 +2771,5 @@ cocor(~ `content_trust_combined_score` + `author_trust_combined_score` | `conten
 
 ```{r child='_variables.rmd'}
 ```
+
+<!--#  -->

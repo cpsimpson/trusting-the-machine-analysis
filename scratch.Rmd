@@ -12,6 +12,15 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(pwr)
 library(Superpower)
+
+citation()
+version$version.string
+
+citation("pwr")
+packageVersion("pwr")
+
+citation("Superpower")
+packageVersion("Superpower")
 ```
 
 ## Power analysis for proposal
