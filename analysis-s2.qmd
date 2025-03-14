@@ -75,7 +75,7 @@ My **hypothesis** is that there will be an increase in epistemic trust with incr
 #| label: load-data
 
 raw_data <- read_survey(
-  "data/s2/Thesis+-+Trusting+the+Machine+-+Interactive_March+6,+2025_20.24.csv", 
+  "data/s2/Thesis+-+Trusting+the+Machine+-+Interactive_March+14,+2025_10.09.csv", 
   col_types = readr::cols(AIChatbotsUsed = readr::col_character())
 )
 
@@ -940,7 +940,7 @@ cd_i <- chatdata$df_info
 # cat(response)
 ```
 
-#### sonaAnthropomorphism
+#### Anthropomorphism
 
 We attempted to explicitly manipulated the level of anthropomorphism. Therefore, we would expect to see a significant difference in this score across the 3 conditions.
 
@@ -1406,23 +1406,15 @@ y_label <- "Content Trust"
 
 {{< include "_ANOVA.qmd" >}}
 
-Assumptions for ANOVA are violated. Is it severe enough to not be able to use?
-
-{{< include "_Kruskal.qmd" >}}
-
 ```{r}
 
-# aov_model <- aov(content_trust_combined_score ~ Condition, data = cleaned_data)
-# 
-# par(mfrow = c(2, 2))
-# plot(aov_model)
-# 
-# summary(aov_model)
+aov_model <- aov(content_trust_combined_score ~ Condition, data = cleaned_data)
+
+par(mfrow = c(2, 2))
+plot(aov_model)
+
+summary(aov_model)
 ```
-
-No effect of anthropomorphism level on Content Trust
-
--   This implies there is a separation between the trust of the content and the trust in the source of the content.
 
 ##### Post-hoc Analysis
 
@@ -1430,9 +1422,8 @@ No effect of anthropomorphism level on Content Trust
 
 ```{r}
 
-fit_i <- lm(content_trust_combined_score ~ anthropomorphism_score , data = cleaned_data)
+fit_i <- linear_regression(content_trust_combined_score ~ anthropomorphism_score , data = cleaned_data)
 
-summ(fit_i)
 
 df <- cleaned_data |>
   select(content_trust_combined_score, anthropomorphism_score)
@@ -1477,11 +1468,20 @@ Age / Condition Interaction
 
 ```{r}
 
-fit_i <- lm(content_trust_combined_score ~ Condition * age_range, data = cleaned_data)
 
-summ(fit_i)
+fit_i <- linear_regression(content_trust_combined_score ~ Condition * age_range, data = cleaned_data)
 
-cat_plot(fit_i, pred = Condition, modx = age_range,  geom = "bar", colors = safe_pal)
+result <- tryCatch({
+  # Code produces error
+  cat_plot(fit_i, pred = Condition, modx = age_range,  geom = "bar", colors = safe_pal)
+
+}, error = function(e) {
+  # Handle the error
+  cat("An error occurred:", e$message, "\n")
+  return(NA)
+})
+
+
 ```
 
 Significant interaction between for age range 50 - 59.7 and 59.7 - 69.3
@@ -1505,11 +1505,18 @@ Gender / Condition Interaction
 
 ```{r}
 
+result <- tryCatch({
+  # Code produces error
+  
 
-fit_i <- lm(content_trust_combined_score ~ Condition * Gender, 
+}, error = function(e) {
+  # Handle the error
+  cat("An error occurred:", e$message, "\n")
+  return(NA)
+})
+
+fit_i <- linear_regression(content_trust_combined_score ~ Condition * Gender, 
                     data = cleaned_data |> filter(Gender == "Man" | Gender == "Woman"))
-
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = Gender,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="line", colors = safe_pal)
 
@@ -1534,10 +1541,9 @@ Sex / Condition Interaction
 
 ```{r}
 
-fit_i <- lm(content_trust_combined_score ~ Condition * Sex, 
-                    data = cleaned_data |> filter(Sex == "Male" | Sex == "Female"))
 
-summ(fit_i)
+fit_i <- linear_regression(content_trust_combined_score ~ Condition * Sex, 
+                    data = cleaned_data |> filter(Sex == "Male" | Sex == "Female"))
 
 cat_plot(fit_i, pred = Condition, modx = Sex,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="line", colors = safe_pal)
 ```
@@ -1561,10 +1567,10 @@ Education / Condition Interaction
 
 ```{r}
 
-fit_i <- lm(content_trust_combined_score ~ Condition * Education, 
+
+fit_i <- linear_regression(content_trust_combined_score ~ Condition * Education, 
                     data = cleaned_data)
 
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = Education,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 
@@ -1658,17 +1664,17 @@ y_label <- "Content Trust"
 
 ```{r}
 
-fit_i <- lm(content_trust_combined_score ~ Condition * AIChatbotsFrequency, 
-                    data = cleaned_data)
 
-summ(fit_i)
+fit_i <- linear_regression(content_trust_combined_score ~ Condition * AIChatbotsFrequency, 
+                    data = cleaned_data)
 
 cat_plot(fit_i, pred = Condition, modx = AIChatbotsFrequency,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 
-fit_i <- lm(content_trust_combined_score ~ Condition * AIChatbotsFrequency_regrouped, 
-                    data = cleaned_data)
 
-summ(fit_i)
+
+
+fit_i <- linear_regression(content_trust_combined_score ~ Condition * AIChatbotsFrequency_regrouped, 
+                    data = cleaned_data)
 
 cat_plot(fit_i, pred = Condition, modx = AIChatbotsFrequency_regrouped,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 
@@ -1708,24 +1714,17 @@ y_label <- "Content Trust"
 
 ```{r}
 
-# aov_model <- aov(content_trust_combined_score ~ ScienceContent, data = cleaned_data)
-# 
-# par(mfrow = c(2, 2))
-# plot(aov_model)
-# 
-# summary(aov_model)
 
-fit_i <- lm(content_trust_combined_score ~ Condition * ScienceContent, 
+fit_i <- linear_regression(content_trust_combined_score ~ Condition * ScienceContent, 
                     data = cleaned_data)
-
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = ScienceContent,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 
-fit_i <- lm(content_trust_combined_score ~ Condition * ScienceContent_regrouped, 
+
+
+fit_i <- linear_regression(content_trust_combined_score ~ Condition * ScienceContent_regrouped, 
                     data = cleaned_data)
 
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = ScienceContent_regrouped,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 
@@ -1748,10 +1747,8 @@ y_label <- "Content Trust"
 
 ```{r}
 
-fit_i <- lm(content_trust_combined_score ~ Condition * intention_to_use_score, 
+fit_i <- linear_regression(content_trust_combined_score ~ Condition * intention_to_use_score, 
                     data = cleaned_data)
-
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = intention_to_use_score,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 ```
@@ -1773,11 +1770,8 @@ y_label <- "Content Trust"
 
 ```{r}
 
-fit_i <- lm(content_trust_combined_score ~ Condition * Experience_4, 
+fit_i <- linear_regression(content_trust_combined_score ~ Condition * Experience_4, 
                     data = cleaned_data)
-
-summ(fit_i)
-
 cat_plot(fit_i, pred = Condition, modx = Experience_4,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 ```
 
@@ -1798,10 +1792,8 @@ y_label <- "Content Trust"
 
 ```{r}
 
-fit_i <- lm(content_trust_combined_score ~ Condition * fear_of_ai_score, 
+fit_i <- linear_regression(content_trust_combined_score ~ Condition * fear_of_ai_score, 
                     data = cleaned_data)
-
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = fear_of_ai_score,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 ```
@@ -1823,10 +1815,8 @@ y_label <- "Content Trust"
 
 ```{r}
 
-fit_i <- lm(content_trust_combined_score ~ Condition * Experience_7, 
+fit_i <- linear_regression(content_trust_combined_score ~ Condition * Experience_7, 
                     data = cleaned_data)
-
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = Experience_7,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 ```
@@ -1848,10 +1838,9 @@ y_label <- "Content Trust"
 
 ```{r}
 
-fit_i <- lm(content_trust_combined_score ~ Condition * professional_content_expertise, 
-                    data = cleaned_data)
 
-summ(fit_i)
+fit_i <- linear_regression(content_trust_combined_score ~ Condition * professional_content_expertise, 
+                    data = cleaned_data)
 
 cat_plot(fit_i, pred = Condition, modx = professional_content_expertise,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 ```
@@ -1873,10 +1862,8 @@ y_label <- "Content Trust"
 
 ```{r}
 
-fit_i <- lm(content_trust_combined_score ~ Condition * Appelman_4, 
+fit_i <- linear_regression(content_trust_combined_score ~ Condition * Appelman_4, 
                     data = cleaned_data)
-
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = Appelman_4,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 ```
@@ -1896,10 +1883,9 @@ y_label <- "Content Trust"
 
 ```{r}
 
-fit_i <- lm(content_trust_combined_score ~ Condition * Appelman_5, 
+fit_i <- linear_regression(content_trust_combined_score ~ Condition * Appelman_5, 
                     data = cleaned_data)
 
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = Appelman_5,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 ```
@@ -1919,10 +1905,8 @@ y_label <- "Content Trust"
 
 ```{r}
 
-fit_i <- lm(content_trust_combined_score ~ Condition * Appelman_6, 
+fit_i <- linear_regression(content_trust_combined_score ~ Condition * Appelman_6, 
                     data = cleaned_data)
-
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = Appelman_6,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 ```
@@ -1946,13 +1930,20 @@ Survey Purpose / Condition Interaction
 
 ```{r}
 
-#TODO: put this back when coding is complete
-# fit_i <- lm(content_trust_combined_score ~ Condition * SurveyTopicCheck_coded, 
-#                     data = cleaned_data)
-# 
-# summ(fit_i)
-# 
-# cat_plot(fit_i, pred = Condition, modx = SurveyTopicCheck_coded,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+fit_i <- linear_regression(content_trust_combined_score ~ Condition * SurveyTopicCheck_coded,
+                    data = cleaned_data)
+
+result <- tryCatch({
+  # Code produces error
+  cat_plot(fit_i, pred = Condition, modx = SurveyTopicCheck_coded,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+
+}, error = function(e) {
+  # Handle the error
+  cat("An error occurred:", e$message, "\n")
+  return(NA)
+})
+
+
 ```
 
 ###### Unrealistic Check
@@ -1987,21 +1978,29 @@ Survey Purpose / Condition Interaction
 
 ```{r}
 
-fit_i <- lm(content_trust_combined_score ~ Condition * Unrealistic, 
-                    data = cleaned_data)
+#TODO
 
-summ(fit_i)
-
-cat_plot(fit_i, pred = Condition, modx = Unrealistic,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
-
-
-#TODO: put this back when coding is complete
-# fit_i <- lm(content_trust_combined_score ~ Condition * Unrealistic_coded, 
+# fit_i <- linear_regression(content_trust_combined_score ~ Condition * Unrealistic, 
+#                     data = cleaned_data)
+# 
+# 
+# cat_plot(fit_i, pred = Condition, modx = Unrealistic,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+# 
+# 
+# fit_i <- linear_regression(content_trust_combined_score ~ Condition * Unrealistic_coded,
 #                     data = cleaned_data |> filter(Unrealistic == "Yes"))
 # 
-# summ(fit_i)
+# result <- tryCatch({
+#   # Code produces error
+#   
 # 
 # cat_plot(fit_i, pred = Condition, modx = Unrealistic_coded,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", , colors = safe_pal)
+# 
+# }, error = function(e) {
+#   # Handle the error
+#   cat("An error occurred:", e$message, "\n")
+#   return(NA)
+# })
 ```
 
 #### Author Trust
@@ -2038,18 +2037,14 @@ y_label <- "Author Trust"
 
 {{< include "_ANOVA.qmd" >}}
 
-Assumptions for ANOVA are violated. Is it severe enough to not be able to use?
-
-{{< include "_Kruskal.qmd" >}}
-
 ```{r}
 
-# aov_model <- aov(author_trust_combined_score ~ Condition, data = cleaned_data)
-# 
-# par(mfrow = c(2, 2))
-# plot(aov_model)
-# 
-# summary(aov_model)
+aov_model <- aov(author_trust_combined_score ~ Condition, data = cleaned_data)
+
+par(mfrow = c(2, 2))
+plot(aov_model)
+
+summary(aov_model)
 ```
 
 ##### Post-hoc Analysis
@@ -2058,9 +2053,8 @@ Assumptions for ANOVA are violated. Is it severe enough to not be able to use?
 
 ```{r}
 
-fit_i <- lm(author_trust_combined_score ~ anthropomorphism_score , data = cleaned_data)
+fit_i <- linear_regression(author_trust_combined_score ~ anthropomorphism_score , data = cleaned_data)
 
-summ(fit_i)
 
 ```
 
@@ -2117,9 +2111,8 @@ Age / Condition Interaction
 
 ```{r}
 
-fit_i <- lm(author_trust_combined_score ~ Condition * age_range, data = cleaned_data)
+fit_i <- linear_regression(author_trust_combined_score ~ Condition * age_range, data = cleaned_data)
 
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = age_range,  geom = "bar", colors = safe_pal)
 ```
@@ -2146,10 +2139,9 @@ Gender / Condition Interaction
 ```{r}
 
 
-fit_i <- lm(author_trust_combined_score ~ Condition * Gender, 
-                    data = cleaned_data |> filter(Gender == "Man" | Gender == "Woman"))
+fit_i <- linear_regression(formula = author_trust_combined_score ~ Condition * Gender, 
+                  data = cleaned_data |> filter(Gender == "Man" | Gender == "Woman"))
 
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = Gender,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="line", colors = safe_pal)
 
@@ -2174,7 +2166,7 @@ Sex / Condition Interaction
 
 ```{r}
 
-fit_i <- lm(author_trust_combined_score ~ Condition * Sex, 
+fit_i <- linear_regression(author_trust_combined_score ~ Condition * Sex, 
                     data = cleaned_data |> filter(Sex == "Male" | Sex == "Female"))
 
 summ(fit_i)
@@ -2201,7 +2193,7 @@ Education / Condition Interaction
 
 ```{r}
 
-fit_i <- lm(author_trust_combined_score ~ Condition * Education, 
+fit_i <- linear_regression(author_trust_combined_score ~ Condition * Education, 
                     data = cleaned_data)
 
 summ(fit_i)
@@ -2297,18 +2289,18 @@ y_label <- "Author Trust"
 
 ```{r}
 
-fit_i <- lm(author_trust_combined_score ~ Condition * AIChatbotsFrequency, 
+fit_i <- linear_regression(author_trust_combined_score ~ Condition * AIChatbotsFrequency, 
                     data = cleaned_data)
 
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = AIChatbotsFrequency,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 ```
 
-```{fit_i <- lm(author_trust_combined_score ~ Condition * AIChatbotsFrequency_regrouped,}
+```{r}
+
+fit_i <- linear_regression(author_trust_combined_score ~ Condition * AIChatbotsFrequency_regrouped,
                     data = cleaned_data)
 
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = AIChatbotsFrequency_regrouped,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 
@@ -2351,17 +2343,15 @@ y_label <- "Author Trust"
 # 
 # summary(aov_model)
 
-fit_i <- lm(author_trust_combined_score ~ Condition * ScienceContent, 
+fit_i <- linear_regression(author_trust_combined_score ~ Condition * ScienceContent, 
                     data = cleaned_data)
 
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = ScienceContent,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 
-fit_i <- lm(author_trust_combined_score ~ Condition * ScienceContent_regrouped, 
+fit_i <- linear_regression(author_trust_combined_score ~ Condition * ScienceContent_regrouped, 
                     data = cleaned_data)
 
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = ScienceContent_regrouped,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 
@@ -2384,10 +2374,9 @@ y_label <- "Author Trust"
 
 ```{r}
 
-fit_i <- lm(author_trust_combined_score ~ Condition * intention_to_use_score, 
+fit_i <- linear_regression(author_trust_combined_score ~ Condition * intention_to_use_score, 
                     data = cleaned_data)
 
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = intention_to_use_score,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 ```
@@ -2409,10 +2398,9 @@ y_label <- "Author Trust"
 
 ```{r}
 
-fit_i <- lm(author_trust_combined_score ~ Condition * Experience_4, 
+fit_i <- linear_regression(author_trust_combined_score ~ Condition * Experience_4, 
                     data = cleaned_data)
 
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = Experience_4,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 ```
@@ -2434,10 +2422,8 @@ y_label <- "Author Trust"
 
 ```{r}
 
-fit_i <- lm(author_trust_combined_score ~ Condition * fear_of_ai_score, 
+fit_i <- linear_regression(author_trust_combined_score ~ Condition * fear_of_ai_score, 
                     data = cleaned_data)
-
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = fear_of_ai_score,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 ```
@@ -2459,10 +2445,9 @@ y_label <- "Author Trust"
 
 ```{r}
 
-fit_i <- lm(author_trust_combined_score ~ Condition * Experience_7, 
+fit_i <- linear_regression(author_trust_combined_score ~ Condition * Experience_7, 
                     data = cleaned_data)
 
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = Experience_7,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 ```
@@ -2484,10 +2469,9 @@ y_label <- "Author Trust"
 
 ```{r}
 
-fit_i <- lm(author_trust_combined_score ~ Condition * professional_content_expertise, 
+fit_i <- linear_regression(author_trust_combined_score ~ Condition * professional_content_expertise, 
                     data = cleaned_data)
 
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = professional_content_expertise,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 ```
@@ -2509,10 +2493,9 @@ y_label <- "Author Trust"
 
 ```{r}
 
-fit_i <- lm(author_trust_combined_score ~ Condition * Appelman_4, 
+fit_i <- linear_regression(author_trust_combined_score ~ Condition * Appelman_4, 
                     data = cleaned_data)
 
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = Appelman_4,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 ```
@@ -2532,10 +2515,9 @@ y_label <- "Author Trust"
 
 ```{r}
 
-fit_i <- lm(author_trust_combined_score ~ Condition * Appelman_5, 
+fit_i <- linear_regression(author_trust_combined_score ~ Condition * Appelman_5, 
                     data = cleaned_data)
 
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = Appelman_5,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 ```
@@ -2557,10 +2539,9 @@ y_label <- "Author Trust"
 
 ```{r}
 
-fit_i <- lm(author_trust_combined_score ~ Condition * Appelman_6, 
+fit_i <- linear_regression(author_trust_combined_score ~ Condition * Appelman_6, 
                     data = cleaned_data)
 
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = Appelman_6,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 ```
@@ -2584,13 +2565,20 @@ Survey Purpose / Condition Interaction
 
 ```{r}
 
-#TODO: put this back when coding is complete
-# fit_i <- lm(author_trust_combined_score ~ Condition * SurveyTopicCheck_coded, 
-#                     data = cleaned_data)
-# 
-# summ(fit_i)
-# 
-# cat_plot(fit_i, pred = Condition, modx = SurveyTopicCheck_coded,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+fit_i <- linear_regression(author_trust_combined_score ~ Condition * SurveyTopicCheck_coded,
+                    data = cleaned_data)
+
+ result <- tryCatch({
+    cat_plot(fit_i, pred = Condition, modx = SurveyTopicCheck_coded,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+    
+  }, error = function(e) {
+    # Handle the error
+    cat("An error occurred:", e$message, "\n")
+    return(NA)
+  })
+  
+ 
+
 ```
 
 ###### Unrealistic Check
@@ -2625,20 +2613,16 @@ Survey Purpose / Condition Interaction
 
 ```{r}
 
-fit_i <- lm(author_trust_combined_score ~ Condition * Unrealistic, 
+fit_i <- linear_regression(author_trust_combined_score ~ Condition * Unrealistic, 
                     data = cleaned_data)
 
-summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = Unrealistic,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 
-#TODO: put this back when coding is complete
-# fit_i <- lm(author_trust_combined_score ~ Condition * Unrealistic_coded, 
-#                     data = cleaned_data |> filter(Unrealistic == "Yes"))
-# 
-# summ(fit_i)
-# 
-# cat_plot(fit_i, pred = Condition, modx = Unrealistic_coded,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", , colors = safe_pal)
+fit_i <- linear_regression(author_trust_combined_score ~ Condition * Unrealistic_coded,
+                    data = cleaned_data |> filter(Unrealistic == "Yes"))
+
+cat_plot(fit_i, pred = Condition, modx = Unrealistic_coded,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", , colors = safe_pal)
 ```
 
 #### Correlations
@@ -2769,7 +2753,5 @@ cocor(~ `content_trust_combined_score` + `author_trust_combined_score` | `conten
 
 # Appendix A
 
-```{r child='_variables.rmd'}
+```{# {r child='_variables.rmd'}
 ```
-
-<!--#  -->

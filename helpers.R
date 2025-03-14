@@ -58,4 +58,21 @@ export_variables_as_markdown <- function(raw_data){
   save_kable(variables_md, "variables.md")
 }
 
-
+linear_regression <- function(formula, data) {
+  result <- tryCatch({
+    # Code produces error
+    fit_i <- lm(formula, 
+                data = data)
+    
+    summ(fit_i) |>
+      print()
+    
+    return(fit_i)
+    
+  }, error = function(e) {
+    # Handle the error
+    cat("An error occurred:", e$message, "\n")
+    return(NA)
+  })
+  
+}

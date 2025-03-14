@@ -2,17 +2,90 @@
 Analysis of Variance of `r y_label` by `r x_label`
 
 Let's try with an ANOVA
+```{r}
+library(apa)
+library(effectsize)
+library(rstatix)
+
+options(es.use_symbols = TRUE) # get nice symbols when printing! (On Windows, requires R >= 4.2.0)
+```
 
 ```{r}
 aov_model <- aov(formula = formula, data = data)
-summary(aov_model)
+model_summ <- summary(aov_model)
+
+model_summ
+```
+
+
+```{r}
+anova_apa(aov_model)
+```
+
+
+```{r}
+# Between group MSE.
+print(paste0("MSE = ", model_summ[[1]]["Mean Sq"][[1]][1]))
+```
+
+```{r}
+
+effectsize::omega_squared(aov_model)
+
 ```
 
 
 Follow-up tests to identify where variance is located
 
 ```{r}
-pairwise.t.test(y, x,  p.adjust.method = "bonferroni")
+
+
+
+# Error handling using tryCatch
+result <- tryCatch({
+  # Code produces error
+  rstatix::pairwise_t_test(data = data, formula = formula,  p.adjust.method = "bonferroni", detailed = TRUE, paired = FALSE)
+}, error = function(e) {
+  # Handle the error
+  cat("An error occurred:", e$message, "\n")
+  return(NA)
+})
+
+result
+
+```
+
+```{r}
+
+
+
+# Error handling using tryCatch
+result <- tryCatch({
+  # Code produces error
+  rstatix::t_test(data = data, formula = formula,  p.adjust.method = "bonferroni", detailed = TRUE, paired = FALSE)
+}, error = function(e) {
+  # Handle the error
+  cat("An error occurred:", e$message, "\n")
+  return(NA)
+})
+
+result
+
+```
+
+
+```{r}
+# Error handling using tryCatch
+result <- tryCatch({
+  # Code produces error
+  rstatix::cohens_d(data = data, formula = formula)
+}, error = function(e) {
+  # Handle the error
+  cat("An error occurred:", e$message, "\n")
+  return(NA)
+})
+
+result
 ```
 
 But we should test assumptions for the ANOVA before we use these results
