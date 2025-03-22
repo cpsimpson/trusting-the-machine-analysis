@@ -47,6 +47,10 @@ Large Effect
 pwr.anova.test(k=5,f=.5,sig.level=.05,power=.8)
 ```
 
+```{r}
+pwr.anova.test(k=5, n=100,sig.level=.05,power=.8)
+```
+
 ## Power analysis for proposal
 
 Using 3 levels for the anthropomorphism condition.

@@ -123,7 +123,7 @@ My **hypothesis** is that there will be an increase in epistemic trust with incr
 ```{r}
 
 raw_data <- read_survey(
-  "data/Thesis+-+Trusting+the+Machine_January+18,+2025_16.09_coded.csv", 
+  "data/anonymized/s1/anonymized_data.csv", 
   col_types = readr::cols(Languages = readr::col_character(), AIChatbotsUsed = readr::col_character())
 )
 
@@ -193,7 +193,7 @@ raw_data$SurveyTopicCheck_coded <- factor(raw_data$SurveyTopicCheck_coded,
 
 raw_data$Unrealistic <- factor(raw_data$Unrealistic, labels = c("No", "Yes"))
 
-raw_data$Unrealistic_coded <- factor(raw_data$Unrealistic_coded, 
+raw_data$Unrealistic_coded <- factor(raw_data$Unrealistic_coded,
                                      levels = c(0,1,2,3,4,5,6),
                                      labels = c("No Answer", "AI/Not AI", "AI no personality", "Realistic", "Description Not Believable", "Junk Data", "Question why AI in High"))
 
@@ -552,15 +552,15 @@ cleaned_data$age_range <- cut(cleaned_data$Age_1, 6)
 cleaned_data <- cleaned_data |>
   mutate(Education_regrouped = Education)
 
-cleaned_data$Education_regrouped <- fct_collapse(cleaned_data$Education_regrouped, 
-                                                 non_post_secondary = c("SomePrimary", 
-                                                                    "Primary", 
-                                                                    "SomeSecondarySchool", 
-                                                                    "Secondary",  
-                                                                    "PreferNotToSay"), 
-                                                 post_secondary = c( "VocationalOrSimilar", 
-                                                                 "SomeUniversity", 
-                                                                 "UniversityBachelorsDegree", 
+cleaned_data$Education_regrouped <- fct_collapse(cleaned_data$Education_regrouped,
+                                                 non_post_secondary = c("SomePrimary",
+                                                                    "Primary",
+                                                                    "SomeSecondarySchool",
+                                                                    "Secondary",
+                                                                    "PreferNotToSay"),
+                                                 post_secondary = c( "VocationalOrSimilar",
+                                                                 "SomeUniversity",
+                                                                 "UniversityBachelorsDegree",
                                                                  "GraduateProfessionalDegree"))
 
 cleaned_data$AIChatbotsFrequency_regrouped <- fct_collapse(cleaned_data$AIChatbotsFrequency,
@@ -768,7 +768,7 @@ cleaned_data |>
 
 cleaned_data |> 
   select(all_of(author_trust_score_METI_cols)) |>
-  psych::alpha(discrete=FALSE)
+  psych::alpha(discrete = FALSE)
 
 ```
 
@@ -782,7 +782,7 @@ cleaned_data |>
 
 cleaned_data |> 
   select(all_of(author_trust_score_behaviour_cols)) |>
-  psych::alpha(discrete=FALSE)
+  psych::alpha(discrete = FALSE)
 
 ```
 
@@ -1261,10 +1261,6 @@ violin_plot(data = cleaned_data,
             title = "Anthropomorphism Scores by AI Usage Frequency", 
             legend_label = "AI Usage Frequency", 
             y_label = "Anthropomorphism Score", x_label = "AI Usage Frequency")
-
-```
-
-```{r}
 
 ```
 
@@ -1750,10 +1746,6 @@ y_label <- "Content Trust"
 
 {{< include "_ANOVA.qmd" >}}
 
-Assumptions for ANOVA are violated. Is it severe enough to not be able to use?
-
-{{< include "_Kruskal.qmd" >}}
-
 ```{r}
 
 # aov_model <- aov(content_trust_combined_score ~ Condition, data = cleaned_data)
@@ -1763,10 +1755,6 @@ Assumptions for ANOVA are violated. Is it severe enough to not be able to use?
 # 
 # summary(aov_model)
 ```
-
-No effect of anthropomorphism level on Content Trust
-
--   This implies there is a separation between the trust of the content and the trust in the source of the content.
 
 ##### Post-hoc Analysis
 
@@ -3280,9 +3268,4 @@ packageVersion("FSA")
 
 citation("see")
 packageVersion("see")
-```
-
-# Appendix A
-
-```{r child='_variables.rmd'}
 ```

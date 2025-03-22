@@ -33,6 +33,7 @@ library(interactions)
 library(corrplot)
 library(rcartocolor)
 library(ggpubr)
+library(apaTables)
 
 library(FSA)
 
@@ -59,36 +60,24 @@ My **hypothesis** is that there will be an increase in epistemic trust with incr
 
 ### Load data
 
-```{r include=FALSE}
-# raw_data <- read_spss(
-#   #"data/Thesis+-+Trusting+the+Machine+-+Copy+For+Testing_December+4,+2024_21.34.sav"
-#   # "data/Thesis+-+Trusting+the+Machine_December+4,+2024_19.13.sav"
-#   # "data/Thesis+-+Trusting+the+Machine_November+30,+2024_13.06.sav"
-#   "data/Thesis+-+Trusting+the+Machine_December+6,+2024_16.22.sav"
-#   )
-
-
-
-```
-
 ```{r}
 #| label: load-data
 
 raw_data <- read_survey(
-  "data/s2/Thesis+-+Trusting+the+Machine+-+Interactive_March+14,+2025_10.09.csv", 
+  "data/anonymized/s2/anonymized_data.csv", 
   col_types = readr::cols(AIChatbotsUsed = readr::col_character())
 )
-
-cols <- c(SurveyTopicCheck_coded = runif(n=1, min=0, max=5), Unrealistic_coded = runif(n=1, min=0, max=5))
-raw_data <- raw_data %>% 
-  add_column(!!!cols[!names(cols) %in% names(.)])
 
 raw_data$Appelman_1 <- as.numeric(as.character(raw_data$Appelman_1))
 raw_data$Appelman_2 <- as.numeric(as.character(raw_data$Appelman_2))
 raw_data$Appelman_3 <- as.numeric(as.character(raw_data$Appelman_3))
-raw_data$Appelman_4 <- as.numeric(as.character(raw_data$Appelman_4))
-raw_data$Appelman_5 <- as.numeric(as.character(raw_data$Appelman_5))
-raw_data$Appelman_6 <- as.numeric(as.character(raw_data$Appelman_6))
+# raw_data$Appelman_4 <- as.numeric(as.character(raw_data$Appelman_4))
+# raw_data$Appelman_5 <- as.numeric(as.character(raw_data$Appelman_5))
+# raw_data$Appelman_6 <- as.numeric(as.character(raw_data$Appelman_6))
+raw_data$Appelman_4 <- as.factor(raw_data$Appelman_4)
+raw_data$Appelman_5 <- as.factor(raw_data$Appelman_5)
+raw_data$Appelman_6 <- as.factor(raw_data$Appelman_6)
+
 
 raw_data$TrustBehaviour_1 <- as.numeric(as.character(raw_data$TrustBehaviour_1))
 raw_data$TrustBehaviour_2 <- as.numeric(as.character(raw_data$TrustBehaviour_2))
@@ -114,9 +103,6 @@ raw_data$Experience_10 <- as.numeric(as.character(raw_data$Experience_10))
 raw_data$Experience_11 <- as.numeric(as.character(raw_data$Experience_11))
 
 
-raw_data$Appelman_4 <- as.factor(raw_data$Appelman_4)
-raw_data$Appelman_5 <- as.factor(raw_data$Appelman_5)
-raw_data$Appelman_6 <- as.factor(raw_data$Appelman_6)
 
 # setup factor variables
 raw_data$Condition <- factor(raw_data$Condition, 
@@ -149,8 +135,10 @@ raw_data$SurveyTopicCheck_coded <- factor(raw_data$SurveyTopicCheck_coded,
 raw_data$Unrealistic <- factor(raw_data$Unrealistic, labels = c("No", "Yes"))
 
 raw_data$Unrealistic_coded <- factor(raw_data$Unrealistic_coded,
-                                     levels = c(0,1,2,3,4,5,6),
-                                     labels = c("No Answer", "AI/Not AI", "AI no personality", "Realistic", "Description Not Believable", "Junk Data", "Question why AI in High"))
+                                     levels = c(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14),
+                                     labels = c("No Answer", "AI didn't write", "AI no personality", "Realistic", "Description Not Believable", "Junk Data", "Question why AI in High", "Didn't follow instructions", "Sliders confusing", "The chat", "Didn't understand blog post", "other", "Distrust experiments", "N/A", "Quality/Content of blog post"))
+
+
 
 raw_data$TechnicalIssues <- factor(raw_data$Unrealistic, labels = c("No", "Yes"))
 
@@ -183,39 +171,6 @@ five_point_likert_labels = c("Strongly disagree",
                                                   "Neither agree or disagree", 
                                                   "Agree",
                                                   "Strongly agree")
-# raw_data$Experience_1 <- factor(raw_data$Experience_1,
-#                                        levels = c(1,2,3,4,5),
-#                                        labels = five_point_likert_labels)
-# raw_data$Experience_2 <- factor(raw_data$Experience_2,
-#                                        levels = c(1,2,3,4,5),
-#                                        labels = five_point_likert_labels)
-# raw_data$Experience_3 <- factor(raw_data$Experience_3,
-#                                        levels = c(1,2,3,4,5),
-#                                        labels = five_point_likert_labels)
-# raw_data$Experience_4 <- factor(raw_data$Experience_4,
-#                                        levels = c(1,2,3,4,5),
-#                                        labels = five_point_likert_labels)
-# raw_data$Experience_5 <- factor(raw_data$Experience_5,
-#                                        levels = c(1,2,3,4,5),
-#                                        labels = five_point_likert_labels)
-# raw_data$Experience_6 <- factor(raw_data$Experience_6,
-#                                        levels = c(1,2,3,4,5),
-#                                        labels = five_point_likert_labels)
-# raw_data$Experience_7 <- factor(raw_data$Experience_7,
-#                                        levels = c(1,2,3,4,5),
-#                                        labels = five_point_likert_labels)
-# raw_data$Experience_8 <- factor(raw_data$Experience_8,
-#                                        levels = c(1,2,3,4,5),
-#                                        labels = five_point_likert_labels)
-# raw_data$Experience_9 <- factor(raw_data$Experience_9,
-#                                        levels = c(1,2,3,4,5),
-#                                        labels = five_point_likert_labels)
-# raw_data$Experience_10 <- factor(raw_data$Experience_10,
-#                                        levels = c(1,2,3,4,5),
-#                                        labels = five_point_likert_labels)
-# raw_data$Experience_11 <- factor(raw_data$Experience_11,
-#                                        levels = c(1,2,3,4,5),
-#                                        labels = five_point_likert_labels)
 
 
 ```
@@ -246,6 +201,15 @@ raw_data <- raw_data %>%
 
 ```
 
+### Exclude non-consent
+
+```{r}
+
+raw_data <- raw_data |>
+  filter(ConsentForm == 1)  # Provided consent
+
+```
+
 ### Manual Processing
 
 Reviewed and coded Survey purpose check (what they think this study is about, not the attention check)
@@ -258,7 +222,7 @@ Reviewed and coded Survey purpose check (what they think this study is about, no
 
     -   2 = nonsensical text
 
-    -   3 = values that describe a purpose
+    -   3 = values that describe a purpose (not about AI)
 
     -   4 = random word
 
@@ -267,6 +231,8 @@ Reviewed and coded Survey purpose check (what they think this study is about, no
     -   6 = "the study was interesting" or "good" and variations of this
 
     -   7 = None
+
+    -   8 = paying attention
 
 ```{r}
 #| label: participant-survey-topic-check
@@ -287,7 +253,7 @@ Reviewed and coded Unrealistic parts of survey.
 
     -   0 = no answer provided
 
-    -   1 = believe descriptions written by AI or content written by AI when told human or content written by human when told AI
+    -   1 = didn't believe content written by the AI
 
     -   2 = don't believe that traits make sense to apply to AI
 
@@ -298,6 +264,22 @@ Reviewed and coded Unrealistic parts of survey.
     -   5 = random text
 
     -   6 = unsure why they were asked questions about AI (in High condition)
+
+    -   7 = Identified didn't follow instructions
+
+    -   8 = Confusion with sliders
+
+    -   9 = The chat (Chatbot was too fast, Chatbot wouldn't talk about other topics, Question why they would talk to an author)
+
+    -   10 = Didn't understand the blog post
+
+    -   11 = other (subconscious bias introduced)
+
+    -   12 = predisposed to distrust information in experiments
+
+    -   13 =
+
+    -   14 = Quality or content of the article (no citations, etc)
 
 ```{r}
 
@@ -310,10 +292,138 @@ raw_data |>
   summarise(n=n(), .groups = "keep")
 ```
 
-#### Replace NA values with mean
+
+### Clean Data
+
+#### Validate no duplicate participants
 
 ```{r}
-meaned_data <- raw_data %>% mutate(across(where(is.numeric), ~replace_na(., mean(., na.rm=TRUE))))
+duplicates <- raw_data |> 
+  group_by(id) |> 
+  summarise(n=n(), .groups = "keep") |>
+  filter(n > 1) |>
+  nrow()
+  
+
+```
+
+There are `r if (duplicates == 0) "no duplicate participants" else paste (duplicates, "duplicates")`
+
+```{r clean_remove_duplicates}
+
+# Filtering out responses from participants who completed the survey multiple times. 
+# Only keeping the first one for each.
+deduped_data <- raw_data |>
+  group_by(id) |>  # Group by participant ID 
+  filter(RecordedDate == min(RecordedDate)) |>  #  keep only the first recorded entry for each group
+  ungroup() |>  # Remove the grouping
+  distinct(id, .keep_all = TRUE)  #  select only distinct rows (i.e. remove any duplicates)
+
+duplicates <- deduped_data |> 
+  group_by(id) |> 
+  summarise(n=n(), .groups = "keep") |>
+  filter(n > 1) |>
+  nrow()
+```
+
+There are `r if (duplicates == 0) "no duplicate participants" else paste (duplicates, "duplicates")`after removing duplicates.
+
+
+```{r}
+cleaned_data <- deduped_data |>
+  filter(Status == 0) # Used anonymous link to complete survey (not preview)
+
+```
+
+Number of participants recruited = `r nrow(cleaned_data)`.
+
+```{r}
+cleaned_data <- deduped_data |>
+  filter(Progress == 100) |>  # Completed surveys
+  filter(ConsentForm == 1) |>  # Provided consent
+  filter(Status == 0) |> # Used anonymous link to complete survey (not preview)
+  filter(`Duration (in seconds)` >= (median(`Duration (in seconds)`)) / 3) |>
+  filter(TopicCheck == 1) |>  # Passed topic check (attention check)
+  filter(GodspeedMETI_28 == 20) |>  # Explicit item value check (attention check)
+  filter(GodspeedMETI_29 == 67) |> # Explicit item value check (attention check)
+  filter(Q_RecaptchaScore >= 0.5) |>  # Recaptcha score from Qualtrics == 1
+  filter(Unrealistic_coded != "Didn't follow instructions")  # Identified they didn't read the blog post
+```
+
+Number of participants after exclusions = `r nrow(cleaned_data)`.
+
+
+### Fill missing values
+
+#### Assess skewness and distribution
+
+```{r}
+library(moments)  # For skewness calculation
+
+# Compute skewness for each numeric variable
+skewness_results <- cleaned_data %>%
+  summarise(across(where(is.numeric), ~ skewness(., na.rm = TRUE)))
+
+print(skewness_results)
+write_csv(skewness_results, "skewness_results.csv")
+
+#Shapiro-Wilk normality test (only works for n <= 5000)
+shapiro_results <- cleaned_data %>%
+  select(-Progress, -ConsentForm, -`Duration (in seconds)`, -Status, -Finished, -TopicCheck, -GodspeedMETI_28, -GodspeedMETI_29, -AIChatbotsUsed_NA) %>%
+  summarise(across(where(is.numeric), ~ shapiro.test(.[!is.na(.)])$p.value))
+
+print(shapiro_results)
+write_csv(shapiro_results, "shapiro_results.csv")
+```
+
+#### Fill missing values with median values
+
+Populate missing values with the median within Condition.
+
+```{r}
+
+# Define variables to exclude from imputation
+exclude_vars <- c("ConsentForm", "AgentNameCheck", "AgentTypeCheck", "TopicCheck",
+                  "Q_RecaptchaScore", "SurveyTopicCheck")
+
+
+# Count missing values per variable within each condition
+missing_values_table <- cleaned_data %>%
+  group_by(Condition) %>%
+  summarise(across(everything(), ~ sum(is.na(.)), .names = "{.col}")) %>%
+  pivot_longer(-Condition, names_to = "Variable", values_to = "Missing_Count")
+
+# Print the missing values table
+print(missing_values_table |> filter(Missing_Count > 0))
+
+# Perform imputation only on selected variables
+imputed_data <- cleaned_data %>%
+  group_by(Condition) %>%
+  mutate(
+    # Fill numeric variables with the median, excluding certain variables
+    across(
+      where(is.numeric) & !any_of(exclude_vars) & !ends_with("_TEXT"),
+      ~replace_na(., median(., na.rm = TRUE))
+    ),
+    # Fill categorical variables with the mode, excluding certain variables
+    across(
+      where(~ (is.character(.) | is.factor(.))) & !any_of(exclude_vars) & !ends_with("_TEXT"),
+      ~replace_na(., names(sort(table(.), decreasing = TRUE))[1]))
+  ) %>%
+  ungroup()
+
+# Print confirmation message
+print("Missing values have been imputed (excluding specified variables).")
+
+# Count missing values per variable within each condition
+missing_values_table <- imputed_data %>%
+  group_by(Condition) %>%
+  summarise(across(everything(), ~ sum(is.na(.)), .names = "{.col}")) %>%
+  pivot_longer(-Condition, names_to = "Variable", values_to = "Missing_Count")
+
+# Print the missing values table
+print(missing_values_table |> filter(Missing_Count > 0))
+
 
 ```
 
@@ -325,7 +435,7 @@ Reverse code items for each scale where appropriate
 
 # 4, 5
 
-recoded_data <- meaned_data |> 
+recoded_data <- imputed_data |>
   mutate(
     TrustBehaviour_4r = 7 - TrustBehaviour_4,
     TrustBehaviour_5r = 7 - TrustBehaviour_5,
@@ -346,58 +456,34 @@ recoded_data <- meaned_data |>
     GodspeedMETI_26r = 100 - GodspeedMETI_26,
   )
 
-
 ```
 
-### Clean Data
-
-Filter out incomplete results
-
-```{r}
-cleaned_data <- recoded_data |>
-  filter(Status == 0) # Used anonymous link to complete survey (not preview)
-
-```
-
-Number of participants recruited = `r nrow(cleaned_data)`.
-
-```{r}
-cleaned_data <- recoded_data |>
-  filter(Progress == 100) |>  # Completed surveys
-  filter(ConsentForm == 1) |>  # Provided consent
-  filter(Status == 0) |> # Used anonymous link to complete survey (not preview)
-  filter(`Duration (in seconds)` >= (median(`Duration (in seconds)`)) / 3) |>
-  filter(TopicCheck == 1) |>  # Passed topic check (attention check)
-  filter(GodspeedMETI_28 == 20) |>  # Explicit item value check (attention check)
-  filter(GodspeedMETI_29 == 67) |> # Explicit item value check (attention check)
-  filter(Q_RecaptchaScore >= 0.5) |>  # Recaptcha score from Qualtrics == 1
-  filter(id != 472759) # didn't read the blog post and didn't get answers from bot
-  # #filter(Unrealistic_coded != 5 & SurveyTopicCheck_coded != 2) # Free text field does not appear to be random keystrokes (Unrealistic experience in survey, study purpose)
-```
-
-Number of participants after basic filtering = `r nrow(cleaned_data)`.
-
-#### Validate no duplicate participants
-
-```{r}
-duplicates <- cleaned_data |> 
-  group_by(ResponseId) |> 
-  summarise(n=n(), .groups = "keep") |>
-  filter(n > 1) |>
-  nrow()
-  
-
-```
-
-There are `r if (duplicates == 0) "no duplicate participants" else paste (duplicates, "duplicates")`
+#### Standardize Scale Item Values
 
 ```{r}
 
-# cleaned_data |> 
-#   group_by(TechnicalIssues) |> 
-#   summarise(n=n(), .groups = "keep")
+
+standardized_data <- recoded_data %>%
+  mutate(
+    across(
+      c(starts_with("TrustBehaviour"),
+        starts_with("GodspeedMETI"),
+        Appelman_1:Appelman_3,
+        starts_with("Experience")
+        ),
+    ~ (. - mean(., na.rm = TRUE)) / sd(., na.rm = TRUE),
+    .names = "z.{.col}"
+    )
+  )
+
 
 ```
+
+```{r}
+cleaned_data <- standardized_data
+```
+
+
 
 #### Regroup data
 
@@ -455,38 +541,38 @@ cleaned_data$ScienceContent_regrouped <- fct_collapse(cleaned_data$ScienceConten
 
 ```{r}
 
-content_trust_score_appelman_cols = c("Appelman_1", "Appelman_2", "Appelman_3")
+content_trust_score_appelman_cols = c("z.Appelman_1", "z.Appelman_2", "z.Appelman_3")
 
-content_trust_score_behaviour_cols = c("TrustBehaviour_1", "TrustBehaviour_2",  "TrustBehaviour_3" ,"TrustBehaviour_4r", "TrustBehaviour_5r", "TrustBehaviour_6", "TrustBehaviour_9")
+content_trust_score_behaviour_cols = c("z.TrustBehaviour_1", "z.TrustBehaviour_2",  "z.TrustBehaviour_3" ,"z.TrustBehaviour_4r", "z.TrustBehaviour_5r", "z.TrustBehaviour_6", "z.TrustBehaviour_9")
 
 content_trust_score_combined_cols =  append(content_trust_score_appelman_cols, content_trust_score_behaviour_cols)
 
-author_trust_score_behaviour_cols = c("TrustBehaviour_7", "TrustBehaviour_8")
+author_trust_score_behaviour_cols = c("z.TrustBehaviour_7", "z.TrustBehaviour_8")
 
-expertise_score_METI_cols = c("GodspeedMETI_10", "GodspeedMETI_13", "GodspeedMETI_15r", "GodspeedMETI_16r", "GodspeedMETI_17r", "GodspeedMETI_18r")
-integrity_score_METI_cols = c("GodspeedMETI_19r", "GodspeedMETI_20r", "GodspeedMETI_21r", "GodspeedMETI_22r")
-benevolence_score_METI_cols = c("GodspeedMETI_23r", "GodspeedMETI_24r", "GodspeedMETI_25r", "GodspeedMETI_26r")
+expertise_score_METI_cols = c("z.GodspeedMETI_10", "z.GodspeedMETI_13", "z.GodspeedMETI_15r", "z.GodspeedMETI_16r", "z.GodspeedMETI_17r", "z.GodspeedMETI_18r")
+integrity_score_METI_cols = c("z.GodspeedMETI_19r", "z.GodspeedMETI_20r", "z.GodspeedMETI_21r", "z.GodspeedMETI_22r")
+benevolence_score_METI_cols = c("z.GodspeedMETI_23r", "z.GodspeedMETI_24r", "z.GodspeedMETI_25r", "z.GodspeedMETI_26r")
 
 author_trust_score_METI_cols = append(append(expertise_score_METI_cols, integrity_score_METI_cols), benevolence_score_METI_cols)
 
 author_trust_score_combined_cols = append(author_trust_score_behaviour_cols, author_trust_score_METI_cols)
 
-anthropomorphism_score_godspeed_cols = c("GodspeedMETI_1", "GodspeedMETI_2", "GodspeedMETI_3", "GodspeedMETI_4")
-likeability_score_godspeed_cols = c("GodspeedMETI_5", "GodspeedMETI_6", "GodspeedMETI_7", "GodspeedMETI_8", "GodspeedMETI_9")
-competence_score_godspeed_cols =  c("GodspeedMETI_10", "GodspeedMETI_11", "GodspeedMETI_12", "GodspeedMETI_13", "GodspeedMETI_14")
+anthropomorphism_score_godspeed_cols = c("z.GodspeedMETI_1", "z.GodspeedMETI_2", "z.GodspeedMETI_3", "z.GodspeedMETI_4")
+likeability_score_godspeed_cols = c("z.GodspeedMETI_5", "z.GodspeedMETI_6", "z.GodspeedMETI_7", "z.GodspeedMETI_8", "z.GodspeedMETI_9")
+competence_score_godspeed_cols =  c("z.GodspeedMETI_10", "z.GodspeedMETI_11", "z.GodspeedMETI_12", "z.GodspeedMETI_13", "z.GodspeedMETI_14")
 
 
 
 # intention to use AI 
-intention_cols = c("Experience_1", "Experience_2", "Experience_3")
+intention_cols = c("z.Experience_1", "z.Experience_2", "z.Experience_3")
 
 # changed opinion Experience_4
 
-fear_cols = c("Experience_5", "Experience_6")
+fear_cols = c("z.Experience_5", "z.Experience_6")
 
 # could write this Experience_7
 
-participant_expertise_cols = c("Experience_8", "Experience_9", "Experience_10", "Experience_11")
+participant_expertise_cols = c("z.Experience_8", "z.Experience_9", "z.Experience_10", "z.Experience_11")
 
 
 ```
@@ -537,7 +623,11 @@ cleaned_data <- cleaned_data |>
 
 ```{r}
 
-cleaned_data |> 
+cleaned_data |>
+  select(anthropomorphism_score) |>
+  summary()
+
+cleaned_data |>
   select(all_of(anthropomorphism_score_godspeed_cols)) |>
   psych::alpha(discrete=FALSE)
 ```
@@ -546,7 +636,11 @@ cleaned_data |>
 
 ```{r}
 
-cleaned_data |> 
+cleaned_data |>
+  select(likeability_score) |>
+  summary()
+
+cleaned_data |>
   select(all_of(likeability_score_godspeed_cols)) |>
   psych::alpha(discrete=FALSE)
 
@@ -556,7 +650,11 @@ cleaned_data |>
 
 ```{r}
 
-cleaned_data |> 
+cleaned_data |>
+  select(competence_score) |>
+  summary()
+
+cleaned_data |>
   select(all_of(competence_score_godspeed_cols)) |>
   psych::alpha(discrete=FALSE)
 
@@ -566,7 +664,11 @@ cleaned_data |>
 
 ```{r}
 
-cleaned_data |> 
+cleaned_data |>
+  select(expertise_score) |>
+  summary()
+
+cleaned_data |>
   select(all_of(expertise_score_METI_cols)) |>
   psych::alpha(discrete=FALSE)
 
@@ -576,17 +678,25 @@ cleaned_data |>
 
 ```{r}
 
-cleaned_data |> 
+cleaned_data |>
+  select(integrity_score) |>
+  summary()
+
+cleaned_data |>
   select(all_of(integrity_score_METI_cols)) |>
   psych::alpha(discrete=FALSE)
 
 ```
 
-#### Benevolence (Godspeed Subscale)
+#### Benevolence (METI Subscale)
 
 ```{r}
 
-cleaned_data |> 
+cleaned_data |>
+  select(benevolence_score) |>
+  summary()
+
+cleaned_data |>
   select(all_of(benevolence_score_METI_cols)) |>
   psych::alpha(discrete=FALSE)
 
@@ -596,7 +706,11 @@ cleaned_data |>
 
 ```{r}
 
-cleaned_data |> 
+cleaned_data |>
+  select(author_trust_METI_score) |>
+  summary()
+
+cleaned_data |>
   select(all_of(author_trust_score_METI_cols)) |>
   psych::alpha(discrete = FALSE)
 
@@ -606,7 +720,11 @@ cleaned_data |>
 
 ```{r}
 
-cleaned_data |> 
+cleaned_data |>
+  select(author_trust_behaviour_score) |>
+  summary()
+
+cleaned_data |>
   select(all_of(author_trust_score_behaviour_cols)) |>
   psych::alpha(discrete = FALSE)
 
@@ -616,7 +734,11 @@ cleaned_data |>
 
 ```{r}
 
-cleaned_data |> 
+cleaned_data |>
+  select(author_trust_combined_score) |>
+  summary()
+
+cleaned_data |>
   select(all_of(author_trust_score_combined_cols)) |>
   psych::alpha(discrete=FALSE)
 
@@ -626,7 +748,11 @@ cleaned_data |>
 
 ```{r}
 
-cleaned_data |> 
+cleaned_data |>
+  select(content_trust_appelman_score) |>
+  summary()
+
+cleaned_data |>
   select(all_of(content_trust_score_appelman_cols)) |>
   psych::alpha(discrete=FALSE)
 
@@ -636,7 +762,11 @@ cleaned_data |>
 
 ```{r}
 
-cleaned_data |> 
+cleaned_data |>
+  select(content_trust_behaviour_score) |>
+  summary()
+
+cleaned_data |>
   select(all_of(content_trust_score_behaviour_cols)) |>
   psych::alpha(discrete=FALSE)
 
@@ -645,6 +775,9 @@ cleaned_data |>
 #### Combined Content Trust
 
 ```{r}
+cleaned_data |>
+  select(content_trust_combined_score) |>
+  summary()
 
 cleaned_data |> 
   select(all_of(content_trust_score_combined_cols)) |>
@@ -656,15 +789,25 @@ cleaned_data |>
 
 ```{r}
 
+cleaned_data |>
+  select(intention_to_use_score) |>
+  summary()
 
 cleaned_data |> 
   select(all_of(intention_cols)) |>
   psych::alpha(discrete=FALSE)
 
-cleaned_data |> 
+cleaned_data |>
+  select(fear_of_ai_score) |>
+  summary()
+
+cleaned_data |>
   select(all_of(fear_cols)) |>
   psych::alpha(discrete=FALSE)
 
+cleaned_data |>
+  select(professional_content_expertise) |>
+  summary()
 
 cleaned_data |> 
   select(all_of(participant_expertise_cols)) |>
@@ -680,6 +823,12 @@ cleaned_data |>
 N=`r length(unique(cleaned_data$ResponseId))`
 ```
 
+#### Study duration
+
+```{r}
+mean(cleaned_data$`Duration (in seconds)`) / 60
+```
+
 #### Participants reporting Technical Issues (Not removed in data cleaning)
 
 ```{r}
@@ -687,6 +836,12 @@ cleaned_data |>
   group_by(TechnicalIssues) |> 
   summarise(n=n(), .groups = "keep")
 
+```
+
+```{r}
+cleaned_data |> 
+  group_by(Unrealistic_coded) |> 
+  summarise(n=n(), .groups = "keep")
 ```
 
 #### Participants per condition.
@@ -1046,6 +1201,24 @@ ggbarplot(cleaned_data, x = "AIChatbotsFrequency_regrouped", y = "anthropomorphi
     labs(x="Frequency of Use", y = "Anthropomorphism", fill = "Frequency of Use")
   
 
+violin_plot(cleaned_data, cleaned_data$Condition, cleaned_data$anthropomorphism_score, cleaned_data$Condition, "Anthropomorphism Scores") +
+  facet_wrap(~AIChatbotsFrequency_regrouped)
+
+
+
+```
+
+```{r}
+
+library(apa)
+library(effectsize)
+library(rstatix)
+aov_model <- aov(anthropomorphism_score ~ Condition * AIChatbotsFrequency_regrouped, data = cleaned_data)
+model_summ <- summary(aov_model)
+anova_apa(aov_model)
+
+model_summ
+
 
 ```
 
@@ -1389,6 +1562,18 @@ by(cleaned_data$Condition, summary)
 
 ```
 
+###### Standard Deviation
+
+```{r}
+tapply(cleaned_data$content_trust_combined_score, cleaned_data$Condition, sd)
+```
+
+###### Variance
+
+```{r}
+tapply(cleaned_data$content_trust_combined_score, cleaned_data$Condition, var)
+```
+
 ##### Inferential Statistics
 
 Main Effect ANOVA
@@ -1441,6 +1626,11 @@ corrplot(cor(df),
 ```
 
 ```{r}
+
+cor_result <- cor.test(cleaned_data$anthropomorphism_score, cleaned_data$content_trust_combined_score, method = "pearson")
+apa::cor_apa(cor_result, r_ci = TRUE)
+
+
 cleaned_data |>
   ggplot(aes(x = anthropomorphism_score, y = content_trust_combined_score)) +
   geom_point() +
@@ -1563,7 +1753,20 @@ y_label <- "Content Trust"
 
 {{< include "_ANOVA.qmd" >}}
 
-Education / Condition Interaction
+```{r}
+
+data <- cleaned_data |> group_by(Education_regrouped) |> filter(n() > 3) |> ungroup()
+formula <- content_trust_combined_score ~ Education_regrouped
+x <- cleaned_data$Education_regrouped
+x_label <- "Education"
+y <- cleaned_data$content_trust_combined_score
+y_label <- "Content Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+###### Education / Condition Interaction
 
 ```{r}
 
@@ -1574,6 +1777,12 @@ fit_i <- linear_regression(content_trust_combined_score ~ Condition * Education,
 
 cat_plot(fit_i, pred = Condition, modx = Education,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 
+fit_i <- lm(content_trust_combined_score ~ Condition * Education_regrouped,
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Education_regrouped,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 
 ```
 
@@ -1679,10 +1888,6 @@ fit_i <- linear_regression(content_trust_combined_score ~ Condition * AIChatbots
 cat_plot(fit_i, pred = Condition, modx = AIChatbotsFrequency_regrouped,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 
 ```
-
-Main effect of AI Chatbot Usage Frequency
-
-Interaction effect? I think so, but could be iffy given sample sizes in conditions?
 
 ###### Science Content Experience
 
@@ -1926,7 +2131,7 @@ y_label <- "Content Trust"
 
 {{< include "_ANOVA.qmd" >}}
 
-Survey Purpose / Condition Interaction
+###### Survey Purpose / Condition Interaction
 
 ```{r}
 
@@ -1974,33 +2179,32 @@ y_label <- "Content Trust"
 
 {{< include "_ANOVA.qmd" >}}
 
-Survey Purpose / Condition Interaction
+###### Unrealistic / Condition Interaction
 
 ```{r}
 
-#TODO
 
-# fit_i <- linear_regression(content_trust_combined_score ~ Condition * Unrealistic, 
-#                     data = cleaned_data)
-# 
-# 
-# cat_plot(fit_i, pred = Condition, modx = Unrealistic,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
-# 
-# 
-# fit_i <- linear_regression(content_trust_combined_score ~ Condition * Unrealistic_coded,
-#                     data = cleaned_data |> filter(Unrealistic == "Yes"))
-# 
-# result <- tryCatch({
-#   # Code produces error
-#   
-# 
-# cat_plot(fit_i, pred = Condition, modx = Unrealistic_coded,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", , colors = safe_pal)
-# 
-# }, error = function(e) {
-#   # Handle the error
-#   cat("An error occurred:", e$message, "\n")
-#   return(NA)
-# })
+fit_i <- linear_regression(content_trust_combined_score ~ Condition * Unrealistic,
+                    data = cleaned_data)
+
+
+cat_plot(fit_i, pred = Condition, modx = Unrealistic,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+
+
+fit_i <- linear_regression(content_trust_combined_score ~ Condition * Unrealistic_coded,
+                    data = cleaned_data |> filter(Unrealistic == "Yes"))
+
+result <- tryCatch({
+  # Code produces error
+
+
+cat_plot(fit_i, pred = Condition, modx = Unrealistic_coded,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", , colors = safe_pal)
+
+}, error = function(e) {
+  # Handle the error
+  cat("An error occurred:", e$message, "\n")
+  return(NA)
+})
 ```
 
 #### Author Trust
@@ -2018,6 +2222,18 @@ cleaned_data |>
   select(Condition, author_trust_combined_score) |>
 by(cleaned_data$Condition, summary)
 
+```
+
+###### Standard Deviation
+
+```{r}
+tapply(cleaned_data$author_trust_combined_score, cleaned_data$Condition, sd)
+```
+
+###### Variance
+
+```{r}
+tapply(cleaned_data$author_trust_combined_score, cleaned_data$Condition, var)
 ```
 
 ##### Inferential Statistics
@@ -2060,13 +2276,14 @@ fit_i <- linear_regression(author_trust_combined_score ~ anthropomorphism_score 
 
 ```{r}
 
+cor_result <- cor.test(cleaned_data$anthropomorphism_score, cleaned_data$author_trust_combined_score, method = "pearson")
+apa::cor_apa(cor_result, r_ci = TRUE)
+
 ```
 
 ```{r}
 df <- cleaned_data |>
   select(content_trust_combined_score, author_trust_combined_score, anthropomorphism_score)
-
-
 
 ```
 
@@ -2095,6 +2312,18 @@ cleaned_data |>
 ###### Age
 
 ```{r}
+cor_result <- cor.test(cleaned_data$author_trust_combined_score, cleaned_data$Age_1, method = "pearson")
+apa::cor_apa(cor_result, r_ci = TRUE)
+
+cleaned_data |>
+  ggplot(aes(x = Age_1, y = author_trust_combined_score)) +
+  geom_point() +
+        stat_smooth(method = "lm",
+        col = "#C42126", se = FALSE, size = 1
+)
+```
+
+```{r}
 
 data <- cleaned_data |> group_by(age_range) |> filter(n() > 3) |> ungroup()
 formula <- author_trust_combined_score ~ age_range
@@ -2107,7 +2336,7 @@ y_label <- "Author Trust"
 
 {{< include "_ANOVA.qmd" >}}
 
-Age / Condition Interaction
+###### Age / Condition Interaction
 
 ```{r}
 
@@ -2116,8 +2345,6 @@ fit_i <- linear_regression(author_trust_combined_score ~ Condition * age_range, 
 
 cat_plot(fit_i, pred = Condition, modx = age_range,  geom = "bar", colors = safe_pal)
 ```
-
-Significant interaction between for age range 50 - 59.7 and 59.7 - 69.3
 
 ###### Gender (Man / Woman only)
 
@@ -2134,7 +2361,7 @@ y_label <- "Author Trust"
 
 {{< include "_ANOVA.qmd" >}}
 
-Gender / Condition Interaction
+###### Gender / Condition Interaction
 
 ```{r}
 
@@ -2162,7 +2389,7 @@ y_label <- "Author Trust"
 
 {{< include "_ANOVA.qmd" >}}
 
-Sex / Condition Interaction
+###### Sex / Condition Interaction
 
 ```{r}
 
@@ -2189,7 +2416,20 @@ y_label <- "Author Trust"
 
 {{< include "_ANOVA.qmd" >}}
 
-Education / Condition Interaction
+```{r}
+
+data <- cleaned_data |> group_by(Education_regrouped) |> filter(n() > 3) |> ungroup()
+formula <- author_trust_combined_score ~ Education_regrouped
+x <- cleaned_data$Education_regrouped
+x_label <- "Education"
+y <- cleaned_data$author_trust_combined_score
+y_label <- "Author Trust"
+
+```
+
+{{< include "_ANOVA.qmd" >}}
+
+###### Education / Condition Interaction
 
 ```{r}
 
@@ -2200,6 +2440,12 @@ summ(fit_i)
 
 cat_plot(fit_i, pred = Condition, modx = Education,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 
+fit_i <- lm(author_trust_combined_score ~ Condition * Education_regrouped,
+                    data = cleaned_data)
+
+summ(fit_i)
+
+cat_plot(fit_i, pred = Condition, modx = Education_regrouped,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 
 ```
 
@@ -2360,6 +2606,18 @@ cat_plot(fit_i, pred = Condition, modx = ScienceContent_regrouped,  plot.points 
 ###### Intention to Use AI
 
 ```{r}
+cor_result <- cor.test(cleaned_data$author_trust_combined_score, cleaned_data$intention_to_use_score, method = "pearson")
+apa::cor_apa(cor_result, r_ci = TRUE)
+
+cleaned_data |>
+  ggplot(aes(x = intention_to_use_score, y = author_trust_combined_score)) +
+  geom_point() +
+        stat_smooth(method = "lm",
+        col = "#C42126", se = FALSE, size = 1
+)
+```
+
+```{r}
 data <- cleaned_data |> group_by(intention_to_use_score) |> filter(n() > 3) |> ungroup()
 formula <- author_trust_combined_score ~ intention_to_use_score
 x <- cleaned_data$intention_to_use_score
@@ -2382,6 +2640,18 @@ cat_plot(fit_i, pred = Condition, modx = intention_to_use_score,  plot.points = 
 ```
 
 ###### Changed Opinion
+
+```{r}
+cor_result <- cor.test(cleaned_data$author_trust_combined_score, cleaned_data$Experience_4, method = "pearson")
+apa::cor_apa(cor_result, r_ci = TRUE)
+
+cleaned_data |>
+  ggplot(aes(x = Experience_4, y = author_trust_combined_score)) +
+  geom_point() +
+        stat_smooth(method = "lm",
+        col = "#C42126", se = FALSE, size = 1
+)
+```
 
 ```{r}
 data <- cleaned_data |> group_by(Experience_4) |> filter(n() > 3) |> ungroup()
@@ -2408,6 +2678,18 @@ cat_plot(fit_i, pred = Condition, modx = Experience_4,  plot.points = TRUE, jitt
 ###### Fear of AI
 
 ```{r}
+cor_result <- cor.test(cleaned_data$author_trust_combined_score, cleaned_data$fear_of_ai_score, method = "pearson")
+apa::cor_apa(cor_result, r_ci = TRUE)
+
+cleaned_data |>
+  ggplot(aes(x = fear_of_ai_score, y = author_trust_combined_score)) +
+  geom_point() +
+        stat_smooth(method = "lm",
+        col = "#C42126", se = FALSE, size = 1
+)
+```
+
+```{r}
 data <- cleaned_data |> group_by(fear_of_ai_score) |> filter(n() > 3) |> ungroup()
 formula <- author_trust_combined_score ~ fear_of_ai_score
 x <- cleaned_data$fear_of_ai_score
@@ -2429,6 +2711,18 @@ cat_plot(fit_i, pred = Condition, modx = fear_of_ai_score,  plot.points = TRUE, 
 ```
 
 ###### Could Write
+
+```{r}
+cor_result <- cor.test(cleaned_data$author_trust_combined_score, cleaned_data$Experience_7, method = "pearson")
+apa::cor_apa(cor_result, r_ci = TRUE)
+
+cleaned_data |>
+  ggplot(aes(x = Experience_7, y = author_trust_combined_score)) +
+  geom_point() +
+        stat_smooth(method = "lm",
+        col = "#C42126", se = FALSE, size = 1
+)
+```
 
 ```{r}
 data <- cleaned_data |> group_by(Experience_7) |> filter(n() > 3) |> ungroup()
@@ -2479,6 +2773,18 @@ cat_plot(fit_i, pred = Condition, modx = professional_content_expertise,  plot.p
 ###### Content Properties
 
 Well-written
+
+```{r}
+cor_result <- cor.test(cleaned_data$author_trust_combined_score, as.numeric(cleaned_data$Appelman_4), method = "pearson")
+apa::cor_apa(cor_result, r_ci = TRUE)
+
+cleaned_data |>
+  ggplot(aes(x = Appelman_4, y = author_trust_combined_score)) +
+  geom_point() +
+        stat_smooth(method = "lm",
+        col = "#C42126", se = FALSE, size = 1
+)
+```
 
 ```{r}
 data <- cleaned_data |> group_by(Appelman_4) |> filter(n() > 3) |> ungroup()
@@ -2751,7 +3057,36 @@ cocor(~ `content_trust_combined_score` + `author_trust_combined_score` | `conten
 )
 ```
 
-# Appendix A
+# References
 
-```{# {r child='_variables.rmd'}
+```{r}
+citation()
+version$version.string
+
+citation("rstatix")
+packageVersion("rstatix")
+
+citation("stats")
+packageVersion("stats")
+
+citation("effectsize")
+packageVersion("effectsize")
+
+citation("psych")
+packageVersion("psych")
+
+citation("interactions")
+packageVersion("interactions")
+
+citation("corrplot")
+packageVersion("corrplot")
+
+citation("performance")
+packageVersion("performance")
+
+citation("FSA")
+packageVersion("FSA")
+
+citation("see")
+packageVersion("see")
 ```

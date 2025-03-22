@@ -11,15 +11,40 @@ options(es.use_symbols = TRUE) # get nice symbols when printing! (On Windows, re
 ```
 
 ```{r}
-aov_model <- aov(formula = formula, data = data)
-model_summ <- summary(aov_model)
 
-model_summ
+result <- tryCatch({
+    # Code produces error
+    aov_model <- aov(formula = formula, data = data)
+    model_summ <- summary(aov_model)
+    
+    model_summ
+    
+    return(model_summ)
+    
+  }, error = function(e) {
+    # Handle the error
+    cat("An error occurred:", e$message, "\n")
+    return(NA)
+  })
+
+
 ```
 
 
 ```{r}
-anova_apa(aov_model)
+
+result <- tryCatch({
+    # Code produces error
+    anova_apa(aov_model)
+    
+  }, error = function(e) {
+    # Handle the error
+    cat("An error occurred:", e$message, "\n")
+    return(NA)
+  })
+
+
+
 ```
 
 
@@ -107,6 +132,15 @@ Next test for equal variance
 ```{r}
 # Test for Equal Variance
 boxplot(formula, xlab = x_label, ylab = y_label, data = data)
-bartlett.test(formula, data = data)
+
+result <- tryCatch({
+  # Code produces error
+  bartlett.test(formula, data = data)
+}, error = function(e) {
+  # Handle the error
+  cat("An error occurred:", e$message, "\n")
+  return(NA)
+})
+
 ```
 
