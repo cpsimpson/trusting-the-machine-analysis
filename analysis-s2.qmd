@@ -1276,7 +1276,7 @@ plot
 
 ```
 
-###### Anthro / Author Trust Interaction
+###### Path Analysis
 
 ```{r}
 model_design <- '
@@ -1294,6 +1294,46 @@ model_design <- '
   total := c_prime + indirect1 + indirect2 + indirect3
 '
 s2_fit_basic <- s2_cleaned_data |> test_med_mod_model(model_design)
+```
+
+```{r}
+plot <- plot_model(s2_fit_basic, s2_study)
+
+plot
+```
+
+```{r}
+model_design <- '
+
+  # Define the latent variable
+  author_trust_behaviour =~ z.TrustBehaviour_7 + z.TrustBehaviour_8 + z.TrustBehaviour_10 + z.TrustBehaviour_11
+  
+  expertise =~ z.GodspeedMETI_10 + z.GodspeedMETI_13 + z.GodspeedMETI_15r + z.GodspeedMETI_16r + z.GodspeedMETI_17r + z.GodspeedMETI_18r
+  integreity =~ z.GodspeedMETI_19r + z.GodspeedMETI_20r + z.GodspeedMETI_21r + z.GodspeedMETI_22r
+  benevolence =~ z.GodspeedMETI_23r + z.GodspeedMETI_24r + z.GodspeedMETI_25r + z.GodspeedMETI_26r
+  author_trust_traits =~ expertise + integreity + benevolence 
+  
+  perceived_author_trust =~ author_trust_behaviour + author_trust_traits
+  
+  # Mediation paths
+  anthropomorphism_score ~ a1 * Condition
+  perceived_author_trust ~ a2 * anthropomorphism_score + d * Condition 
+  content_trust_combined_score ~ b1 * perceived_author_trust + b2 * anthropomorphism_score + c_prime * Condition
+
+  # Indirect effects
+  indirect1 := a1 * b2
+  indirect2 := a1 * a2 * b1
+  indirect3 := d * b1
+
+  # Total effect
+  total := c_prime + indirect1 + indirect2 + indirect3
+'
+s2_fit_basic <- s2_cleaned_data |> test_med_mod_model(model_design)
+```
+
+```{r}
+summary_table <- get_sem_summary_table(s2_fit_basic, save_doc = TRUE, outfile = "plots/s2/sem_summary_table.docx")
+knitr::kable(summary_table)
 ```
 
 ```{r}

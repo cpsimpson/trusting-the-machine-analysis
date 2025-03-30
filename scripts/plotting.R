@@ -304,7 +304,7 @@ get_sem_label <- function(column_name) {
     "professional_content_expertise" = "Professional Experience with Content or Writing",
     "Appelman_4" = "Writing Quality",
     "SurveyTopicCheck_coded" = "Reported Survey Purpose",
-    "unknown"
+    column_name
   )
 }
 
@@ -318,7 +318,8 @@ add_stars <- function(p) {
 }
 
 plot_model <- function(fit, study){
-
+  # plot the variables with edges represented by standardized effect size (Beta) and significance stars
+  
   sem_model <- semPlot::semPlotModel(fit)
   node_names <- sem_model@Vars$name
   node_labels <- map_chr(node_names, get_sem_label)
@@ -327,6 +328,23 @@ plot_model <- function(fit, study){
   std_estimates <- lavaan::parameterEstimates(fit, standardized = TRUE)
   
   
+  # std_estimates$starred_label <- ifelse(
+  #   is.na(std_estimates$std.all),
+  #   "",  # If there's no standardized estimate, leave blank
+  #   paste0(
+  #     format(round(std_estimates$std.all, 2), nsmall = 2),
+  #     sapply(std_estimates$pvalue, add_stars)
+  #   )
+  # )
+  # 
+  # std_estimates$label_type <- dplyr::case_when(
+  #   std_estimates$op == "~" ~ "regression",
+  #   std_estimates$op == "=~" ~ "loading",
+  #   std_estimates$op == "~~" ~ "covariance",
+  #   std_estimates$op == ":=" ~ "indirect effect",
+  #   TRUE ~ "other"
+  # )
+  
   # Create custom labels for paths
   std_estimates$starred_label <- paste0(
     round(std_estimates$std.all, 2),
@@ -334,8 +352,13 @@ plot_model <- function(fit, study){
   )
   
   regression_labels <- std_estimates$starred_label[std_estimates$op == "~"]
+  # loading_labels <- std_estimates$starred_label[std_estimates$op == "=~"]
+  # correlation_labels <- std_estimates$starred_label[std_estimates$op == "~~"]
+  # indirect_labels <- std_estimates$starred_label[std_estimates$op == ":="]
+  # 
+  # all_labels <- std_estimates$starred_label
   
-  filename <- paste0("sem_", paste(node_names, collapse="_"))
+  filename <- paste0("sem_", paste(node_names[1:5], collapse="_"))
   path <- paste(sep = "/", "plots", study, filename)
   
   plot <- semPlot::semPaths(
@@ -343,10 +366,11 @@ plot_model <- function(fit, study){
     what = "std",
     whatLabels = "est",
     edgeLabels = regression_labels,
+    # edgeLabels = all_labels,
     layout = "spring",           # "tree", "circle", "spring", etc.
-    edge.label.cex = 1.2,      # size of edge (path) labels
-    sizeMan = 10,               # size of variable boxes
-    sizeLat = 0,               # hide latent variable nodes (you have none)
+    # edge.label.cex = 1.2,      # size of edge (path) labels
+    # sizeMan = 10,               # size of variable boxes
+    # sizeLat = 0,               
     residuals = FALSE,         # don't show residual variances
     nCharNodes = 0,            # show full variable names
     title = FALSE,
@@ -355,9 +379,14 @@ plot_model <- function(fit, study){
     label.cex = 0.5, 
     filetype = "png",
     filename = path,
-    repulsion = 0.5,
+    repulsion = 0.9,
+    # curveAll = TRUE,
     curvePivot = TRUE     # improves curve spacing
     
   )
+  
+  # indirects <- std_estimates[std_estimates$op == ":=", c("lhs", "rhs", "label", "std.all", "pvalue")]
+  # indirects$starred <- paste0(round(indirects$std.all, 2), sapply(indirects$pvalue, add_stars))
+  # print(indirects)
   return(plot)
 }
