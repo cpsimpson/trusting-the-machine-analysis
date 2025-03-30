@@ -28,33 +28,107 @@ deduplicate_participants <- function(data) {
 
 # data filtering ----------------------------------------------------------
 
+# clean_data <- function(data, study) {
+#   cleaned_data <- data |>
+#     filter(Progress == 100) |>  # Completed surveys
+#     filter(ConsentForm == 1) |>  # Provided consent
+#     filter(Status == 0) |> # Used anonymous link to complete survey (not preview)
+#     filter(`Duration (in seconds)` >= (median(`Duration (in seconds)`)) / 3) |>
+#     filter(TopicCheck == 1) |>  # Passed topic check (attention check)
+#     filter(Q_RecaptchaScore >= 0.5) #|>  # Recaptcha score from Qualtrics == 1
+#   # filter(Unrealistic_coded != 5 & SurveyTopicCheck_coded != 2) # Free text field does not appear to be random keystrokes (Unrealistic experience in survey, study purpose)
+#   
+#   if (study == "s1") {
+#     cleaned_data <- cleaned_data |>
+#       filter(EndDate >= "2024-12-04") |>  # Started on or after "2024-12-04" to remove test runs
+#       filter(Reread != 1) |>  # Did not need to reread the instructions
+#       filter(
+#         (AgentTypeCheck == 1 & Condition == "Low") |
+#           (AgentTypeCheck == 1 & Condition == "Medium") |
+#           (AgentTypeCheck == 2 & Condition == "High")
+#       ) |>  # Passed agent check (attention check)
+#       filter(GodspeedMETI_28 == 100) |>  # Explicit item value check (attention check)
+#       filter(GodspeedMETI_29 == 0) # Explicit item value check (attention check)
+#   } else if (study == "s2") {
+#     cleaned_data <- cleaned_data |>
+#       filter(GodspeedMETI_28 == 20) |>  # Explicit item value check (attention check)
+#       filter(GodspeedMETI_29 == 67) # Explicit item value check (attention check)
+#   }
+#   
+#   return(cleaned_data)
+# }
+
 clean_data <- function(data, study) {
-  cleaned_data <- data |>
-    filter(Progress == 100) |>  # Completed surveys
-    filter(ConsentForm == 1) |>  # Provided consent
-    filter(Status == 0) |> # Used anonymous link to complete survey (not preview)
-    filter(`Duration (in seconds)` >= (median(`Duration (in seconds)`)) / 3) |>
-    filter(TopicCheck == 1) |>  # Passed topic check (attention check)
-    filter(Q_RecaptchaScore >= 0.5) #|>  # Recaptcha score from Qualtrics == 1
-  # filter(Unrealistic_coded != 5 & SurveyTopicCheck_coded != 2) # Free text field does not appear to be random keystrokes (Unrealistic experience in survey, study purpose)
+  initial_count <- nrow(data)
+  cat("Initial number of participants:", initial_count, "\n")
+  
+  # Filter 1: Completed surveys (Progress == 100)
+  step1 <- dplyr::filter(data, Progress == 100)
+  cat("After Completed surveys filter (Progress == 100): Excluded", initial_count - nrow(step1), "participants\n")
+  
+  # Filter 2: Provided consent (ConsentForm == 1)
+  step2 <- dplyr::filter(step1, ConsentForm == 1)
+  cat("After Provided consent filter (ConsentForm == 1): Excluded", nrow(step1) - nrow(step2), "participants\n")
+  
+  # Filter 3: Used anonymous link (Status == 0)
+  step3 <- dplyr::filter(step2, Status == 0)
+  cat("After Anonymous link filter (Status == 0): Excluded", nrow(step2) - nrow(step3), "participants\n")
+  
+  # Filter 4: Duration filter
+  step4 <- dplyr::filter(step3, `Duration (in seconds)` >= (median(`Duration (in seconds)`, na.rm = TRUE)) / 3)
+  cat("After Duration filter (>= median/3): Excluded", nrow(step3) - nrow(step4), "participants\n")
+  
+  # Filter 5: TopicCheck (attention check)
+  step5 <- dplyr::filter(step4, TopicCheck == 1)
+  cat("After TopicCheck filter (TopicCheck == 1): Excluded", nrow(step4) - nrow(step5), "participants\n")
+  
+  # Filter 6: Recaptcha score filter
+  step6 <- dplyr::filter(step5, Q_RecaptchaScore >= 0.5)
+  cat("After Q_RecaptchaScore filter (>= 0.5): Excluded", nrow(step5) - nrow(step6), "participants\n")
+  
+  cleaned_data <- step6
   
   if (study == "s1") {
-    cleaned_data <- cleaned_data |>
-      filter(EndDate >= "2024-12-04") |>  # Started on or after "2024-12-04" to remove test runs
-      filter(Reread != 1) |>  # Did not need to reread the instructions
-      filter(
-        (AgentTypeCheck == 1 & Condition == "Low") |
-          (AgentTypeCheck == 1 & Condition == "Medium") |
-          (AgentTypeCheck == 2 & Condition == "High")
-      ) |>  # Passed agent check (attention check)
-      filter(GodspeedMETI_28 == 100) |>  # Explicit item value check (attention check)
-      filter(GodspeedMETI_29 == 0) # Explicit item value check (attention check)
+    # Filter 7: EndDate filter
+    step7 <- dplyr::filter(cleaned_data, EndDate >= "2024-12-04")
+    cat("After EndDate filter (>= '2024-12-04'): Excluded", nrow(cleaned_data) - nrow(step7), "participants\n")
+    cleaned_data <- step7
+    
+    # # Filter 8: Reread filter
+    # step8 <- dplyr::filter(cleaned_data, Reread != 1)
+    # cat("After Reread filter (Reread != 1): Excluded", nrow(cleaned_data) - nrow(step8), "participants\n")
+    # cleaned_data <- step8
+    
+    # Filter 9: AgentTypeCheck and Condition combination
+    step9 <- dplyr::filter(cleaned_data, 
+                           (AgentTypeCheck == 1 & Condition %in% c("Low", "Medium")) |
+                             (AgentTypeCheck == 2 & Condition == "High"))
+    cat("After AgentTypeCheck/Condition filter: Excluded", nrow(cleaned_data) - nrow(step9), "participants\n")
+    cleaned_data <- step9
+    
+    # Filter 10: GodspeedMETI_28 filter
+    step10 <- dplyr::filter(cleaned_data, GodspeedMETI_28 == 100)
+    cat("After GodspeedMETI_28 filter (== 100): Excluded", nrow(cleaned_data) - nrow(step10), "participants\n")
+    cleaned_data <- step10
+    
+    # Filter 11: GodspeedMETI_29 filter
+    step11 <- dplyr::filter(cleaned_data, GodspeedMETI_29 == 0)
+    cat("After GodspeedMETI_29 filter (== 0): Excluded", nrow(cleaned_data) - nrow(step11), "participants\n")
+    cleaned_data <- step11
+    
   } else if (study == "s2") {
-    cleaned_data <- cleaned_data |>
-      filter(GodspeedMETI_28 == 20) |>  # Explicit item value check (attention check)
-      filter(GodspeedMETI_29 == 67) # Explicit item value check (attention check)
+    # Filter 7: GodspeedMETI_28 filter for s2
+    step7 <- dplyr::filter(cleaned_data, GodspeedMETI_28 == 20)
+    cat("After GodspeedMETI_28 filter (== 20): Excluded", nrow(cleaned_data) - nrow(step7), "participants\n")
+    cleaned_data <- step7
+    
+    # Filter 8: GodspeedMETI_29 filter for s2
+    step8 <- dplyr::filter(cleaned_data, GodspeedMETI_29 == 67)
+    cat("After GodspeedMETI_29 filter (== 67): Excluded", nrow(cleaned_data) - nrow(step8), "participants\n")
+    cleaned_data <- step8
   }
   
+  cat("Final number of participants:", nrow(cleaned_data), "\n")
   return(cleaned_data)
 }
 
