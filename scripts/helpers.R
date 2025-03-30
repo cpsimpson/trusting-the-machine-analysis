@@ -1,6 +1,10 @@
 
 library(tidyverse)
 library(haven)
+library(rcartocolor)
+
+
+
 
 draw_interaction_plot <- function(x, trace, y, x_label, trace_label, y_label) {
   
@@ -31,15 +35,7 @@ simple_effects_within_anova <- function(data, condition, dv, within) {
 }
 
 
-violin_plot <- function(data, x, y, group, title, 
-                        legend_label = "Anthropomorphism \n Condition", 
-                        x_label = "Condition", y_label = "Score") {
-  data |>
-    ggplot(aes(x = x, y = y, fill = group)) +
-    geom_violin(alpha = 0.5, draw_quantiles = c(0.25, 0.5, 0.75)) +
-    ggtitle(title) + 
-    labs(x=x_label, y = y_label, fill = legend_label)
-}
+
 
 bar_plot <- function(data, y, group, title, 
                         legend_label = "Anthropomorphism \n Condition", 
@@ -51,12 +47,7 @@ bar_plot <- function(data, y, group, title,
     labs(y = y_label, fill = legend_label)
 }
 
-# This was used to output the column information.
-export_variables_as_markdown <- function(raw_data){
-  dictionary <- labelled::generate_dictionary(raw_data)
-  variables_md <- kable(dictionary, align = "c")
-  save_kable(variables_md, "variables.md")
-}
+
 
 linear_regression <- function(formula, data) {
   result <- tryCatch({

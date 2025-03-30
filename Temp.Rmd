@@ -1,0 +1,170 @@
+---
+title: "temp"
+output: html_document
+date: "2025-03-30"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+violin_plot(data = s1_cleaned_data, 
+            x = s1_cleaned_data$AIChatbotsFrequency_regrouped, 
+            y = s1_cleaned_data$anthropomorphism_score, 
+            group = s1_cleaned_data$AIChatbotsFrequency_regrouped, 
+            title = "Anthropomorphism Scores by AI Usage Frequency", 
+            legend_label = "AI Usage Frequency", 
+            y_label = "Anthropomorphism Score", x_label = "AI Usage Frequency")
+
+```
+
+```{r}
+
+frequency_comparisons <- list(  c("rarely", "occasionally"),
+    c("rarely", "frequently"),
+    c("occasionally", "frequently") )
+
+# condition_comparisons <- list(  c("High", "Medium"),
+#     c("High", "Low"),
+#     c("Medium", "Low") )
+
+# Global test
+compare_means(anthropomorphism_score ~ AIChatbotsFrequency_regrouped,  data = s1_cleaned_data, method = "anova")
+
+compare_means(anthropomorphism_score ~ AIChatbotsFrequency_regrouped, comparisons = frequency_comparisons, data = s1_cleaned_data,  method = "t.test")
+
+
+ggboxplot(s1_cleaned_data, x = "AIChatbotsFrequency_regrouped", y = "anthropomorphism_score",
+          color = "AIChatbotsFrequency_regrouped", palette = safe_pal)+ 
+  stat_compare_means(comparisons = frequency_comparisons, method = "t.test", label = "p.signif") + # Add pairwise comparisons p-value
+  stat_compare_means(label.y = 12, method = "anova")        +     # Add global p-value
+  ggtitle("Mean Anthropomorphism by Frequency of AI Chatbot Use") + 
+    labs(x="Frequency of Use", y = "Anthropomorphism", fill = "Frequency of Use")
+  
+
+ggbarplot(s1_cleaned_data, x = "AIChatbotsFrequency_regrouped", y = "anthropomorphism_score",
+          add = "mean_sd",        
+          color = "AIChatbotsFrequency_regrouped", palette = safe_pal, position = position_dodge(0.8))+ 
+  stat_compare_means(comparisons = frequency_comparisons, method = "t.test", label = "p.signif") + # Add pairwise comparisons p-value
+  stat_compare_means(label.y = 12, method = "anova")      +     # Add global p-value
+  ggtitle("Mean Anthropomorphism by Frequency of AI Chatbot Use") + 
+    labs(x="Frequency of Use", y = "Anthropomorphism", fill = "Frequency of Use")
+  
+
+violin_plot(s1_cleaned_data, s1_cleaned_data$Condition, s1_cleaned_data$anthropomorphism_score, s1_cleaned_data$Condition, "Anthropomorphism Scores") + 
+  facet_wrap(~AIChatbotsFrequency_regrouped)
+
+
+
+```
+
+```{r}
+
+library(apa)
+library(effectsize)
+library(rstatix)
+aov_model <- aov(anthropomorphism_score ~ Condition * AIChatbotsFrequency_regrouped, data = s1_cleaned_data)
+model_summ <- summary(aov_model)
+anova_apa(aov_model)
+
+model_summ
+
+
+```
+
+
+```{r}
+
+
+# lm_model <- lm(content_trust_combined_score ~ author_trust_combined_score * anthropomorphism_score, data = s1_cleaned_data |> filter(AIChatbotsFrequency_regrouped == "frequently"))
+# summary(lm_model)
+# 
+# plot <- interact_plot(lm_model, 
+#               pred = author_trust_combined_score, 
+#               modx = anthropomorphism_score,
+#               x.label = "Author Trust Score",
+#               y.label = "Content Trust Score",
+#               legend.main = "Anthropomorphism Score",
+#               plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", 
+#               colors = safe_pal) +
+#   # labs(x="Anthropomorphism Score", y = "Content Trust Score", legend = "Author Trust Score")  +
+#   theme(legend.position = "top")
+# 
+# ggsave("plots/s1/content_anthropomorphism_author_frequently_interaction.png", plot = plot, create.dir = TRUE)
+# 
+# plot
+# 
+# 
+# ```
+# ```{r}
+# 
+# lm_model <- lm(content_trust_combined_score ~ author_trust_combined_score * anthropomorphism_score, data = s1_cleaned_data |> filter(AIChatbotsFrequency_regrouped == "occasionally"))
+# summary(lm_model)
+# 
+# plot <- interact_plot(lm_model, 
+#               pred = author_trust_combined_score, 
+#               modx = anthropomorphism_score,
+#               x.label = "Author Trust Score",
+#               y.label = "Content Trust Score",
+#               legend.main = "Anthropomorphism Score",
+#               plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", 
+#               colors = safe_pal) +
+#   # labs(x="Anthropomorphism Score", y = "Content Trust Score", legend = "Author Trust Score")  +
+#   theme(legend.position = "top")
+# 
+# ggsave("plots/s1/content_anthropomorphism_author_occasionally_interaction.png", plot = plot, create.dir = TRUE)
+# 
+# plot
+
+
+```
+
+```{r}
+
+# lm_model <- lm(content_trust_combined_score ~ author_trust_combined_score * anthropomorphism_score, data = s1_cleaned_data |> filter(AIChatbotsFrequency_regrouped == "rarely"))
+# summary(lm_model)
+# 
+# plot <- interact_plot(lm_model, 
+#               pred = author_trust_combined_score, 
+#               modx = anthropomorphism_score,
+#               x.label = "Author Trust Score",
+#               y.label = "Content Trust Score",
+#               legend.main = "Anthropomorphism Score",
+#               plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", 
+#               colors = safe_pal) +
+#   # labs(x="Anthropomorphism Score", y = "Content Trust Score", legend = "Author Trust Score")  +
+#   theme(legend.position = "top")
+# 
+# ggsave("plots/s1/content_anthropomorphism_author_rarely_interaction.png", plot = plot, create.dir = TRUE)
+# 
+# plot
+
+
+```
+
+###### Content / Anthro / Usage Interaction
+
+```{r}
+
+# lm_model <- lm(content_trust_combined_score ~ anthropomorphism_score * AIChatbotsFrequency_regrouped, data = s1_cleaned_data)
+# summary(lm_model)
+# 
+# plot <- interact_plot(lm_model, 
+#               pred = anthropomorphism_score, 
+#               modx = AIChatbotsFrequency_regrouped,
+#               x.label ="Anthropomorphism Score",
+#               y.label = "Content Trust Score",
+#               legend.main = "Frequency",
+#               # mod2.values = c("frequently", "occasionally", "rarely"),
+#               # mod2.labels = c("frequently", "occasionally", "rarely"),
+#               plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", 
+#               colors = safe_pal) +
+#   theme(legend.position = "top")
+# 
+# ggsave("plots/s1/content_anthropomorphism_frequency_interaction.png", plot = plot, create.dir = TRUE)
+# 
+# plot
+
+```

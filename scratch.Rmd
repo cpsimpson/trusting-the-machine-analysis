@@ -9,6 +9,17 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Generate QR Code
+
+Create an svg that points at the site containing more info about the project.
+```{r}
+
+library(qrcode)
+code <- qr_code("https://carolinesimpson.ca/academia/trusting-the-machine/")
+
+generate_svg(code, filename = "includes/qr.svg")
+```
+
 ```{r}
 library(pwr)
 library(Superpower)

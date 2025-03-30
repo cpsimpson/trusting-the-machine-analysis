@@ -1,0 +1,96 @@
+---
+title: "Trusting the machine: Epistemic trust and anthropomorphism in generative artificial intelligence"
+author:
+  - name: Caroline Simpson* & 
+  - name: Jonathan Fugelsang
+  
+primary_colour: "#196389"
+secondary_colour: "#2f2589"
+accent_colour: "#7F2543"
+
+title_textsize: "70pt"
+# column_numbers: 3
+main_findings:
+  - "People **trust** anthropomorphic **GenAI** more, especially those that use it more."
+  - '![](https://raw.githubusercontent.com/brentthorne/posterdown/master/images/betterhexlogo.png){.main_pic}'
+logoright_name: '![](includes/UniversityOfWaterloo_logo_horiz_rgb.png){.main-img-right}'
+logoleft_name: '![](includes/qr.svg){.main-img-left}'
+output: 
+  posterdown::posterdown_betterland:
+    self_contained: false
+    pandoc_args: --mathjax
+    highlight: espresso
+    number_sections: false
+bibliography: packages.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+# Introduction
+
+Generative artificial intelligence (GenAI) have rapidly gained popularity for their ability to produce fluent, seemingly credible content. With increasing usage, understanding how people decide to trust their outputs is critical. This research explores how attributing human-like traits to AI influences trust in both GenAI-generated content and its author. Across two studies, results show that greater anthropomorphism correlates with higher trust in the GenAI agent and, to a lesser extent, the content it produces. With our second study also showing a causal relationship. These findings provide insights for designing more effective and trustworthy AI communication interfaces.
+
+## Research Question
+
+What effect does anthropomorphism have on level of trust in GenAI and the content it creates?
+
+## Hypothesis
+
+Increasing levels of anthropomorphism leads to increased trust in a GenAI author and content it produces.
+
+# Methods
+
+## Study 1
+
+1. Participants read a short description of an author which varied by the anthropomorphism condition (low -- machine-like AI, medium -- human-like AI, high -- human) the participant was randomly assigned to. 
+2. Then they read a blog post said to be written by the author.
+3. Completed surveys to assess perceived anthropomorphism, trust in content, and trust in author.
+
+## Study 2
+1. Participants read blog post.
+2. Then they had a short text chat with the AI author, which varied how it responded based on the participant's randonly assigned anthropomorphism condition (low -- refrained from affective language, high -- used affective and filler language)
+3. Completed same surveys as study 1.
+
+# Results
+
+Usually you want to have a nice table displaying some important results that you have calculated. In `posterdown` this is as easy as using the `kable` table formatting you are probably use to as per typical R Markdown formatting.
+
+You can reference tables like so: Table \@ref(tab:mytable). Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam placerat augue at velit tincidunt semper. Donec elementum porta posuere. Nullam interdum, odio at tincidunt feugiat, turpis nisi blandit eros, eu posuere risus felis non quam. Nam eget lorem odio. Duis et aliquet orci. Phasellus nec viverra est.
+
+```{r mytable, out.width='80%'}
+knitr::kable(iris[1:10, 1:4], caption = 'Table caption.',align = 'c',"html")
+```
+
+Or with figures: Figure \@ref(fig:standard-plot), or Figure \@ref(fig:morefigs).
+
+```{r standard-plot, out.width='80%', fig.align='center', fig.cap='Great figure!', fig.height=5}
+plot(mtcars[1:2])
+```
+
+```{r morefigs, out.width='80%', echo=TRUE, fig.cap='Amazing, right?!', fig.height=5}
+data <- iris
+
+plot(x = data$Sepal.Length, 
+     y = data$Sepal.Width, 
+     col = data$Species,
+     pch = 19, 
+     xlab = "Sepal Length (cm)",
+     ylab = "Sepal Width (cm)")
+
+```
+
+# Next Steps
+
+Aliquam sed faucibus risus, quis efficitur erat. Vestibulum semper mauris quis tempus eleifend. Aliquam sagittis dictum ipsum, quis viverra ligula eleifend ut. Curabitur sagittis vitae arcu eget faucibus. In non elementum felis. Duis et aliquam nunc. Nunc pulvinar sapien nunc, vel pretium nisi efficitur in. Fusce fringilla maximus leo et maximus. Fusce at ligula laoreet, iaculis mi at, auctor odio. Praesent sed elementum justo. Aenean consectetur risus rhoncus tincidunt efficitur. Praesent dictum mauris at diam maximus maximus [@R-posterdown].
+
+# Conclusion
+
+Try `posterdown` out! Hopefully you like it!
+
+```{r, include=FALSE}
+knitr::write_bib(c('knitr','rmarkdown','posterdown','pagedown'), 'packages.bib')
+```
+
+# References
