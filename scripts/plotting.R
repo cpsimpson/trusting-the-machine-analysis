@@ -313,17 +313,19 @@ get_sem_label <- function(column_name) {
 }
 
 plot_model <- function(fit){
-  library(semPlot)
   library(purrr)
   
   sem_model <- semPlot::semPlotModel(fit)
   node_names <- sem_model@Vars$name
   node_labels <- map_chr(node_names, get_sem_label)
   
-  plot <- semPaths(
+  
+  filename <- paste0("interaction_", paste(node_names, collapse="_"), ".png")
+  
+  plot <- semPlot::semPaths(
     object = fit,              # your lavaan model object
     what = "std",              # show standardized coefficients
-    layout = "circle",           # "tree", "circle", "spring", etc.
+    layout = "spring",           # "tree", "circle", "spring", etc.
     edge.label.cex = 1.2,      # size of edge (path) labels
     sizeMan = 20,               # size of variable boxes
     sizeLat = 0,               # hide latent variable nodes (you have none)
@@ -332,7 +334,9 @@ plot_model <- function(fit){
     title = FALSE,
     nodeLabels = node_labels,
     label.scale = FALSE, 
-    label.cex = 0.5
+    label.cex = 0.5, 
+    filetype = "png",
+    filename = filename
     
   )
   return(plot)

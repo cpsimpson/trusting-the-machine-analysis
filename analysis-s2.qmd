@@ -221,7 +221,7 @@ Number of participants after exclusions = `r nrow(s2_cleaned_data)`.
 s2_cleaned_data |> check_skewness("s2")
 
 s2_cleaned_data |>
-  select(-Progress, -ConsentForm, -`Duration (in seconds)`, -Status, -Finished, -TopicCheck, -GodspeedMETI_28, -GodspeedMETI_29, -AIChatbotsUsed_NA) |> 
+  dplyr::select(-Progress, -ConsentForm, -`Duration (in seconds)`, -Status, -Finished, -TopicCheck, -GodspeedMETI_28, -GodspeedMETI_29, -AIChatbotsUsed_NA) |> 
   check_normality("s2")
 
 ```
@@ -1304,19 +1304,81 @@ plot
 model_design <- '
   # Mediation paths
   anthropomorphism_score ~ a1 * Condition
-  author_trust_combined_score ~ a2 * anthropomorphism_score
+  author_trust_combined_score ~ a2 * anthropomorphism_score + d * Condition 
   content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + c_prime * Condition
 
   # Indirect effects
   indirect1 := a1 * b2
   indirect2 := a1 * a2 * b1
+  indirect3 := d * b1
 
   # Total effect
-  total := c_prime + indirect1 + indirect2
+  total := c_prime + indirect1 + indirect2 + indirect3
 '
-fit <- s2_cleaned_data |> test_med_mod_model(model_design)
+s2_fit_basic <- s2_cleaned_data |> test_med_mod_model(model_design)
+```
 
-plot <- plot_model(fit)
+
+```{r}
+plot <- plot_model(s2_fit_basic)
+
+```
+
+```{r}
+model_design <- '
+  # Mediation paths
+  anthropomorphism_score ~ a1 * Condition
+  likeability_score ~ a3 * anthropomorphism_score + e * Condition
+  author_trust_combined_score ~ a2 * anthropomorphism_score + d * Condition + b3 * likeability_score
+  content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + c_prime * Condition
+
+  # Indirect effects
+  indirect1 := a1 * b2
+  indirect2 := a1 * a2 * b1
+  indirect3 := d * b1
+  indirect4 := e * b3 * b1
+  indirect5 := a1 * a3 * b3 * b1
+
+  # Total effect
+  total := c_prime + indirect1 + indirect2 + indirect3 + indirect4 + indirect5
+'
+s2_fit_with_likeability <- s2_cleaned_data |> test_med_mod_model(model_design)
+```
+
+
+```{r}
+plot <- plot_model(s2_fit_with_likeability)
+
+```
+
+```{r}
+model_design <- '
+  # Mediation paths
+  anthropomorphism_score ~ a1 * Condition
+  likeability_score ~ a3 * anthropomorphism_score + e * Condition
+  competence_score ~ f * Condition + b4 * likeability_score + b5 * anthropomorphism_score
+  author_trust_combined_score ~ a2 * anthropomorphism_score + d * Condition + b3 * likeability_score + b6 * competence_score
+  content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + b7 * competence_score + b8 * likeability_score + c_prime * Condition
+
+  # Indirect effects
+  indirect1 := a1 * b2
+  indirect2 := a1 * a2 * b1
+  indirect3 := d * b1
+  indirect4 := e * b3 * b1
+  indirect5 := a1 * a3 * b3 * b1
+  indirect6 := f * b7
+  indirect7 := f * b6 * b1
+  indirect8 := e * b8
+
+  # Total effect
+  total := c_prime + indirect1 + indirect2 + indirect3 + indirect4 + indirect5 + indirect6 + indirect7 + indirect8
+'
+s2_fit_with_likeability_and_competence <- s2_cleaned_data |> test_med_mod_model(model_design)
+```
+
+
+```{r}
+plot <- plot_model(s2_fit_with_likeability_and_competence)
 
 ```
 
