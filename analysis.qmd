@@ -30,7 +30,7 @@ library(tidyverse)
 # library(FactoMineR)
 # library(psych)
 # library(interactions)
-# library(corrplot)
+# library(corrplot::corrplot)
 # library(rcartocolor)
 # library(ggpubr)
 # library(ggtext)
@@ -50,13 +50,14 @@ source("./scripts/analysis-descriptives.R", local = TRUE)
 source("./scripts/analysis-reliability.R", local = TRUE)
 source("./scripts/analysis-inferential.R", local = TRUE)
 source("./scripts/analysis-correlation.R", local = TRUE)
+source("./scripts/analysis-moderation-mediation.R", local = TRUE)
 source("./scripts/plotting.R", local = TRUE)
 source("./scripts/common.R", local = TRUE)
-# source("./helpers.R", local = TRUE)
 
 directory_setup()
 theme_set(my_theme)
 
+s1_study <- "s1"
 
 ```
 
@@ -121,8 +122,8 @@ My **hypothesis** is that there will be an increase in epistemic trust with incr
 ### Load data
 
 ```{r}
-s1_raw_data <- load_data("s1")
-s1_raw_data <- factorize_data("s1", s1_raw_data)
+s1_raw_data <- load_data(s1_study)
+s1_raw_data <- factorize_data(s1_study, s1_raw_data)
 ```
 
 Number of participants in raw data = `r nrow(s1_raw_data)`.
@@ -203,13 +204,13 @@ s1_raw_data |> summarize_columns(Unrealistic, Unrealistic_coded)
 No ability to check for duplicates because we recruited through CloudResearch and don't have ids. Assume that the platform prevents duplicate participant responses.
 
 ```{r}
-recruited_participants <- s1_raw_data |> count_recruited_participants("s1")
+recruited_participants <- s1_raw_data |> count_recruited_participants(s1_study)
 ```
 
 Number of participants recruited = `r recruited_participants`.
 
 ```{r}
-s1_cleaned_data <- s1_raw_data |> clean_data("s1")
+s1_cleaned_data <- s1_raw_data |> clean_data(s1_study)
 
 ```
 
@@ -222,12 +223,12 @@ Number of participants after basic filtering = `r nrow(s1_cleaned_data)`.
 ```{r}
 
 # Compute skewness for each numeric variable
-s1_cleaned_data |> check_skewness("s1")
+s1_cleaned_data |> check_skewness(s1_study)
 
 # Shapiro-Wilk normality test 
 s1_cleaned_data |>
   select(-Progress, -ConsentForm, -`Duration (in seconds)`, -Status, -Finished, -TopicCheck, -GodspeedMETI_28, -GodspeedMETI_29, -AIChatbotsUsed_NA, -Reread, -LanguagesFluent_NA) |>
-  check_normality("s1")
+  check_normality(s1_study)
 
 ```
 
@@ -251,7 +252,7 @@ missing_values_within_conditions(s1_imputed_data)
 Reverse code items for each scale where appropriate
 
 ```{r}
-s1_recoded_data <- s1_imputed_data |> recode_data("s1")
+s1_recoded_data <- s1_imputed_data |> recode_data(s1_study)
 ```
 
 #### Standardize Scale Item Values
@@ -278,7 +279,7 @@ s1_cleaned_data <- s1_cleaned_data |> regroup_data()
 
 ```{r}
 
-s1_cleaned_data <- s1_cleaned_data |> compute_scores("s1")
+s1_cleaned_data <- s1_cleaned_data |> compute_scores(s1_study)
 
 ```
 
@@ -359,7 +360,7 @@ s1_cleaned_data |> cronbachs_alpha(get_author_trust_score_METI_cols())
 ```{r}
 basic_descriptives(s1_cleaned_data$author_trust_behaviour_score)
 
-s1_cleaned_data |> cronbachs_alpha(get_author_trust_score_behaviour_cols("s1"))
+s1_cleaned_data |> cronbachs_alpha(get_author_trust_score_behaviour_cols(s1_study))
 
 ```
 
@@ -369,7 +370,7 @@ s1_cleaned_data |> cronbachs_alpha(get_author_trust_score_behaviour_cols("s1"))
 
 basic_descriptives(s1_cleaned_data$author_trust_combined_score)
 
-s1_cleaned_data |> cronbachs_alpha(get_author_trust_score_combined_cols("s1"))
+s1_cleaned_data |> cronbachs_alpha(get_author_trust_score_combined_cols(s1_study))
 
 
 ```
@@ -617,7 +618,7 @@ s1_cleaned_data |> summarize_exploded_columns("LanguagesFluent", LanguagesFluent
 ```{r}
 
 violin_plot(s1_cleaned_data, 
-            "s1",
+            s1_study,
             "Condition",
             "anthropomorphism_score",
             include_legend = FALSE)
@@ -652,7 +653,7 @@ We were not explicitly intending to manipulate likeability
 
 ```{r}
 violin_plot(s1_cleaned_data, 
-            "s1",
+            s1_study,
             "Condition",
             "likeability_score",
             include_legend = FALSE)
@@ -685,7 +686,7 @@ We were not explicitly intending to manipulate competence \##### Plot
 
 ```{r}
 violin_plot(s1_cleaned_data, 
-            "s1",
+            s1_study,
             "Condition",
             "competence_score",
             include_legend = FALSE)
@@ -721,7 +722,7 @@ s1_cleaned_data |> run_simple_effects_t_tests(competence_score ~ Condition)
 ```{r}
 
 plot <- violin_plot(s1_cleaned_data, 
-            "s1",
+            s1_study,
             "Condition",
             "content_trust_combined_score",
             include_legend = FALSE)
@@ -766,7 +767,7 @@ s1_cleaned_data |> linear_model(content_trust_combined_score ~ anthropomorphism_
 s1_cleaned_data |> test_correlation("anthropomorphism_score", "content_trust_combined_score")
 
 plot <- correlation_plot(s1_cleaned_data, 
-            "s1",
+            s1_study,
             "anthropomorphism_score",
             "content_trust_combined_score")
 
@@ -780,7 +781,7 @@ plot
 s1_cleaned_data |> test_correlation("author_trust_combined_score", "content_trust_combined_score")
 
 plots <- correlation_plot(s1_cleaned_data, 
-            "s1",
+            s1_study,
             "author_trust_combined_score",
             "content_trust_combined_score")
 
@@ -799,7 +800,7 @@ plot <- s1_cleaned_data |> interaction_plot_3(
   pred_name = "author_trust_combined_score",
   mod_name = "anthropomorphism_score", 
   target_name = "content_trust_combined_score", 
-  study = "s1")
+  study = s1_study)
 
 plot
 
@@ -818,7 +819,7 @@ plot <- s1_cleaned_data |> interaction_plot_4(
   mod2_name = "AIChatbotsFrequency_regrouped",
   mod2_v = c("frequently", "occasionally", "rarely"),
   target_name = "content_trust_combined_score", 
-  study = "s1")
+  study = s1_study)
 
 plot
 
@@ -837,7 +838,7 @@ aov_model <- s1_cleaned_data |> run_between_subjects_anova(content_trust_combine
 s1_cleaned_data |> test_correlation("Age_1", "content_trust_combined_score")
 
 plots <- correlation_plot(s1_cleaned_data, 
-            "s1",
+            s1_study,
             "Age_1",
             "content_trust_combined_score")
 
@@ -891,7 +892,7 @@ aov_model <- s1_cleaned_data |>
 s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ AIChatbotsFrequency_regrouped)
 
 plot <- violin_plot(s1_cleaned_data, 
-            "s1",
+            s1_study,
             "AIChatbotsFrequency_regrouped",
             "content_trust_combined_score",
             include_legend = FALSE, 
@@ -911,7 +912,7 @@ plot <- s1_cleaned_data |>
                                 pred_name = "Condition",
                                 mod_name = "AIChatbotsFrequency_regrouped",
                                 target_name = "content_trust_combined_score",
-                                study = "s1"
+                                study = s1_study
                                 )
 
 plot
@@ -928,7 +929,7 @@ aov_model <- s1_cleaned_data |>
 s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ ScienceContent_regrouped)
 
 plot <- violin_plot(s1_cleaned_data, 
-            "s1",
+            s1_study,
             "ScienceContent_regrouped",
             "content_trust_combined_score",
             include_legend = FALSE, 
@@ -950,7 +951,7 @@ plot <- s1_cleaned_data |>
                                 pred_name = "Condition",
                                 mod_name = "ScienceContent_regrouped",
                                 target_name = "content_trust_combined_score",
-                                study = "s1"
+                                study = s1_study
                                 )
 
 plot
@@ -964,7 +965,7 @@ plot
 s1_cleaned_data |> test_correlation("intention_to_use_score", "content_trust_combined_score")
 
 plots <- correlation_plot(s1_cleaned_data, 
-            "s1",
+            s1_study,
             "intention_to_use_score",
             "content_trust_combined_score")
 
@@ -987,7 +988,7 @@ aov_model <- s1_cleaned_data |>
 s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ Experience_4)
 
 plot <- violin_plot(s1_cleaned_data,
-            "s1",
+            s1_study,
             "Experience_4",
             "content_trust_combined_score",
             include_legend = FALSE,
@@ -1015,7 +1016,7 @@ plot <- violin_plot(s1_cleaned_data,
 s1_cleaned_data |> test_correlation("fear_of_ai_score", "content_trust_combined_score")
 
 plots <- correlation_plot(s1_cleaned_data, 
-            "s1",
+            s1_study,
             "fear_of_ai_score",
             "content_trust_combined_score")
 
@@ -1037,7 +1038,7 @@ aov_model <- s1_cleaned_data |>
 s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ Experience_7)
 
 plot <- violin_plot(s1_cleaned_data,
-            "s1",
+            s1_study,
             "Experience_7",
             "content_trust_combined_score",
             include_legend = FALSE,
@@ -1064,7 +1065,7 @@ plot <- violin_plot(s1_cleaned_data,
 s1_cleaned_data |> test_correlation("professional_content_expertise", "content_trust_combined_score")
 
 plots <- correlation_plot(s1_cleaned_data, 
-            "s1",
+            s1_study,
             "professional_content_expertise",
             "content_trust_combined_score")
 
@@ -1087,7 +1088,7 @@ aov_model <- s1_cleaned_data |>
 s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ Appelman_4)
 
 plot <- violin_plot(s1_cleaned_data,
-            "s1",
+            s1_study,
             "Appelman_4",
             "content_trust_combined_score",
             include_legend = FALSE,
@@ -1115,7 +1116,7 @@ plot <- s1_cleaned_data |>
                                 pred_name = "Condition",
                                 mod_name = "Appelman_4",
                                 target_name = "content_trust_combined_score",
-                                study = "s1"
+                                study = s1_study
                                 )
 
 plot
@@ -1133,7 +1134,7 @@ aov_model <- s1_cleaned_data |>
 s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ Appelman_5)
 
 plot <- violin_plot(s1_cleaned_data,
-            "s1",
+            s1_study,
             "Appelman_5",
             "content_trust_combined_score",
             include_legend = FALSE,
@@ -1161,7 +1162,7 @@ plot <- s1_cleaned_data |>
                                 pred_name = "Condition",
                                 mod_name = "Appelman_5",
                                 target_name = "content_trust_combined_score",
-                                study = "s1"
+                                study = s1_study
                                 )
 
 plot
@@ -1179,7 +1180,7 @@ aov_model <- s1_cleaned_data |>
 s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ Appelman_6)
 
 plot <- violin_plot(s1_cleaned_data,
-            "s1",
+            s1_study,
             "Appelman_6",
             "content_trust_combined_score",
             include_legend = FALSE,
@@ -1207,7 +1208,7 @@ plot <- s1_cleaned_data |>
                                 pred_name = "Condition",
                                 mod_name = "Appelman_6",
                                 target_name = "content_trust_combined_score",
-                                study = "s1"
+                                study = s1_study
                                 )
 
 plot
@@ -1253,9 +1254,11 @@ s1_cleaned_data |>
 ##### Plot
 
 ```{r}
-plot <- violin_plot(s1_cleaned_data, s1_cleaned_data$Condition, s1_cleaned_data$author_trust_combined_score, s1_cleaned_data$Condition, "Author Trust Scores", x_label = "Anthropomorphism Condition", y_label = "Author Trust Score", comparisons = anthropomorphism_comparisons)
-
-ggsave("plots/s1/author_anthropomorphism_distribution.png", plot = plot, create.dir = TRUE)
+plot <- violin_plot(s1_cleaned_data, 
+            s1_study,
+            "Condition",
+            "author_trust_combined_score",
+            include_legend = FALSE)
 
 plot
 ```
@@ -1263,22 +1266,8 @@ plot
 ##### Descriptive Statistics
 
 ```{r}
-s1_cleaned_data |>
-  select(Condition, author_trust_combined_score) |>
-by(s1_cleaned_data$Condition, summary)
 
-```
-
-###### Standard Deviation
-
-```{r}
-tapply(s1_cleaned_data$author_trust_combined_score, s1_cleaned_data$Condition, sd)
-```
-
-###### Variance
-
-```{r}
-tapply(s1_cleaned_data$author_trust_combined_score, s1_cleaned_data$Condition, var)
+s1_cleaned_data |> descriptives_by_group(Condition, author_trust_combined_score)
 ```
 
 ##### Inferential Statistics
@@ -1287,20 +1276,56 @@ tapply(s1_cleaned_data$author_trust_combined_score, s1_cleaned_data$Condition, v
 
 ```{r include=FALSE}
 
-data <- s1_cleaned_data |> group_by(Condition) |> filter(n() > 3) |> ungroup()
-formula <- author_trust_combined_score ~ Condition
-x <- s1_cleaned_data$Condition
-x_label <- "Anthropomorphism Condition"
-y <- s1_cleaned_data$author_trust_combined_score
-y_label <- "Author Trust"
+s1_cleaned_data |> descriptives_by_group(Condition, author_trust_combined_score) 
+
+aov_model <- s1_cleaned_data |>
+  group_by(Condition) |> filter(n() > 3) |> ungroup() |>
+  droplevels() |>
+  run_between_subjects_anova(author_trust_combined_score ~ Condition, "author_trust_combined_score")
+
+s1_cleaned_data |>
+  droplevels() |>
+  run_simple_effects_t_tests(author_trust_combined_score ~ Condition)
 
 ```
 
-{{< include "_ANOVA.qmd" >}}
-
 ##### Post-hoc Analysis
 
+###### Anthropomorphism
+
+```{r}
+
+s1_cleaned_data |> linear_model(author_trust_combined_score ~ anthropomorphism_score)
+
+```
+
+```{r}
+
+s1_cleaned_data |> test_correlation("anthropomorphism_score", "author_trust_combined_score")
+
+plot <- correlation_plot(s1_cleaned_data, 
+            s1_study,
+            "anthropomorphism_score",
+            "author_trust_combined_score")
+
+plot
+
+
+```
+
 ###### Anthro / Author Trust Interaction
+
+```{r}
+
+s1_cleaned_data$Condition_Compressed <- ifelse(s1_cleaned_data$Condition == "High", 1, 0)
+
+s1_cleaned_data$Condition_Medium <- ifelse(s1_cleaned_data$Condition == "Medium", 1, 0)
+s1_cleaned_data$Condition_High <- ifelse(s1_cleaned_data$Condition == "High", 1, 0)
+
+s1_gen_ai_con_only_data <- s1_cleaned_data |> filter(Condition != "High") 
+s1_gen_ai_con_only_data$Condition <- factor(s1_gen_ai_con_only_data$Condition, levels = c("Low", "Medium"))
+
+```
 
 ```{r}
 model_design <- '
@@ -1317,12 +1342,59 @@ model_design <- '
   # Total effect
   total := c_prime + indirect1 + indirect2 + indirect3
 '
+s1_fit_compressed <- s1_gen_ai_con_only_data |> test_med_mod_model(model_design)
+
+```
+
+```{r}
+plot_model(s1_fit_compressed, s1_study)
+```
+
+```{r}
+model_design <- '
+  # Mediation paths
+  anthropomorphism_score ~ a1 * Condition_Compressed
+  author_trust_combined_score ~ a2 * anthropomorphism_score + d * Condition_Compressed 
+  content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + c_prime * Condition_Compressed
+
+  # Indirect effects
+  indirect1 := a1 * b2
+  indirect2 := a1 * a2 * b1
+  indirect3 := d * b1
+
+  # Total effect
+  total := c_prime + indirect1 + indirect2 + indirect3
+'
+s1_fit_compressed <- s1_cleaned_data |> test_med_mod_model(model_design)
+
+plot_model(s1_fit_compressed, s1_study)
+```
+
+```{r}
+model_design <- '
+  # Mediation paths
+  anthropomorphism_score ~ a1 * Condition_Medium + a2 * Condition_High
+  author_trust_combined_score ~ d1 * Condition_Medium + d2 * Condition_High + a3 * anthropomorphism_score
+  content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + c1 * Condition_Medium + c2 * Condition_High
+
+  # Indirect effects
+  indirect1_med := a1 * b2
+  indirect1_high := a2 * b2
+
+  indirect2_med := a1 * a3 * b1
+  indirect2_high := a2 * a3 * b1
+
+  indirect3_med := d1 * b1
+  indirect3_high := d2 * b1
+
+  total_med := c1 + indirect1_med + indirect2_med + indirect3_med
+  total_high := c2 + indirect1_high + indirect2_high + indirect3_high
+'
 s1_fit_basic <- s1_cleaned_data |> test_med_mod_model(model_design)
 ```
 
-
 ```{r}
-plot <- plot_model(s1_fit_basic)
+plot_model(s1_fit_basic, s1_study)
 
 ```
 
@@ -1344,12 +1416,11 @@ model_design <- '
   # Total effect
   total := c_prime + indirect1 + indirect2 + indirect3 + indirect4 + indirect5
 '
-s1_fit_with_likeability <- s1_cleaned_data |> test_med_mod_model(model_design)
+s1_fit_with_likeability <- s1_gen_ai_con_only_data |> test_med_mod_model(model_design)
 ```
 
-
 ```{r}
-plot <- plot_model(s1_fit_with_likeability)
+plot <- plot_model(s1_fit_with_likeability, s1_study)
 
 ```
 
@@ -1375,201 +1446,173 @@ model_design <- '
   # Total effect
   total := c_prime + indirect1 + indirect2 + indirect3 + indirect4 + indirect5 + indirect6 + indirect7 + indirect8
 '
+s1_fit_with_likeability_and_competence <- s1_gen_ai_con_only_data |> test_med_mod_model(model_design)
+```
+
+```{r}
+plot <- plot_model(s1_fit_with_likeability_and_competence, s1_study)
+
+```
+
+```{r}
+model_design <- '
+  # Mediation paths
+  anthropomorphism_score ~ a1 * Condition_Compressed
+  likeability_score ~ a3 * anthropomorphism_score + e * Condition_Compressed
+  author_trust_combined_score ~ a2 * anthropomorphism_score + d * Condition_Compressed + b3 * likeability_score
+  content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + c_prime * Condition_Compressed
+
+  # Indirect effects
+  indirect1 := a1 * b2
+  indirect2 := a1 * a2 * b1
+  indirect3 := d * b1
+  indirect4 := e * b3 * b1
+  indirect5 := a1 * a3 * b3 * b1
+
+  # Total effect
+  total := c_prime + indirect1 + indirect2 + indirect3 + indirect4 + indirect5
+'
+s1_fit_with_likeability <- s1_cleaned_data |> test_med_mod_model(model_design)
+```
+
+```{r}
+plot <- plot_model(s1_fit_with_likeability, s1_study)
+
+```
+
+```{r}
+model_design <- '
+  # Mediation paths
+  anthropomorphism_score ~ a1 * Condition_Compressed
+  likeability_score ~ a3 * anthropomorphism_score + e * Condition_Compressed
+  competence_score ~ f * Condition_Compressed + b4 * likeability_score + b5 * anthropomorphism_score
+  author_trust_combined_score ~ a2 * anthropomorphism_score + d * Condition_Compressed + b3 * likeability_score + b6 * competence_score
+  content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + b7 * competence_score + b8 * likeability_score + c_prime * Condition_Compressed
+
+  # Indirect effects
+  indirect1 := a1 * b2
+  indirect2 := a1 * a2 * b1
+  indirect3 := d * b1
+  indirect4 := e * b3 * b1
+  indirect5 := a1 * a3 * b3 * b1
+  indirect6 := f * b7
+  indirect7 := f * b6 * b1
+  indirect8 := e * b8
+
+  # Total effect
+  total := c_prime + indirect1 + indirect2 + indirect3 + indirect4 + indirect5 + indirect6 + indirect7 + indirect8
+'
 s1_fit_with_likeability_and_competence <- s1_cleaned_data |> test_med_mod_model(model_design)
 ```
 
-
 ```{r}
-plot <- plot_model(s1_fit_with_likeability_and_competence)
-
-```
-
-
-
-###### Anthropomorphism
-
-```{r}
-
-fit_i <- lm(author_trust_combined_score ~ anthropomorphism_score , data = s1_cleaned_data)
-
-summ(fit_i)
+plot <- plot_model(s1_fit_with_likeability_and_competence, s1_study)
 
 ```
 
 ```{r}
 
-cor_result <- cor.test(s1_cleaned_data$anthropomorphism_score, s1_cleaned_data$author_trust_combined_score, method = "pearson")
-apa::cor_apa(cor_result, r_ci = TRUE)
-
-```
-
-```{r}
-df <- s1_cleaned_data |>
-  select(content_trust_combined_score, author_trust_combined_score, anthropomorphism_score)
-
-```
-
-```{r}
-cor(df)
-corrplot(cor(df),
-         method = "number",
-  sig.level = 0.05,
-  type = "upper", # show only upper side
-)
-
+# lm_model <- lm(author_trust_combined_score ~ anthropomorphism_score * content_trust_combined_score, data = s1_cleaned_data)
+# summary(lm_model)
 # 
-# cat_plot(fit_i, pred = Condition, modx = age_range,  geom = "bar", colors = safe_pal)
-
-```
-
-```{r}
-plot <- s1_cleaned_data |>
-  ggplot(aes(x = anthropomorphism_score, y = author_trust_combined_score)) +
-  labs(x="Anthropomorphism Score", y = "Author Trust Score")  +
-  geom_point(col = "#196389", size = 0.5) +
-        stat_smooth(method = "lm", formula = "y ~ x",
-        col = "#7F2543", se = FALSE, size = 1
-)
-
-ggsave("plots/s1/author_anthropomorphism_correlation.png", plot = plot, create.dir = TRUE)
-
-plot
-```
-
-###### Anthro / Author Trust Interaction
-
-```{r}
-
-lm_model <- lm(author_trust_combined_score ~ anthropomorphism_score * content_trust_combined_score, data = s1_cleaned_data)
-summary(lm_model)
-
-plot <- interact_plot(lm_model, 
-              pred = anthropomorphism_score, 
-              modx = content_trust_combined_score,  
-              x.label ="Anthropomorphism Score",
-              y.label = "Author Trust Score",
-              legend.main = "Content Trust Score",
-              plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", 
-              colors = safe_pal) +
-  theme(legend.position = "right")
-
-ggsave("plots/s1/author_anthropomorphism_content_interaction.png", plot = plot, create.dir = TRUE)
-
-plot
+# plot <- interact_plot(lm_model, 
+#               pred = anthropomorphism_score, 
+#               modx = content_trust_combined_score,  
+#               x.label ="Anthropomorphism Score",
+#               y.label = "Author Trust Score",
+#               legend.main = "Content Trust Score",
+#               plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", 
+#               colors = safe_pal) +
+#   theme(legend.position = "right")
+# 
+# ggsave("plots/s1/author_anthropomorphism_content_interaction.png", plot = plot, create.dir = TRUE)
+# 
+# plot
 
 ```
 
 ```{r}
 
-lm_model <- lm(author_trust_combined_score ~ anthropomorphism_score * content_trust_combined_score * AIChatbotsFrequency_regrouped, data = s1_cleaned_data)
-summary(lm_model)
-
-plot <- interact_plot(lm_model, 
-              pred = anthropomorphism_score, 
-              modx = content_trust_combined_score,
-              mod2 = AIChatbotsFrequency_regrouped,
-              x.label ="Anthropomorphism Score",
-              y.label = "Author Trust Score",
-              legend.main = "Content Trust Score",
-              mod2.values = c("frequently", "occasionally", "rarely"),
-              mod2.labels = c("frequently", "occasionally", "rarely"),
-              plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", 
-              colors = safe_pal) +
-  theme(legend.position = "right")
-
-ggsave("plots/s1/author_anthropomorphism_content_frequency_interaction.png", plot = plot, create.dir = TRUE)
-
-plot
+# lm_model <- lm(author_trust_combined_score ~ anthropomorphism_score * content_trust_combined_score * AIChatbotsFrequency_regrouped, data = s1_cleaned_data)
+# summary(lm_model)
+# 
+# plot <- interact_plot(lm_model, 
+#               pred = anthropomorphism_score, 
+#               modx = content_trust_combined_score,
+#               mod2 = AIChatbotsFrequency_regrouped,
+#               x.label ="Anthropomorphism Score",
+#               y.label = "Author Trust Score",
+#               legend.main = "Content Trust Score",
+#               mod2.values = c("frequently", "occasionally", "rarely"),
+#               mod2.labels = c("frequently", "occasionally", "rarely"),
+#               plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", 
+#               colors = safe_pal) +
+#   theme(legend.position = "right")
+# 
+# ggsave("plots/s1/author_anthropomorphism_content_frequency_interaction.png", plot = plot, create.dir = TRUE)
+# 
+# plot
 
 ```
 
 ```{r}
 
-lm_model <- lm(author_trust_combined_score ~ anthropomorphism_score * AIChatbotsFrequency_regrouped, data = s1_cleaned_data)
-summary(lm_model)
-
-plot <- interact_plot(lm_model, 
-              pred = anthropomorphism_score, 
-              modx = AIChatbotsFrequency_regrouped,
-              x.label ="Anthropomorphism Score",
-              y.label = "Author Trust Score",
-              legend.main = "Frequency",
-              # mod2.values = c("frequently", "occasionally", "rarely"),
-              # mod2.labels = c("frequently", "occasionally", "rarely"),
-              plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", 
-              colors = safe_pal) +
-  theme(legend.position = "right")
-
-ggsave("plots/s1/author_anthropomorphism_frequency_interaction.png", plot = plot, create.dir = TRUE)
-
-plot
+# lm_model <- lm(author_trust_combined_score ~ anthropomorphism_score * AIChatbotsFrequency_regrouped, data = s1_cleaned_data)
+# summary(lm_model)
+# 
+# plot <- interact_plot(lm_model, 
+#               pred = anthropomorphism_score, 
+#               modx = AIChatbotsFrequency_regrouped,
+#               x.label ="Anthropomorphism Score",
+#               y.label = "Author Trust Score",
+#               legend.main = "Frequency",
+#               # mod2.values = c("frequently", "occasionally", "rarely"),
+#               # mod2.labels = c("frequently", "occasionally", "rarely"),
+#               plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", 
+#               colors = safe_pal) +
+#   theme(legend.position = "right")
+# 
+# ggsave("plots/s1/author_anthropomorphism_frequency_interaction.png", plot = plot, create.dir = TRUE)
+# 
+# plot
 
 ```
 
 ###### Age
 
 ```{r}
-cor_result <- cor.test(s1_cleaned_data$author_trust_combined_score, s1_cleaned_data$Age_1, method = "pearson")
-apa::cor_apa(cor_result, r_ci = TRUE)
+s1_cleaned_data |> descriptives_by_group(age_range, author_trust_combined_score) 
 
-s1_cleaned_data |>
-  ggplot(aes(x = Age_1, y = author_trust_combined_score)) +
-  geom_point() +
-        stat_smooth(method = "lm",
-        col = "#C42126", se = FALSE, size = 1
-)
-```
-
-```{r}
-
-data <- s1_cleaned_data |> group_by(age_range) |> filter(n() > 3) |> ungroup()
-formula <- author_trust_combined_score ~ age_range
-x <- s1_cleaned_data$age_range
-x_label <- "Age range"
-y <- s1_cleaned_data$author_trust_combined_score
-y_label <- "Author Trust"
+aov_model <- s1_cleaned_data |>
+  group_by(age_range) |> filter(n() > 3) |> ungroup() |>
+  droplevels() |>
+  run_between_subjects_anova(author_trust_combined_score ~ age_range, "author_trust_combined_score")
 
 ```
 
-{{< include "_ANOVA.qmd" >}}
-
-###### Age / Condition Interaction
-
 ```{r}
+s1_cleaned_data |> test_correlation("Age_1", "author_trust_combined_score")
 
-fit_i <- lm(author_trust_combined_score ~ Condition * age_range, data = s1_cleaned_data)
+plots <- correlation_plot(s1_cleaned_data, 
+            s1_study,
+            "Age_1",
+            "author_trust_combined_score")
 
-summ(fit_i)
-
-cat_plot(fit_i, pred = Condition, modx = age_range,  geom = "bar", colors = safe_pal)
+# Display the plots
+plots$lm
+plots$loess
 ```
 
 ###### Gender (Man / Woman only)
 
 ```{r}
 
-data <- s1_cleaned_data |> group_by(Gender) |> filter(n() > 3) |> ungroup()
-formula <- author_trust_combined_score ~ Gender
-x <- s1_cleaned_data$Gender
-x_label <- "Gender"
-y <- s1_cleaned_data$author_trust_combined_score
-y_label <- "Author Trust"
+s1_cleaned_data |> descriptives_by_group(Gender, author_trust_combined_score) 
 
-```
-
-{{< include "_ANOVA.qmd" >}}
-
-###### Gender / Condition Interaction
-
-```{r}
-
-
-fit_i <- lm(author_trust_combined_score ~ Condition * Gender, 
-                    data = s1_cleaned_data |> filter(Gender == "Man" | Gender == "Woman"))
-
-summ(fit_i)
-
-cat_plot(fit_i, pred = Condition, modx = Gender,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="line", colors = safe_pal)
+aov_model <- s1_cleaned_data |>
+  group_by(Gender) |> filter(n() > 3) |> ungroup() |>
+  droplevels() |>
+  run_between_subjects_anova(author_trust_combined_score ~ Gender, "author_trust_combined_score")
 
 ```
 
@@ -1577,801 +1620,609 @@ cat_plot(fit_i, pred = Condition, modx = Gender,  plot.points = TRUE, jitter = 0
 
 ```{r}
 
-data <- s1_cleaned_data |> group_by(Sex) |> filter(n() > 3) |> ungroup()
-formula <- author_trust_combined_score ~ Sex
-x <- s1_cleaned_data$Sex
-x_label <- "Sex"
-y <- s1_cleaned_data$author_trust_combined_score
-y_label <- "Author Trust"
+s1_cleaned_data |> descriptives_by_group(Sex, author_trust_combined_score) 
 
-```
+aov_model <- s1_cleaned_data |>
+  group_by(Sex) |> filter(n() > 3) |> ungroup() |>
+  droplevels() |>
+  run_between_subjects_anova(author_trust_combined_score ~ Sex, "author_trust_combined_score")
 
-{{< include "_ANOVA.qmd" >}}
-
-###### Sex / Condition Interaction
-
-```{r}
-
-fit_i <- lm(author_trust_combined_score ~ Condition * Sex, 
-                    data = s1_cleaned_data |> filter(Sex == "Male" | Sex == "Female"))
-
-summ(fit_i)
-
-cat_plot(fit_i, pred = Condition, modx = Sex,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="line", colors = safe_pal)
 ```
 
 ###### Education
 
 ```{r}
 
-data <- s1_cleaned_data |> group_by(Education) |> filter(n() > 3) |> ungroup()
-formula <- author_trust_combined_score ~ Education
-x <- s1_cleaned_data$Education
-x_label <- "Education"
-y <- s1_cleaned_data$author_trust_combined_score
-y_label <- "Author Trust"
+s1_cleaned_data |> descriptives_by_group(Education, author_trust_combined_score) 
 
-```
-
-{{< include "_ANOVA.qmd" >}}
-
-```{r}
-
-data <- s1_cleaned_data |> group_by(Education_regrouped) |> filter(n() > 3) |> ungroup()
-formula <- author_trust_combined_score ~ Education_regrouped
-x <- s1_cleaned_data$Education_regrouped
-x_label <- "Education"
-y <- s1_cleaned_data$author_trust_combined_score
-y_label <- "Author Trust"
-
-```
-
-{{< include "_ANOVA.qmd" >}}
-
-###### Education / Condition Interaction
-
-```{r}
-
-fit_i <- lm(author_trust_combined_score ~ Condition * Education, 
-                    data = s1_cleaned_data)
-
-summ(fit_i)
-
-cat_plot(fit_i, pred = Condition, modx = Education,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
-
-fit_i <- lm(author_trust_combined_score ~ Condition * Education_regrouped, 
-                    data = s1_cleaned_data)
-
-summ(fit_i)
-
-cat_plot(fit_i, pred = Condition, modx = Education_regrouped,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+aov_model <- s1_cleaned_data |>
+  group_by(Education) |> filter(n() > 3) |> ungroup() |>
+  droplevels() |>
+  run_between_subjects_anova(author_trust_combined_score ~ Education, "author_trust_combined_score")
 
 ```
 
 ###### AI Usage Experience
 
 ```{r}
-violin_plot(data = s1_cleaned_data, 
-            x = s1_cleaned_data$AIChatbotsFrequency_regrouped, 
-            y = s1_cleaned_data$author_trust_combined_score, 
-            group = s1_cleaned_data$AIChatbotsFrequency_regrouped, 
-            title = "Author Trust Scores by AI Usage Frequency", 
-            legend_label = "AI Usage Frequency", 
-            y_label = "Author Trust Score", x_label = "AI Usage Frequency")
+s1_cleaned_data |> descriptives_by_group(AIChatbotsFrequency_regrouped, author_trust_combined_score) 
+
+aov_model <- s1_cleaned_data |>
+  group_by(AIChatbotsFrequency_regrouped) |> filter(n() > 3) |> ungroup() |>
+  droplevels() |>
+  run_between_subjects_anova(author_trust_combined_score ~ AIChatbotsFrequency_regrouped, "author_trust_combined_score")
+
+s1_cleaned_data |>
+  droplevels() |>
+  run_simple_effects_t_tests(author_trust_combined_score ~ AIChatbotsFrequency_regrouped)
+
+plot <- violin_plot(s1_cleaned_data, 
+            s1_study,
+            "AIChatbotsFrequency_regrouped",
+            "author_trust_combined_score",
+            include_legend = FALSE, 
+            comparisons = list(  c("rarely", "occasionally"),
+    c("rarely", "frequently"),
+    c("occasionally", "frequently") ))
+
+plot
+
 ```
 
 ```{r}
 
-# frequency_comparisons <- list(  c("rarely", "occasionally"),
-#     c("rarely", "frequently"),
-#     c("occasionally", "frequently") )
-# 
-# condition_comparisons <- list(  c("High", "Medium"),
-#     c("High", "Low"),
-#     c("Medium", "Low") )
-# 
-# # Global test
-# compare_means(author_trust_combined_score ~ AIChatbotsFrequency_regrouped,  data = s1_cleaned_data, method = "anova")
-# 
-# compare_means(author_trust_combined_score ~ AIChatbotsFrequency_regrouped, comparisons = frequency_comparisons, data = s1_cleaned_data,  method = "t.test")
-# 
-# 
-# ggboxplot(s1_cleaned_data, x = "AIChatbotsFrequency_regrouped", y = "author_trust_combined_score",
-#           color = "AIChatbotsFrequency_regrouped", palette = safe_pal)+ 
-#   stat_compare_means(comparisons = frequency_comparisons, method = "t.test", label = "p.signif") + # Add pairwise comparisons p-value
-#   stat_compare_means(label.y = 12, method = "anova")        +     # Add global p-value
-#   ggtitle("Mean Author Trust by Frequency of AI Chatbot Use") + 
-#     labs(x="Frequency of Use", y = "Author Trust", fill = "Frequency of Use")
-#   
-# 
-# ggbarplot(s1_cleaned_data, x = "AIChatbotsFrequency_regrouped", y = "author_trust_combined_score",
-#           add = "mean_sd",        
-#           color = "AIChatbotsFrequency_regrouped", palette = safe_pal, position = position_dodge(0.8))+ 
-#   stat_compare_means(comparisons = frequency_comparisons, method = "t.test", label = "p.signif") + # Add pairwise comparisons p-value
-#   stat_compare_means(label.y = 12, method = "anova")      +     # Add global p-value
-#   ggtitle("Mean Author Trust by Frequency of AI Chatbot Use") + 
-#     labs(x="Frequency of Use", y = "Author Trust", fill = "Frequency of Use")
-#   
-# 
-# ggbarplot(s1_cleaned_data |> filter(AIChatbotsFrequency_regrouped == "frequently"), x = "Condition", y = "author_trust_combined_score",
-#           add = "mean_sd",        
-#           color = "Condition", palette = safe_pal, position = position_dodge(0.8))+ 
-#   stat_compare_means(comparisons = condition_comparisons, method = "t.test", label = "p.signif") +
-#   stat_compare_means(label.y = 12, method = "anova")  +     # Add global p-value
-#   ggtitle("Mean Author Trust by Condition for Frequent Users of AI Chatbots") + 
-#     labs(x="Antropomorphism Condition", y = "Author Trust", fill = "Antropomorphism Condition")
-#   
-# 
-# ggbarplot(s1_cleaned_data |> filter(AIChatbotsFrequency_regrouped == "occasionally"), x = "Condition", y = "author_trust_combined_score",
-#           add = "mean_sd",        
-#           color = "Condition", palette = safe_pal, position = position_dodge(0.8))+ 
-#   stat_compare_means(comparisons = condition_comparisons, method = "t.test", label = "p.signif") +
-#   stat_compare_means(label.y = 12, method = "anova")  +     # Add global p-value
-#   ggtitle("Mean Author Trust by Condition for Occassional Users of AI Chatbots") + 
-#     labs(x="Antropomorphism Condition", y = "Author Trust", fill = "Antropomorphism Condition")
-#   
-# ggbarplot(s1_cleaned_data |> filter(AIChatbotsFrequency_regrouped == "rarely"), x = "Condition", y = "author_trust_combined_score",
-#           add = "mean_sd",        
-#           color = "Condition", palette = safe_pal, position = position_dodge(0.8))+ 
-#   stat_compare_means(comparisons = condition_comparisons, method = "t.test", label = "p.signif") +
-#   stat_compare_means(label.y = 12, method = "anova") +     # Add global p-value
-#   ggtitle("Mean Author Trust by Condition for Rare Users of AI Chatbots") + 
-#     labs(x="Antropomorphism Condition", y = "Author Trust", fill = "Antropomorphism Condition")
-  
-```
+lm_model <- s1_cleaned_data |> linear_model(author_trust_combined_score ~ Condition * AIChatbotsFrequency_regrouped)
 
-```{r}
 
-data <- s1_cleaned_data |> group_by(AIChatbotsFrequency_regrouped) |> filter(n() > 3) |> ungroup()
-formula <- author_trust_combined_score ~ AIChatbotsFrequency_regrouped 
-x <- s1_cleaned_data$AIChatbotsFrequency_regrouped
-x_label <- "AI Usage Frequency"
-y <- s1_cleaned_data$author_trust_combined_score
-y_label <- "Author Trust"
+plot <- s1_cleaned_data |>
+  categorical_interaction_plot_3(lm_model,
+                                pred_name = "Condition",
+                                mod_name = "AIChatbotsFrequency_regrouped",
+                                target_name = "author_trust_combined_score",
+                                study = s1_study
+                                )
 
-```
-
-{{< include "_ANOVA.qmd" >}}
-
-```{r}
-
-fit_i <- lm(author_trust_combined_score ~ Condition * AIChatbotsFrequency, 
-                    data = s1_cleaned_data)
-
-summ(fit_i)
-
-cat_plot(fit_i, pred = Condition, modx = AIChatbotsFrequency,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
-```
-
-```{r}
-
-fit_i <- lm(author_trust_combined_score ~ Condition * AIChatbotsFrequency_regrouped,
-                    data = s1_cleaned_data)
-
-summ(fit_i)
-
-cat_plot(fit_i, pred = Condition, modx = AIChatbotsFrequency_regrouped,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
-
+plot
 ```
 
 ###### Science Content Experience
 
 ```{r}
+s1_cleaned_data |> descriptives_by_group(ScienceContent, author_trust_combined_score) 
 
-data <- s1_cleaned_data |> group_by(ScienceContent) |> filter(n() > 3) |> ungroup()
-formula <- author_trust_combined_score ~ ScienceContent
-x <- s1_cleaned_data$ScienceContent
-x_label <- "Science Content Consumption Frequency"
-y <- s1_cleaned_data$author_trust_combined_score
-y_label <- "Author Trust"
+aov_model <- s1_cleaned_data |>
+  group_by(ScienceContent) |> filter(n() > 3) |> ungroup() |>
+  droplevels() |>
+  run_between_subjects_anova(author_trust_combined_score ~ ScienceContent, "author_trust_combined_score")
 
-```
 
-{{< include "_ANOVA.qmd" >}}
+s1_cleaned_data |> descriptives_by_group(ScienceContent_regrouped, author_trust_combined_score) 
 
-```{r}
-
-data <- s1_cleaned_data |> group_by(ScienceContent_regrouped) |> filter(n() > 3) |> ungroup()
-formula <- author_trust_combined_score ~ ScienceContent_regrouped
-x <- s1_cleaned_data$ScienceContent_regrouped
-x_label <- "Science Content Consumption Frequency"
-y <- s1_cleaned_data$author_trust_combined_score
-y_label <- "Author Trust"
-
-```
-
-{{< include "_ANOVA.qmd" >}}
-
-```{r}
-
-# aov_model <- aov(author_trust_combined_score ~ ScienceContent, data = s1_cleaned_data)
-# 
-# par(mfrow = c(2, 2))
-# plot(aov_model)
-# 
-# summary(aov_model)
-
-fit_i <- lm(author_trust_combined_score ~ Condition * ScienceContent, 
-                    data = s1_cleaned_data)
-
-summ(fit_i)
-
-cat_plot(fit_i, pred = Condition, modx = ScienceContent,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
-
-fit_i <- lm(author_trust_combined_score ~ Condition * ScienceContent_regrouped, 
-                    data = s1_cleaned_data)
-
-summ(fit_i)
-
-cat_plot(fit_i, pred = Condition, modx = ScienceContent_regrouped,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+aov_model <- s1_cleaned_data |>
+  group_by(ScienceContent_regrouped) |> filter(n() > 3) |> ungroup() |>
+  droplevels() |>
+  run_between_subjects_anova(author_trust_combined_score ~ ScienceContent_regrouped, "author_trust_combined_score")
 
 ```
 
 ###### Intention to Use AI
 
 ```{r}
-cor_result <- cor.test(s1_cleaned_data$author_trust_combined_score, s1_cleaned_data$intention_to_use_score, method = "pearson")
-apa::cor_apa(cor_result, r_ci = TRUE)
+s1_cleaned_data |> test_correlation("intention_to_use_score", "author_trust_combined_score")
 
-s1_cleaned_data |>
-  ggplot(aes(x = intention_to_use_score, y = author_trust_combined_score)) +
-  geom_point() +
-        stat_smooth(method = "lm",
-        col = "#C42126", se = FALSE, size = 1
-)
+plots <- correlation_plot(s1_cleaned_data, 
+            s1_study,
+            "intention_to_use_score",
+            "author_trust_combined_score")
+
+# Display the plots
+plots$lm
+plots$loess
 ```
 
 ```{r}
-data <- s1_cleaned_data |> group_by(intention_to_use_score) |> filter(n() > 3) |> ungroup()
-formula <- author_trust_combined_score ~ intention_to_use_score
-x <- s1_cleaned_data$intention_to_use_score
-x_label <- "Intention to Use AI"
-y <- s1_cleaned_data$author_trust_combined_score
-y_label <- "Author Trust"
+
+lm_model <- s1_cleaned_data |> linear_model(author_trust_combined_score ~ Condition * intention_to_use_score)
 
 
-```
+plot <- s1_cleaned_data |>
+  categorical_interaction_plot_3(lm_model,
+                                pred_name = "Condition",
+                                mod_name = "intention_to_use_score",
+                                target_name = "author_trust_combined_score",
+                                study = s1_study
+                                )
 
-{{< include "_ANOVA.qmd" >}}
-
-```{r}
-
-fit_i <- lm(author_trust_combined_score ~ Condition * intention_to_use_score, 
-                    data = s1_cleaned_data)
-
-summ(fit_i)
-
-cat_plot(fit_i, pred = Condition, modx = intention_to_use_score,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+plot
 ```
 
 ###### Changed Opinion
 
 ```{r}
-cor_result <- cor.test(s1_cleaned_data$author_trust_combined_score, s1_cleaned_data$Experience_4, method = "pearson")
-apa::cor_apa(cor_result, r_ci = TRUE)
+s1_cleaned_data |> descriptives_by_group(Experience_4, author_trust_combined_score) 
 
-s1_cleaned_data |>
-  ggplot(aes(x = Experience_4, y = author_trust_combined_score)) +
-  geom_point() +
-        stat_smooth(method = "lm",
-        col = "#C42126", se = FALSE, size = 1
-)
-```
+aov_model <- s1_cleaned_data |>
+  run_between_subjects_anova(author_trust_combined_score ~ Experience_4, "author_trust_combined_score")
 
-```{r}
-data <- s1_cleaned_data |> group_by(Experience_4) |> filter(n() > 3) |> ungroup()
-formula <- author_trust_combined_score ~ Experience_4
-x <- s1_cleaned_data$Experience_4
-x_label <- "Study Changed Opinion of AI"
-y <- s1_cleaned_data$author_trust_combined_score
-y_label <- "Author Trust"
+s1_cleaned_data |> run_simple_effects_t_tests(author_trust_combined_score ~ Experience_4)
 
-
-```
-
-{{< include "_ANOVA.qmd" >}}
-
-```{r}
-
-fit_i <- lm(author_trust_combined_score ~ Condition * Experience_4, 
-                    data = s1_cleaned_data)
-
-summ(fit_i)
-
-cat_plot(fit_i, pred = Condition, modx = Experience_4,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+plot <- violin_plot(s1_cleaned_data,
+            s1_study,
+            "Experience_4",
+            "author_trust_combined_score",
+            include_legend = FALSE,
+            comparisons = list(  
+              c("1", "2"),
+              c("2", "3"),
+              c("3", "4"),
+              c("4", "5"),
+              c("1", "3"),
+              c("2", "4"),
+              c("3", "5"),
+              c("1", "4"),
+              c("2", "5"),
+              c("1", "5")
+              )
+    )
 ```
 
 ###### Fear of AI
 
 ```{r}
-cor_result <- cor.test(s1_cleaned_data$author_trust_combined_score, s1_cleaned_data$fear_of_ai_score, method = "pearson")
-apa::cor_apa(cor_result, r_ci = TRUE)
+s1_cleaned_data |> test_correlation("fear_of_ai_score", "author_trust_combined_score")
 
-s1_cleaned_data |>
-  ggplot(aes(x = fear_of_ai_score, y = author_trust_combined_score)) +
-  geom_point() +
-        stat_smooth(method = "lm",
-        col = "#C42126", se = FALSE, size = 1
-)
-```
+plots <- correlation_plot(s1_cleaned_data, 
+            s1_study,
+            "fear_of_ai_score",
+            "author_trust_combined_score")
 
-```{r}
-data <- s1_cleaned_data |> group_by(fear_of_ai_score) |> filter(n() > 3) |> ungroup()
-formula <- author_trust_combined_score ~ fear_of_ai_score
-x <- s1_cleaned_data$fear_of_ai_score
-x_label <- "Fear of AI"
-y <- s1_cleaned_data$author_trust_combined_score
-y_label <- "Author Trust"
-
-
-```
-
-{{< include "_ANOVA.qmd" >}}
-
-```{r}
-
-fit_i <- lm(author_trust_combined_score ~ Condition * fear_of_ai_score, 
-                    data = s1_cleaned_data)
-
-summ(fit_i)
-
-cat_plot(fit_i, pred = Condition, modx = fear_of_ai_score,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+# Display the plots
+plots$lm
+plots$loess
 ```
 
 ###### Could Write
 
 ```{r}
-cor_result <- cor.test(s1_cleaned_data$author_trust_combined_score, s1_cleaned_data$Experience_7, method = "pearson")
-apa::cor_apa(cor_result, r_ci = TRUE)
+s1_cleaned_data |> descriptives_by_group(Experience_7, author_trust_combined_score) 
 
-s1_cleaned_data |>
-  ggplot(aes(x = Experience_7, y = author_trust_combined_score)) +
-  geom_point() +
-        stat_smooth(method = "lm",
-        col = "#C42126", se = FALSE, size = 1
-)
-```
+aov_model <- s1_cleaned_data |>
+  run_between_subjects_anova(author_trust_combined_score ~ Experience_7, "author_trust_combined_score")
 
-```{r}
-data <- s1_cleaned_data |> group_by(Experience_7) |> filter(n() > 3) |> ungroup()
-formula <- author_trust_combined_score ~ Experience_7
-x <- s1_cleaned_data$Experience_7
-x_label <- "Belief could write content"
-y <- s1_cleaned_data$author_trust_combined_score
-y_label <- "Author Trust"
+s1_cleaned_data |> run_simple_effects_t_tests(author_trust_combined_score ~ Experience_7)
 
-
-```
-
-{{< include "_ANOVA.qmd" >}}
-
-```{r}
-
-fit_i <- lm(author_trust_combined_score ~ Condition * Experience_7, 
-                    data = s1_cleaned_data)
-
-summ(fit_i)
-
-cat_plot(fit_i, pred = Condition, modx = Experience_7,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+plot <- violin_plot(s1_cleaned_data,
+            s1_study,
+            "Experience_7",
+            "author_trust_combined_score",
+            include_legend = FALSE,
+            comparisons = list(  
+              c("1", "2"),
+              c("2", "3"),
+              c("3", "4"),
+              c("4", "5"),
+              c("1", "3"),
+              c("2", "4"),
+              c("3", "5"),
+              c("1", "4"),
+              c("2", "5"),
+              c("1", "5")
+              )
+    )
 ```
 
 ###### Professional Content / Writing Expertise
 
 ```{r}
-data <- s1_cleaned_data |> group_by(professional_content_expertise) |> filter(n() > 3) |> ungroup()
-formula <- author_trust_combined_score ~ professional_content_expertise
-x <- s1_cleaned_data$professional_content_expertise
-x_label <- "Professional Experience with Content or Writing"
-y <- s1_cleaned_data$author_trust_combined_score
-y_label <- "Author Trust"
+s1_cleaned_data |> test_correlation("professional_content_expertise", "author_trust_combined_score")
 
+plots <- correlation_plot(s1_cleaned_data, 
+            s1_study,
+            "professional_content_expertise",
+            "author_trust_combined_score")
 
-```
-
-{{< include "_ANOVA.qmd" >}}
-
-```{r}
-
-fit_i <- lm(author_trust_combined_score ~ Condition * professional_content_expertise, 
-                    data = s1_cleaned_data)
-
-summ(fit_i)
-
-cat_plot(fit_i, pred = Condition, modx = professional_content_expertise,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+# Display the plots
+plots$lm
+plots$loess
 ```
 
 ###### Content Properties
 
-Well-written
+####### Well-written
 
 ```{r}
-cor_result <- cor.test(s1_cleaned_data$author_trust_combined_score, as.numeric(s1_cleaned_data$Appelman_4), method = "pearson")
-apa::cor_apa(cor_result, r_ci = TRUE)
+s1_cleaned_data |> descriptives_by_group(Appelman_4, author_trust_combined_score) 
 
-s1_cleaned_data |>
-  ggplot(aes(x = Appelman_4, y = author_trust_combined_score)) +
-  geom_point() +
-        stat_smooth(method = "lm",
-        col = "#C42126", se = FALSE, size = 1
-)
+aov_model <- s1_cleaned_data |>
+  run_between_subjects_anova(author_trust_combined_score ~ Appelman_4, "author_trust_combined_score")
+
+s1_cleaned_data |> run_simple_effects_t_tests(author_trust_combined_score ~ Appelman_4)
+
+plot <- violin_plot(s1_cleaned_data,
+            s1_study,
+            "Appelman_4",
+            "author_trust_combined_score",
+            include_legend = FALSE,
+            comparisons = list(  
+              c("-2", "-1"),
+              c("-1", "0"),
+              c("0", "1"),
+              c("1", "2"),
+              c("-2", "0"),
+              c("-1", "1"),
+              c("0", "2"),
+              c("-2", "1"),
+              c("-1", "2"),
+              c("-2", "2")
+              )
+    )
+
+lm_model <- s1_cleaned_data |> linear_model(author_trust_combined_score ~ Condition * Appelman_4)
+
+plot <- s1_cleaned_data |>
+  categorical_interaction_plot_3(lm_model,
+                                pred_name = "Condition",
+                                mod_name = "Appelman_4",
+                                target_name = "author_trust_combined_score",
+                                study = s1_study
+                                )
+
+plot
 ```
 
+####### Boring
+
 ```{r}
-data <- s1_cleaned_data |> group_by(Appelman_4) |> filter(n() > 3) |> ungroup()
-formula <- author_trust_combined_score ~ Appelman_4
-x <- s1_cleaned_data$Appelman_4
-x_label <- "Well-written"
-y <- s1_cleaned_data$author_trust_combined_score
-y_label <- "Author Trust"
+s1_cleaned_data |> descriptives_by_group(Appelman_5, author_trust_combined_score) 
+
+aov_model <- s1_cleaned_data |>
+  run_between_subjects_anova(author_trust_combined_score ~ Appelman_5, "author_trust_combined_score")
+
+s1_cleaned_data |> run_simple_effects_t_tests(author_trust_combined_score ~ Appelman_5)
+
+plot <- violin_plot(s1_cleaned_data,
+            s1_study,
+            "Appelman_5",
+            "author_trust_combined_score",
+            include_legend = FALSE,
+            comparisons = list(  
+              c("-2", "-1"),
+              c("-1", "0"),
+              c("0", "1"),
+              c("1", "2"),
+              c("-2", "0"),
+              c("-1", "1"),
+              c("0", "2"),
+              c("-2", "1"),
+              c("-1", "2"),
+              c("-2", "2")
+              )
+    )
+
+
+lm_model <- s1_cleaned_data |> linear_model(author_trust_combined_score ~ Condition * Appelman_5)
+
+plot <- s1_cleaned_data |>
+  categorical_interaction_plot_3(lm_model,
+                                pred_name = "Condition",
+                                mod_name = "Appelman_5",
+                                target_name = "author_trust_combined_score",
+                                study = s1_study
+                                )
+
+plot
 ```
 
-{{< include "_ANOVA.qmd" >}}
+####### Engaging
 
 ```{r}
+s1_cleaned_data |> descriptives_by_group(Appelman_6, author_trust_combined_score) 
 
-fit_i <- lm(author_trust_combined_score ~ Condition * Appelman_4, 
-                    data = s1_cleaned_data)
+aov_model <- s1_cleaned_data |>
+  run_between_subjects_anova(author_trust_combined_score ~ Appelman_6, "author_trust_combined_score")
 
-summ(fit_i)
+s1_cleaned_data |> run_simple_effects_t_tests(author_trust_combined_score ~ Appelman_6)
 
-cat_plot(fit_i, pred = Condition, modx = Appelman_4,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
-```
+plot <- violin_plot(s1_cleaned_data,
+            s1_study,
+            "Appelman_6",
+            "author_trust_combined_score",
+            include_legend = FALSE,
+            comparisons = list(  
+              c("-2", "-1"),
+              c("-1", "0"),
+              c("0", "1"),
+              c("1", "2"),
+              c("-2", "0"),
+              c("-1", "1"),
+              c("0", "2"),
+              c("-2", "1"),
+              c("-1", "2"),
+              c("-2", "2")
+              )
+    )
+lm_model <- s1_cleaned_data |> linear_model(author_trust_combined_score ~ Condition * Appelman_6)
 
-Boring
+plot <- s1_cleaned_data |>
+  categorical_interaction_plot_3(lm_model,
+                                pred_name = "Condition",
+                                mod_name = "Appelman_6",
+                                target_name = "author_trust_combined_score",
+                                study = s1_study
+                                )
 
-```{r}
-data <- s1_cleaned_data |> group_by(Appelman_5) |> filter(n() > 3) |> ungroup()
-formula <- author_trust_combined_score ~ Appelman_5
-x <- s1_cleaned_data$Appelman_5
-x_label <- "Boring"
-y <- s1_cleaned_data$author_trust_combined_score
-y_label <- "Author Trust"
-```
-
-{{< include "_ANOVA.qmd" >}}
-
-```{r}
-
-fit_i <- lm(author_trust_combined_score ~ Condition * Appelman_5, 
-                    data = s1_cleaned_data)
-
-summ(fit_i)
-
-cat_plot(fit_i, pred = Condition, modx = Appelman_5,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
-```
-
-###### 
-
-Engaging
-
-```{r}
-data <- s1_cleaned_data |> group_by(Appelman_6) |> filter(n() > 3) |> ungroup()
-formula <- author_trust_combined_score ~ Appelman_6
-x <- s1_cleaned_data$Appelman_6
-x_label <- "Engaging"
-y <- s1_cleaned_data$author_trust_combined_score
-y_label <- "Author Trust"
-```
-
-{{< include "_ANOVA.qmd" >}}
-
-```{r}
-
-fit_i <- lm(author_trust_combined_score ~ Condition * Appelman_6, 
-                    data = s1_cleaned_data)
-
-summ(fit_i)
-
-cat_plot(fit_i, pred = Condition, modx = Appelman_6,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+plot
 ```
 
 ###### Survey Purpose Check
 
 ```{r}
 
-data <- s1_cleaned_data |> group_by(SurveyTopicCheck_coded) |> filter(n() > 3) |> ungroup()
-formula <- author_trust_combined_score ~ SurveyTopicCheck_coded
-x <- s1_cleaned_data$SurveyTopicCheck_coded
-x_label <- "Perceived Survey Purpose"
-y <- s1_cleaned_data$author_trust_combined_score
-y_label <- "Author Trust"
+s1_cleaned_data |> descriptives_by_group(SurveyTopicCheck_coded, author_trust_combined_score) 
 
-```
+aov_model <- s1_cleaned_data |>
+  run_between_subjects_anova(author_trust_combined_score ~ SurveyTopicCheck_coded, "author_trust_combined_score")
 
-{{< include "_ANOVA.qmd" >}}
+s1_cleaned_data |>
+  droplevels() |>
+  run_simple_effects_t_tests(author_trust_combined_score ~ SurveyTopicCheck_coded)
 
-Survey Purpose / Condition Interaction
 
-```{r}
-
-fit_i <- lm(author_trust_combined_score ~ Condition * SurveyTopicCheck_coded, 
-                    data = s1_cleaned_data)
-
-summ(fit_i)
-
-cat_plot(fit_i, pred = Condition, modx = SurveyTopicCheck_coded,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
 ```
 
 ###### Unrealistic Check
 
 ```{r}
 
-data <- s1_cleaned_data |> group_by(Unrealistic) |> filter(n() > 3) |> ungroup()
-formula <- author_trust_combined_score ~ Unrealistic
-x <- s1_cleaned_data$Unrealistic
-x_label <- "Perceived Unrealistic"
-y <- s1_cleaned_data$author_trust_combined_score
-y_label <- "Author Trust"
+s1_cleaned_data |> descriptives_by_group(Unrealistic, author_trust_combined_score) 
+
+aov_model <- s1_cleaned_data |>
+  run_between_subjects_anova(author_trust_combined_score ~ Unrealistic, "author_trust_combined_score")
+
+s1_cleaned_data |> descriptives_by_group(Unrealistic_coded, author_trust_combined_score) 
+
+aov_model <- s1_cleaned_data |>
+   group_by(Unrealistic_coded) |> filter(n() > 3) |> ungroup() |>
+  run_between_subjects_anova(author_trust_combined_score ~ Unrealistic_coded, "author_trust_combined_score")
+
+s1_cleaned_data |>
+  droplevels() |>
+  run_simple_effects_t_tests(author_trust_combined_score ~ Unrealistic_coded)
+
 
 ```
 
-{{< include "_ANOVA.qmd" >}}
+#### Correlations
 
 ```{r}
 
-data <- s1_cleaned_data |> group_by(Unrealistic_coded) |> filter(n() > 3) |> ungroup()
-formula <- author_trust_combined_score ~ Unrealistic_coded
-x <- s1_cleaned_data$Unrealistic_coded
-x_label <- "Perceived Unrealistic Reason"
-y <- s1_cleaned_data$author_trust_combined_score
-y_label <- "Author Trust"
+correlation_data <- s1_cleaned_data |> select(author_trust_combined_score,
+
+                                           content_trust_combined_score,
+
+                                           likeability_score,
+
+                                           competence_score,
+
+                                           expertise_score,
+
+                                           integrity_score,
+
+                                           benevolence_score,
+
+                                           anthropomorphism_score,
+
+                                           content_trust_appelman_score,
+
+                                           content_trust_behaviour_score,
+
+                                           author_trust_METI_score,
+
+                                           author_trust_behaviour_score)
+
+corr_matrix = cor(correlation_data)
+
+corr_matrix_p <- psych::corr.test(correlation_data)
+
+kable(head(corr_matrix))
+
+corrplot::corrplot(corr_matrix, type="upper", method = "circle", order = "hclust",
+
+         addCoef.col = "white", # Add coefficient of correlation
+
+         tl.col="black", tl.srt=45, #Text label color and rotation
+
+         p.mat = corr_matrix_p$p, sig.level = 0.01, insig = "blank",
+
+         diag = FALSE)
 
 ```
 
-{{< include "_ANOVA.qmd" >}}
-
-Survey Purpose / Condition Interaction
+##### Correlations at High Condition
 
 ```{r}
 
-fit_i <- lm(author_trust_combined_score ~ Condition * Unrealistic, 
-                    data = s1_cleaned_data)
+correlation_data_high <- s1_cleaned_data |>
 
-summ(fit_i)
+  filter(Condition == "High") |>
 
-cat_plot(fit_i, pred = Condition, modx = Unrealistic,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", colors = safe_pal)
+  select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
 
-fit_i <- lm(author_trust_combined_score ~ Condition * Unrealistic_coded, 
-                    data = s1_cleaned_data |> filter(Unrealistic == "Yes"))
+corr_matrix_high = cor(correlation_data_high)
 
-summ(fit_i)
+corr_matrix_p_high <- psych::corr.test(correlation_data_high)
 
-cat_plot(fit_i, pred = Condition, modx = Unrealistic_coded,  plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", , colors = safe_pal)
+kable(head(corr_matrix_high))
+
+corrplot::corrplot(corr_matrix_high, type="upper", method = "circle", order = "hclust",
+
+         addCoef.col = "white", # Add coefficient of correlation
+
+         tl.col="black", tl.srt=45, #Text label color and rotation
+
+         p.mat = corr_matrix_p_high$p, sig.level = 0.01, insig = "blank",
+
+         diag = FALSE)
+
 ```
 
-<!-- #### Correlations -->
+##### Correlations at Medium Condition
 
-<!-- ```{r} -->
+```{r}
 
-<!-- correlation_data <- s1_cleaned_data |> select(author_trust_combined_score, -->
+correlation_data_medium <- s1_cleaned_data |>
 
-<!--                                            content_trust_combined_score, -->
+  filter(Condition == "Medium") |>
 
-<!--                                            likeability_score,  -->
+  select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
 
-<!--                                            competence_score,  -->
+corr_matrix_medium = cor(correlation_data_medium)
 
-<!--                                            expertise_score,  -->
+corr_matrix_p_medium <- psych::corr.test(correlation_data_medium)
 
-<!--                                            integrity_score,  -->
+kable(head(corr_matrix_medium))
 
-<!--                                            benevolence_score,  -->
+corrplot::corrplot(corr_matrix_medium, type="upper", method = "circle", order = "hclust",
 
-<!--                                            anthropomorphism_score,  -->
+         addCoef.col = "white", # Add coefficient of correlation
 
-<!--                                            content_trust_appelman_score, -->
+         tl.col="black", tl.srt=45, #Text label color and rotation
 
-<!--                                            content_trust_behaviour_score, -->
+         p.mat = corr_matrix_p_medium$p, sig.level = 0.01, insig = "blank",
 
-<!--                                            author_trust_METI_score, -->
+         diag = FALSE)
 
-<!--                                            author_trust_behaviour_score) -->
+```
 
-<!-- corr_matrix = cor(correlation_data) -->
+##### Correlations at Low Condition
 
-<!-- corr_matrix_p <- corr.test(correlation_data) -->
+```{r}
 
-<!-- kable(head(corr_matrix)) -->
+correlation_data_low <- s1_cleaned_data |>
 
-<!-- corrplot(corr_matrix, type="upper", method = "circle", order = "hclust",  -->
+  filter(Condition == "Low") |>
 
-<!--          addCoef.col = "white", # Add coefficient of correlation -->
+  select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
 
-<!--          tl.col="black", tl.srt=45, #Text label color and rotation -->
+corr_matrix_low = cor(correlation_data_low)
 
-<!--          p.mat = corr_matrix_p$p, sig.level = 0.01, insig = "blank",  -->
+corr_matrix_p_low <- psych::corr.test(correlation_data_low)
 
-<!--          diag = FALSE) -->
+kable(head(corr_matrix_low))
 
-<!-- ``` -->
+corrplot::corrplot(corr_matrix_low, type="upper", method = "circle", order = "hclust",
 
-<!-- ##### Correlations at High Condition -->
+         addCoef.col = "white", # Add coefficient of correlation
 
-<!-- ```{r} -->
+         tl.col="black", tl.srt=45, #Text label color and rotation
 
-<!-- correlation_data_high <- s1_cleaned_data |>  -->
+         p.mat = corr_matrix_p_low$p, sig.level = 0.01, insig = "blank",
 
-<!--   filter(Condition == "High") |>  -->
+         diag = FALSE)
 
-<!--   select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score) -->
+```
 
-<!-- corr_matrix_high = cor(correlation_data_high) -->
+```{r}
 
-<!-- corr_matrix_p_high <- corr.test(correlation_data_high) -->
+cocor::cocor(~ `content_trust_combined_score` + `expertise_score` | `content_trust_combined_score` + `expertise_score`,
 
-<!-- kable(head(corr_matrix_high)) -->
+      data = list(
 
-<!-- corrplot(corr_matrix_high, type="upper", method = "circle", order = "hclust",  -->
+        as.data.frame(s1_cleaned_data |> filter(Condition == "High")),
 
-<!--          addCoef.col = "white", # Add coefficient of correlation -->
+        as.data.frame(s1_cleaned_data |> filter(Condition == "Low"))
 
-<!--          tl.col="black", tl.srt=45, #Text label color and rotation -->
+      )
 
-<!--          p.mat = corr_matrix_p_high$p, sig.level = 0.01, insig = "blank",  -->
+)
 
-<!--          diag = FALSE) -->
+```
 
-<!-- ``` -->
+```{r}
 
-<!-- ##### Correlations at Medium Condition -->
+cocor::cocor(~ `content_trust_combined_score` + `competence_score` | `content_trust_combined_score` + `competence_score`,
 
-<!-- ```{r} -->
+      data = list(
 
-<!-- correlation_data_medium <- s1_cleaned_data |>  -->
+        as.data.frame(s1_cleaned_data |> filter(Condition == "High")),
 
-<!--   filter(Condition == "Medium") |>  -->
+        as.data.frame(s1_cleaned_data |> filter(Condition == "Low"))
 
-<!--   select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score) -->
+      )
 
-<!-- corr_matrix_medium = cor(correlation_data_medium) -->
+)
 
-<!-- corr_matrix_p_medium <- corr.test(correlation_data_medium) -->
+```
 
-<!-- kable(head(corr_matrix_medium)) -->
+```{r}
 
-<!-- corrplot(corr_matrix_medium, type="upper", method = "circle", order = "hclust",  -->
+cocor::cocor(~ `content_trust_combined_score` + `likeability_score` | `content_trust_combined_score` + `likeability_score`,
 
-<!--          addCoef.col = "white", # Add coefficient of correlation -->
+      data = list(
 
-<!--          tl.col="black", tl.srt=45, #Text label color and rotation -->
+        as.data.frame(s1_cleaned_data |> filter(Condition == "High")),
 
-<!--          p.mat = corr_matrix_p_medium$p, sig.level = 0.01, insig = "blank",  -->
+        as.data.frame(s1_cleaned_data |> filter(Condition == "Low"))
 
-<!--          diag = FALSE) -->
+      )
 
-<!-- ``` -->
+)
 
-<!-- ##### Correlations at Low Condition -->
+```
 
-<!-- ```{r} -->
+```{r}
 
-<!-- correlation_data_low <- s1_cleaned_data |>  -->
+cocor::cocor(~ `content_trust_combined_score` + `benevolence_score` | `content_trust_combined_score` + `benevolence_score`,
 
-<!--   filter(Condition == "Low") |>  -->
+      data = list(
 
-<!--   select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score) -->
+        as.data.frame(s1_cleaned_data |> filter(Condition == "High")),
 
-<!-- corr_matrix_low = cor(correlation_data_low) -->
+        as.data.frame(s1_cleaned_data |> filter(Condition == "Low"))
 
-<!-- corr_matrix_p_low <- corr.test(correlation_data_low) -->
+      )
 
-<!-- kable(head(corr_matrix_low)) -->
+)
 
-<!-- corrplot(corr_matrix_low, type="upper", method = "circle", order = "hclust",  -->
+```
 
-<!--          addCoef.col = "white", # Add coefficient of correlation -->
+```{r}
 
-<!--          tl.col="black", tl.srt=45, #Text label color and rotation -->
+cocor::cocor(~ `content_trust_combined_score` + `integrity_score` | `content_trust_combined_score` + `integrity_score`,
 
-<!--          p.mat = corr_matrix_p_low$p, sig.level = 0.01, insig = "blank",  -->
+      data = list(
 
-<!--          diag = FALSE) -->
+        as.data.frame(s1_cleaned_data |> filter(Condition == "High")),
 
-<!-- ``` -->
+        as.data.frame(s1_cleaned_data |> filter(Condition == "Low"))
 
-<!-- ```{r} -->
+      )
 
-<!-- library(cocor) -->
+)
 
-<!-- cocor(~ `content_trust_combined_score` + `expertise_score` | `content_trust_combined_score` + `expertise_score`,  -->
+```
 
-<!--       data = list( -->
+```{r}
 
-<!--         as.data.frame(s1_cleaned_data |> filter(Condition == "High")),  -->
+cocor::cocor(~ `content_trust_combined_score` + `author_trust_combined_score` | `content_trust_combined_score` + `author_trust_combined_score`,
 
-<!--         as.data.frame(s1_cleaned_data |> filter(Condition == "Low")) -->
+      data = list(
 
-<!--       ) -->
+        as.data.frame(s1_cleaned_data |> filter(Condition == "High")),
 
-<!-- ) -->
+        as.data.frame(s1_cleaned_data |> filter(Condition == "Low"))
 
-<!-- ``` -->
+      )
 
-<!-- ```{r} -->
+)
 
-<!-- cocor(~ `content_trust_combined_score` + `competence_score` | `content_trust_combined_score` + `competence_score`,  -->
-
-<!--       data = list( -->
-
-<!--         as.data.frame(s1_cleaned_data |> filter(Condition == "High")),  -->
-
-<!--         as.data.frame(s1_cleaned_data |> filter(Condition == "Low")) -->
-
-<!--       ) -->
-
-<!-- ) -->
-
-<!-- ``` -->
-
-<!-- ```{r} -->
-
-<!-- cocor(~ `content_trust_combined_score` + `likeability_score` | `content_trust_combined_score` + `likeability_score`,  -->
-
-<!--       data = list( -->
-
-<!--         as.data.frame(s1_cleaned_data |> filter(Condition == "High")),  -->
-
-<!--         as.data.frame(s1_cleaned_data |> filter(Condition == "Low")) -->
-
-<!--       ) -->
-
-<!-- ) -->
-
-<!-- ``` -->
-
-<!-- ```{r} -->
-
-<!-- cocor(~ `content_trust_combined_score` + `benevolence_score` | `content_trust_combined_score` + `benevolence_score`,  -->
-
-<!--       data = list( -->
-
-<!--         as.data.frame(s1_cleaned_data |> filter(Condition == "High")),  -->
-
-<!--         as.data.frame(s1_cleaned_data |> filter(Condition == "Low")) -->
-
-<!--       ) -->
-
-<!-- ) -->
-
-<!-- ``` -->
-
-<!-- ```{r} -->
-
-<!-- cocor(~ `content_trust_combined_score` + `integrity_score` | `content_trust_combined_score` + `integrity_score`,  -->
-
-<!--       data = list( -->
-
-<!--         as.data.frame(s1_cleaned_data |> filter(Condition == "High")),  -->
-
-<!--         as.data.frame(s1_cleaned_data |> filter(Condition == "Low")) -->
-
-<!--       ) -->
-
-<!-- ) -->
-
-<!-- ``` -->
-
-<!-- ```{r} -->
-
-<!-- cocor(~ `content_trust_combined_score` + `author_trust_combined_score` | `content_trust_combined_score` + `author_trust_combined_score`,  -->
-
-<!--       data = list( -->
-
-<!--         as.data.frame(s1_cleaned_data |> filter(Condition == "High")),  -->
-
-<!--         as.data.frame(s1_cleaned_data |> filter(Condition == "Low")) -->
-
-<!--       ) -->
-
-<!-- ) -->
-
-<!-- ``` -->
+```
 
 # References
 
 ```{r}
 my_packages = c("rstatix", "stats", "effectsize", "psych", "interactions",
-                 "corrplot", "performance", "FSA", "see")
+                 "corrplot::corrplot", "performance", "FSA", "see")
 
 write_bib(my_packages, file= "outputs/s1/packages.bib")
 ```

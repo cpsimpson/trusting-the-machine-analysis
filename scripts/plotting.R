@@ -1,27 +1,20 @@
-library(tidyverse)
-library(haven)
-library(rcartocolor)
-library(ggsignif)
-library(ggtext)
-library(ggpubr)
-library(interactions)
 
-safe_pal <- carto_pal(12, "Safe")
+safe_pal <- rcartocolor::carto_pal(12, "Safe")
 
 
 pal = c("#7F2543", "#196389", "#2f2589", "#267843", "#f4849f")
 fill_pal = c("#7F254350", "#19638950", "#2f258950", "#26784350", "#f4849f50")
 
 
-# Create a customized theme and apply it as the default in this rmarkdown file.
-my_theme <- theme_minimal() +
-  theme(
-    panel.grid = element_blank(),
-    # panel.grid.minor = element_blank(),  # hide the minor grid lines
-    axis.line = element_line(colour = "grey70"),
-    axis.ticks = element_line(colour = "grey70"),
+# Create a customized ggplot2::theme and apply it as the default in this rmarkdown file.
+my_theme <- ggplot2::theme_minimal() +
+  ggplot2::theme(
+    panel.grid = ggplot2::element_blank(),
+    # panel.grid.minor = ggplot2::element_blank(),  # hide the minor grid lines
+    axis.line = ggplot2::element_line(colour = "grey70"),
+    axis.ticks = ggplot2::element_line(colour = "grey70"),
     legend.position = "top",
-    plot.title = element_blank() #element_markdown(hjust=.5, vjust=.5),  # center the title
+    plot.title = ggplot2::element_blank() #ggtext::element_markdown(hjust=.5, vjust=.5),  # center the title
   )
 
 get_anthropomorphism_comparisons <- function(study) {
@@ -93,8 +86,8 @@ violin_plot <- function(data,
     scale_fill_manual(values = fill_pal) +
     scale_color_manual(values = pal) +
     geom_boxplot(width = 0.1) +
-    theme(legend.position = legend_position) +
-    stat_compare_means(
+    ggplot2::theme(legend.position = legend_position) +
+    ggpubr::stat_compare_means(
       comparisons = comparisons,
       method = "t.test",
       label = "p.signif",
@@ -144,7 +137,7 @@ violin_plot <- function(data,
 #       y = get_label(y_col_name),
 #       title = paste("Prediction Interval for", get_label(y_col_name), "vs.",  get_label(x_col_name))
 #     ) +
-#     theme_minimal()
+#     ggplot2::theme_minimal()
 # }
 
 
@@ -210,7 +203,7 @@ categorical_interaction_plot_3 <- function(data, lm_model, pred_name, mod_name, 
            point.alpha = 0.25, 
            geom="line", 
            colors = safe_pal) +
-    theme(legend.position = "top")
+    ggplot2::theme(legend.position = "top")
   
   filename <- paste0("interaction_", target_name, "_", pred_name, "_", mod_name, ".png")
   
@@ -239,7 +232,7 @@ interaction_plot_3 <- function(data, lm_model, pred_name, mod_name, target_name,
                         rug = TRUE,
                         rug.sides = "bl",
                         colors = safe_pal) +
-    theme(legend.position = "top")
+    ggplot2::theme(legend.position = "top")
   
   filename <- paste0("interaction_", target_name, "_", pred_name, "_", mod_name, ".png")
   
@@ -271,7 +264,7 @@ interaction_plot_4 <- function(data, lm_model, pred_name, mod_name, mod2_name, m
                         rug = TRUE,
                         rug.sides = "bl",
                         colors = safe_pal) +
-    theme(legend.position = "top")
+    ggplot2::theme(legend.position = "top")
   
   filename <- paste0("interaction_", target_name, "_", pred_name, "_", mod_name, "_", mod2_name, ".png")
   
@@ -289,9 +282,12 @@ get_sem_label <- function(column_name) {
   switch(
     column_name,
     "Condition" = "Anthropomorphism\nManipulation",
+    "Condition_Compressed" = "Anthropomorphism\nManipulation",
+    "Condition_Medium" = "Anthropomorphism\nManipulation\nMedium",
+    "Condition_High" = "Anthropomorphism\nManipulation\nHigh",
     "anthropomorphism_score" = "Perceived\nAnthropomorphism",
-    "likeability_score" = "Perceived Likeability",
-    "competence_score" = "Perceived Competence",
+    "likeability_score" = "Perceived\nLikeability",
+    "competence_score" = "Perceived\nCompetence",
     "content_trust_combined_score" = "Content Trust",
     "author_trust_combined_score" = "Author Trust",
     "Age_1" = "Participant Age",
@@ -312,22 +308,44 @@ get_sem_label <- function(column_name) {
   )
 }
 
-plot_model <- function(fit){
-  library(purrr)
-  
+# Function to add asterisks
+add_stars <- function(p) {
+  if (is.na(p)) return("")
+  if (p < 0.001) return("***")
+  if (p < 0.01) return("**")
+  if (p < 0.05) return("*")
+  return("")
+}
+
+plot_model <- function(fit, study){
+
   sem_model <- semPlot::semPlotModel(fit)
   node_names <- sem_model@Vars$name
   node_labels <- map_chr(node_names, get_sem_label)
   
   
-  filename <- paste0("interaction_", paste(node_names, collapse="_"), ".png")
+  std_estimates <- lavaan::parameterEstimates(fit, standardized = TRUE)
+  
+  
+  # Create custom labels for paths
+  std_estimates$starred_label <- paste0(
+    round(std_estimates$std.all, 2),
+    sapply(std_estimates$pvalue, add_stars)
+  )
+  
+  regression_labels <- std_estimates$starred_label[std_estimates$op == "~"]
+  
+  filename <- paste0("sem_", paste(node_names, collapse="_"))
+  path <- paste(sep = "/", "plots", study, filename)
   
   plot <- semPlot::semPaths(
     object = fit,              # your lavaan model object
-    what = "std",              # show standardized coefficients
+    what = "std",
+    whatLabels = "est",
+    edgeLabels = regression_labels,
     layout = "spring",           # "tree", "circle", "spring", etc.
     edge.label.cex = 1.2,      # size of edge (path) labels
-    sizeMan = 20,               # size of variable boxes
+    sizeMan = 10,               # size of variable boxes
     sizeLat = 0,               # hide latent variable nodes (you have none)
     residuals = FALSE,         # don't show residual variances
     nCharNodes = 0,            # show full variable names
@@ -336,7 +354,9 @@ plot_model <- function(fit){
     label.scale = FALSE, 
     label.cex = 0.5, 
     filetype = "png",
-    filename = filename
+    filename = path,
+    repulsion = 0.5,
+    curvePivot = TRUE     # improves curve spacing
     
   )
   return(plot)

@@ -50,6 +50,7 @@ descriptives_by_group <- function(df, group_col, target_col) {
   df %>%
     group_by({{ group_col }}) %>%
     summarise(
+      n = n(),
       Min = min({{ target_col }}, na.rm = TRUE),
       Q1 = quantile({{ target_col }}, 0.25, na.rm = TRUE),
       Median = median({{ target_col }}, na.rm = TRUE),
