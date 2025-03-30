@@ -283,3 +283,57 @@ interaction_plot_4 <- function(data, lm_model, pred_name, mod_name, mod2_name, m
   
   return(plot)
 }
+
+
+get_sem_label <- function(column_name) {
+  switch(
+    column_name,
+    "Condition" = "Anthropomorphism\nManipulation",
+    "anthropomorphism_score" = "Perceived\nAnthropomorphism",
+    "likeability_score" = "Perceived Likeability",
+    "competence_score" = "Perceived Competence",
+    "content_trust_combined_score" = "Content Trust",
+    "author_trust_combined_score" = "Author Trust",
+    "Age_1" = "Participant Age",
+    "age_range" = "Participant Age Range",
+    "AIChatbotsFrequency_regrouped" = "AI Usage Frequency", 
+    "Sex" = "Sex",
+    "Gender" = "Gender",
+    "Education_regrouped" = "Education",
+    "ScienceContent_regrouped" = "Science Content Consumption Frequency",
+    "intention_to_use_score" = "Intention to Use AI",
+    "Experience_4" = "Changed Opinion of AI",
+    "Experience_7" = "Could Write Blog Post",
+    "fear_of_ai_score" = "Fear of AI",
+    "professional_content_expertise" = "Professional Experience with Content or Writing",
+    "Appelman_4" = "Writing Quality",
+    "SurveyTopicCheck_coded" = "Reported Survey Purpose",
+    "unknown"
+  )
+}
+
+plot_model <- function(fit){
+  library(semPlot)
+  library(purrr)
+  
+  sem_model <- semPlot::semPlotModel(fit)
+  node_names <- sem_model@Vars$name
+  node_labels <- map_chr(node_names, get_sem_label)
+  
+  plot <- semPaths(
+    object = fit,              # your lavaan model object
+    what = "std",              # show standardized coefficients
+    layout = "circle",           # "tree", "circle", "spring", etc.
+    edge.label.cex = 1.2,      # size of edge (path) labels
+    sizeMan = 20,               # size of variable boxes
+    sizeLat = 0,               # hide latent variable nodes (you have none)
+    residuals = FALSE,         # don't show residual variances
+    nCharNodes = 0,            # show full variable names
+    title = FALSE,
+    nodeLabels = node_labels,
+    label.scale = FALSE, 
+    label.cex = 0.5
+    
+  )
+  return(plot)
+}

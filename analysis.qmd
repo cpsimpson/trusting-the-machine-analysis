@@ -16,6 +16,7 @@ editor: visual
 ---
 
 ```{r include=FALSE}
+#| label: setup
 
 library(knitr)
 library(kableExtra)
@@ -58,7 +59,6 @@ theme_set(my_theme)
 
 
 ```
-
 
 # Trusting the machine: Epistemic trust and anthropomorphism in generative artificial intelligence
 
@@ -120,7 +120,6 @@ My **hypothesis** is that there will be an increase in epistemic trust with incr
 
 ### Load data
 
-
 ```{r}
 s1_raw_data <- load_data("s1")
 s1_raw_data <- factorize_data("s1", s1_raw_data)
@@ -136,10 +135,11 @@ s1_raw_data <- explode_languages(s1_raw_data)
 
 ```
 
+### Exclude non-consent
+
 ```{r}
 s1_raw_data <- exclude_non_consenting_participants(s1_raw_data)
 ```
-
 
 ### Manual Processing
 
@@ -153,7 +153,7 @@ Reviewed and coded Survey purpose check (what they think this study is about, no
 
     -   2 = nonsensical text
 
-    -   3 = values that describe a purpose
+    -   3 = values that describe a purpose (not about AI)
 
     -   4 = random word
 
@@ -200,8 +200,7 @@ s1_raw_data |> summarize_columns(Unrealistic, Unrealistic_coded)
 
 ### Clean Data
 
-No ability to check for duplicates because we recruited through CloudResearch and don't have ids. Assume that the platform prevents duplicate participant responses. 
-
+No ability to check for duplicates because we recruited through CloudResearch and don't have ids. Assume that the platform prevents duplicate participant responses.
 
 ```{r}
 recruited_participants <- s1_raw_data |> count_recruited_participants("s1")
@@ -227,7 +226,8 @@ s1_cleaned_data |> check_skewness("s1")
 
 # Shapiro-Wilk normality test 
 s1_cleaned_data |>
-  select(-Progress, -ConsentForm, -`Duration (in seconds)`, -Status, -Finished, -TopicCheck, -GodspeedMETI_28, -GodspeedMETI_29, -AIChatbotsUsed_NA, -Reread, -LanguagesFluent_NA) |> check_normality("s1")
+  select(-Progress, -ConsentForm, -`Duration (in seconds)`, -Status, -Finished, -TopicCheck, -GodspeedMETI_28, -GodspeedMETI_29, -AIChatbotsUsed_NA, -Reread, -LanguagesFluent_NA) |>
+  check_normality("s1")
 
 ```
 
@@ -276,14 +276,11 @@ s1_cleaned_data <- s1_cleaned_data |> regroup_data()
 
 #### Define Score Components
 
--   Calculate scores for Content Trust, Author Trust, Anthropomorphism, Likeability, Competence, Expertise, Integrity, Benevolence
-
 ```{r}
 
 s1_cleaned_data <- s1_cleaned_data |> compute_scores("s1")
 
 ```
-
 
 ### Scale Inter-item Reliability Analysis
 
@@ -421,8 +418,6 @@ s1_cleaned_data |> cronbachs_alpha(get_participant_expertise_cols())
 
 ```
 
-
-
 ### Sample Characteristics
 
 ```         
@@ -430,7 +425,6 @@ N=`r length(unique(s1_cleaned_data$ResponseId))`
 ```
 
 #### Study duration (in minutes)
-
 
 ```{r}
 basic_descriptives(s1_cleaned_data$`Duration (in seconds)` / 60)
@@ -614,12 +608,9 @@ s1_cleaned_data |> summarize_exploded_columns("LanguagesFluent", LanguagesFluent
 
 ```
 
-
 ### Manipulation Check
 
 #### Anthropomorphism
-
-We attempted to explicitly manipulated the level of anthropomorphism. Therefore, we would expect to see a significant difference in this score across the 3 conditions.
 
 ##### Plot
 
@@ -648,6 +639,7 @@ aov_model <- s1_cleaned_data |> run_between_subjects_anova(anthropomorphism_scor
 ```
 
 ###### T-tests
+
 ```{r}
 s1_cleaned_data |> run_simple_effects_t_tests(anthropomorphism_score ~ Condition)
 ```
@@ -682,15 +674,14 @@ aov_model <- s1_cleaned_data |> run_between_subjects_anova(likeability_score ~ C
 ```
 
 ###### T-tests
+
 ```{r}
 s1_cleaned_data |> run_simple_effects_t_tests(likeability_score ~ Condition)
 ```
 
-
 #### Competence
 
-We were not explicitly intending to manipulate competence
-##### Plot
+We were not explicitly intending to manipulate competence \##### Plot
 
 ```{r}
 violin_plot(s1_cleaned_data, 
@@ -716,10 +707,10 @@ aov_model <- s1_cleaned_data |> run_between_subjects_anova(competence_score ~ Co
 ```
 
 ###### T-tests
+
 ```{r}
 s1_cleaned_data |> run_simple_effects_t_tests(competence_score ~ Condition)
 ```
-
 
 ### Main Analysis
 
@@ -756,10 +747,10 @@ aov_model <- s1_cleaned_data |> run_between_subjects_anova(content_trust_combine
 ```
 
 ###### T-tests
+
 ```{r}
 s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ Condition)
 ```
-
 
 ##### Post-hoc Analysis
 
@@ -833,8 +824,6 @@ plot
 
 ```
 
-
-
 ###### Age
 
 ```{r}
@@ -842,7 +831,6 @@ plot
 aov_model <- s1_cleaned_data |> run_between_subjects_anova(content_trust_combined_score ~ age_range, "content_trust_combined_score")
 
 ```
-
 
 ```{r}
 
@@ -873,9 +861,6 @@ s1_cleaned_data |>
 
 ```
 
-
-
-
 ###### Sex
 
 ```{r}
@@ -886,7 +871,6 @@ aov_model <- s1_cleaned_data |>
 
 ```
 
-
 ###### Education
 
 ```{r}
@@ -896,7 +880,6 @@ aov_model <- s1_cleaned_data |>
   run_between_subjects_anova(content_trust_combined_score ~ Education_regrouped, "content_trust_combined_score")
 
 ```
-
 
 ###### AI Usage Experience
 
@@ -919,8 +902,6 @@ plot <- violin_plot(s1_cleaned_data,
 plot
 
 ```
-
-
 
 ```{r}
 lm_model <- s1_cleaned_data |> linear_model(content_trust_combined_score ~ Condition * AIChatbotsFrequency_regrouped)
@@ -959,9 +940,6 @@ plot
 
 
 ```
-
-
-
 
 ```{r}
 
@@ -1029,7 +1007,6 @@ plot <- violin_plot(s1_cleaned_data,
 
 ```
 
-
 ###### Fear of AI
 
 ```{r}
@@ -1047,7 +1024,6 @@ plots$lm
 plots$loess
 
 ```
-
 
 ###### Could Write
 
@@ -1080,7 +1056,6 @@ plot <- violin_plot(s1_cleaned_data,
     )
 
 ```
-
 
 ###### Professional Content / Writing Expertise
 
@@ -1131,7 +1106,6 @@ plot <- violin_plot(s1_cleaned_data,
     )
 ```
 
-
 ```{r}
 
 lm_model <- s1_cleaned_data |> linear_model(content_trust_combined_score ~ Condition * Appelman_4)
@@ -1178,7 +1152,6 @@ plot <- violin_plot(s1_cleaned_data,
     )
 ```
 
-
 ```{r}
 
 lm_model <- s1_cleaned_data |> linear_model(content_trust_combined_score ~ Condition * Appelman_5)
@@ -1194,8 +1167,6 @@ plot <- s1_cleaned_data |>
 plot
 
 ```
-
-
 
 Engaging
 
@@ -1227,7 +1198,6 @@ plot <- violin_plot(s1_cleaned_data,
     )
 ```
 
-
 ```{r}
 
 lm_model <- s1_cleaned_data |> linear_model(content_trust_combined_score ~ Condition * Appelman_6)
@@ -1244,10 +1214,7 @@ plot
 
 ```
 
-
-
 ###### Survey Purpose Check
-
 
 ```{r}
 s1_cleaned_data |> descriptives_by_group(SurveyTopicCheck_coded, content_trust_combined_score) 
@@ -1255,20 +1222,6 @@ s1_cleaned_data |> descriptives_by_group(SurveyTopicCheck_coded, content_trust_c
 aov_model <- s1_cleaned_data |>
   run_between_subjects_anova(content_trust_combined_score ~ SurveyTopicCheck_coded, "content_trust_combined_score")
 
-# s1_cleaned_data |> 
-#   droplevels() |> 
-#   run_simple_effects_t_tests(content_trust_combined_score ~ SurveyTopicCheck_coded)
-# 
-# plot <- violin_plot(s1_cleaned_data,
-#             "s1",
-#             "SurveyTopicCheck_coded",
-#             "content_trust_combined_score",
-#             include_legend = FALSE,
-#             comparisons = list( 
-#               c("AI", "Unsure"),
-#               c("Non-AI Purpose", "Unsure")
-#               )
-#     )
 ```
 
 ###### Unrealistic Check
@@ -1294,7 +1247,6 @@ s1_cleaned_data |>
 
 
 ```
-
 
 #### Author Trust
 
@@ -2104,17 +2056,29 @@ cat_plot(fit_i, pred = Condition, modx = Unrealistic_coded,  plot.points = TRUE,
 <!-- #### Correlations -->
 
 <!-- ```{r} -->
+
 <!-- correlation_data <- s1_cleaned_data |> select(author_trust_combined_score, -->
+
 <!--                                            content_trust_combined_score, -->
+
 <!--                                            likeability_score,  -->
+
 <!--                                            competence_score,  -->
+
 <!--                                            expertise_score,  -->
+
 <!--                                            integrity_score,  -->
+
 <!--                                            benevolence_score,  -->
+
 <!--                                            anthropomorphism_score,  -->
+
 <!--                                            content_trust_appelman_score, -->
+
 <!--                                            content_trust_behaviour_score, -->
+
 <!--                                            author_trust_METI_score, -->
+
 <!--                                            author_trust_behaviour_score) -->
 
 <!-- corr_matrix = cor(correlation_data) -->
@@ -2122,10 +2086,15 @@ cat_plot(fit_i, pred = Condition, modx = Unrealistic_coded,  plot.points = TRUE,
 <!-- corr_matrix_p <- corr.test(correlation_data) -->
 
 <!-- kable(head(corr_matrix)) -->
+
 <!-- corrplot(corr_matrix, type="upper", method = "circle", order = "hclust",  -->
+
 <!--          addCoef.col = "white", # Add coefficient of correlation -->
+
 <!--          tl.col="black", tl.srt=45, #Text label color and rotation -->
+
 <!--          p.mat = corr_matrix_p$p, sig.level = 0.01, insig = "blank",  -->
+
 <!--          diag = FALSE) -->
 
 <!-- ``` -->
@@ -2133,117 +2102,183 @@ cat_plot(fit_i, pred = Condition, modx = Unrealistic_coded,  plot.points = TRUE,
 <!-- ##### Correlations at High Condition -->
 
 <!-- ```{r} -->
+
 <!-- correlation_data_high <- s1_cleaned_data |>  -->
+
 <!--   filter(Condition == "High") |>  -->
+
 <!--   select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score) -->
 
-
 <!-- corr_matrix_high = cor(correlation_data_high) -->
+
 <!-- corr_matrix_p_high <- corr.test(correlation_data_high) -->
 
 <!-- kable(head(corr_matrix_high)) -->
+
 <!-- corrplot(corr_matrix_high, type="upper", method = "circle", order = "hclust",  -->
+
 <!--          addCoef.col = "white", # Add coefficient of correlation -->
+
 <!--          tl.col="black", tl.srt=45, #Text label color and rotation -->
+
 <!--          p.mat = corr_matrix_p_high$p, sig.level = 0.01, insig = "blank",  -->
+
 <!--          diag = FALSE) -->
+
 <!-- ``` -->
 
 <!-- ##### Correlations at Medium Condition -->
 
 <!-- ```{r} -->
+
 <!-- correlation_data_medium <- s1_cleaned_data |>  -->
+
 <!--   filter(Condition == "Medium") |>  -->
+
 <!--   select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score) -->
 
-
 <!-- corr_matrix_medium = cor(correlation_data_medium) -->
+
 <!-- corr_matrix_p_medium <- corr.test(correlation_data_medium) -->
 
 <!-- kable(head(corr_matrix_medium)) -->
+
 <!-- corrplot(corr_matrix_medium, type="upper", method = "circle", order = "hclust",  -->
+
 <!--          addCoef.col = "white", # Add coefficient of correlation -->
+
 <!--          tl.col="black", tl.srt=45, #Text label color and rotation -->
+
 <!--          p.mat = corr_matrix_p_medium$p, sig.level = 0.01, insig = "blank",  -->
+
 <!--          diag = FALSE) -->
+
 <!-- ``` -->
 
 <!-- ##### Correlations at Low Condition -->
 
 <!-- ```{r} -->
+
 <!-- correlation_data_low <- s1_cleaned_data |>  -->
+
 <!--   filter(Condition == "Low") |>  -->
+
 <!--   select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score) -->
 
-
 <!-- corr_matrix_low = cor(correlation_data_low) -->
+
 <!-- corr_matrix_p_low <- corr.test(correlation_data_low) -->
 
-
 <!-- kable(head(corr_matrix_low)) -->
+
 <!-- corrplot(corr_matrix_low, type="upper", method = "circle", order = "hclust",  -->
+
 <!--          addCoef.col = "white", # Add coefficient of correlation -->
+
 <!--          tl.col="black", tl.srt=45, #Text label color and rotation -->
+
 <!--          p.mat = corr_matrix_p_low$p, sig.level = 0.01, insig = "blank",  -->
+
 <!--          diag = FALSE) -->
+
 <!-- ``` -->
 
 <!-- ```{r} -->
+
 <!-- library(cocor) -->
 
 <!-- cocor(~ `content_trust_combined_score` + `expertise_score` | `content_trust_combined_score` + `expertise_score`,  -->
+
 <!--       data = list( -->
+
 <!--         as.data.frame(s1_cleaned_data |> filter(Condition == "High")),  -->
+
 <!--         as.data.frame(s1_cleaned_data |> filter(Condition == "Low")) -->
+
 <!--       ) -->
+
 <!-- ) -->
 
 <!-- ``` -->
 
 <!-- ```{r} -->
+
 <!-- cocor(~ `content_trust_combined_score` + `competence_score` | `content_trust_combined_score` + `competence_score`,  -->
+
 <!--       data = list( -->
+
 <!--         as.data.frame(s1_cleaned_data |> filter(Condition == "High")),  -->
+
 <!--         as.data.frame(s1_cleaned_data |> filter(Condition == "Low")) -->
+
 <!--       ) -->
+
 <!-- ) -->
 
 <!-- ``` -->
 
 <!-- ```{r} -->
+
 <!-- cocor(~ `content_trust_combined_score` + `likeability_score` | `content_trust_combined_score` + `likeability_score`,  -->
+
 <!--       data = list( -->
+
 <!--         as.data.frame(s1_cleaned_data |> filter(Condition == "High")),  -->
+
 <!--         as.data.frame(s1_cleaned_data |> filter(Condition == "Low")) -->
+
 <!--       ) -->
+
 <!-- ) -->
+
 <!-- ``` -->
 
 <!-- ```{r} -->
+
 <!-- cocor(~ `content_trust_combined_score` + `benevolence_score` | `content_trust_combined_score` + `benevolence_score`,  -->
+
 <!--       data = list( -->
+
 <!--         as.data.frame(s1_cleaned_data |> filter(Condition == "High")),  -->
+
 <!--         as.data.frame(s1_cleaned_data |> filter(Condition == "Low")) -->
+
 <!--       ) -->
+
 <!-- ) -->
+
 <!-- ``` -->
 
 <!-- ```{r} -->
+
 <!-- cocor(~ `content_trust_combined_score` + `integrity_score` | `content_trust_combined_score` + `integrity_score`,  -->
+
 <!--       data = list( -->
+
 <!--         as.data.frame(s1_cleaned_data |> filter(Condition == "High")),  -->
+
 <!--         as.data.frame(s1_cleaned_data |> filter(Condition == "Low")) -->
+
 <!--       ) -->
+
 <!-- ) -->
+
 <!-- ``` -->
 
 <!-- ```{r} -->
+
 <!-- cocor(~ `content_trust_combined_score` + `author_trust_combined_score` | `content_trust_combined_score` + `author_trust_combined_score`,  -->
+
 <!--       data = list( -->
+
 <!--         as.data.frame(s1_cleaned_data |> filter(Condition == "High")),  -->
+
 <!--         as.data.frame(s1_cleaned_data |> filter(Condition == "Low")) -->
+
 <!--       ) -->
+
 <!-- ) -->
+
 <!-- ``` -->
 
 # References

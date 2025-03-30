@@ -168,3 +168,95 @@ model_summ
 # plot
 
 ```
+
+
+```{r}
+
+lm_model <- lm(content_trust_combined_score ~ author_trust_combined_score * anthropomorphism_score, data = s2_cleaned_data |> filter(AIChatbotsFrequency_regrouped == "frequently"))
+summary(lm_model)
+
+plot <- interact_plot(lm_model, 
+              pred = author_trust_combined_score, 
+              modx = anthropomorphism_score,
+              x.label = "Author Trust Score",
+              y.label = "Content Trust Score",
+              legend.main = "Anthropomorphism Score",
+              plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", 
+              colors = safe_pal) +
+  # labs(x="Anthropomorphism Score", y = "Content Trust Score", legend = "Author Trust Score")  +
+  theme(legend.position = "top")
+
+ggsave("plots/s2/content_anthropomorphism_author_frequently_interaction.png", plot = plot, create.dir = TRUE)
+
+plot
+
+
+```
+```{r}
+
+lm_model <- lm(content_trust_combined_score ~ author_trust_combined_score * anthropomorphism_score, data = s2_cleaned_data |> filter(AIChatbotsFrequency_regrouped == "occasionally"))
+summary(lm_model)
+
+plot <- interact_plot(lm_model, 
+              pred = author_trust_combined_score, 
+              modx = anthropomorphism_score,
+              x.label = "Author Trust Score",
+              y.label = "Content Trust Score",
+              legend.main = "Anthropomorphism Score",
+              plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", 
+              colors = safe_pal) +
+  # labs(x="Anthropomorphism Score", y = "Content Trust Score", legend = "Author Trust Score")  +
+  theme(legend.position = "top")
+
+ggsave("plots/s2/content_anthropomorphism_author_occasionally_interaction.png", plot = plot, create.dir = TRUE)
+
+plot
+
+
+```
+
+```{r}
+
+lm_model <- lm(content_trust_combined_score ~ author_trust_combined_score * anthropomorphism_score, data = s2_cleaned_data |> filter(AIChatbotsFrequency_regrouped == "rarely"))
+summary(lm_model)
+
+plot <- interact_plot(lm_model, 
+              pred = author_trust_combined_score, 
+              modx = anthropomorphism_score,
+              x.label = "Author Trust Score",
+              y.label = "Content Trust Score",
+              legend.main = "Anthropomorphism Score",
+              plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", 
+              colors = safe_pal) +
+  # labs(x="Anthropomorphism Score", y = "Content Trust Score", legend = "Author Trust Score")  +
+  theme(legend.position = "top")
+
+ggsave("plots/s2/content_anthropomorphism_author_rarely_interaction.png", plot = plot, create.dir = TRUE)
+
+plot
+
+
+```
+
+```{r}
+
+lm_model <- lm(content_trust_combined_score ~ anthropomorphism_score * AIChatbotsFrequency_regrouped, data = s2_cleaned_data)
+summary(lm_model)
+
+plot <- interact_plot(lm_model, 
+              pred = anthropomorphism_score, 
+              modx = AIChatbotsFrequency_regrouped,
+              x.label ="Anthropomorphism Score",
+              y.label = "Content Trust Score",
+              legend.main = "Frequency",
+              # mod2.values = c("frequently", "occasionally", "rarely"),
+              # mod2.labels = c("frequently", "occasionally", "rarely"),
+              plot.points = TRUE, jitter = 0.5, point.alpha = 0.25, geom="bar", 
+              colors = safe_pal) +
+  theme(legend.position = "right")
+
+ggsave("plots/s2/content_anthropomorphism_frequency_interaction.png", plot = plot, create.dir = TRUE)
+
+plot
+
+```

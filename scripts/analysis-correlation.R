@@ -1,6 +1,8 @@
 library(tidyverse)
 library(apa)
 library(jtools)
+library(interactions)
+library(rlang)   # for ensym/as_name
 
 test_correlation <- function(data, x_name, y_name){
   x <- data |> pull({{x_name}})
@@ -16,7 +18,7 @@ test_correlation <- function(data, x_name, y_name){
 linear_model <- function(data, formula){
   
   fit <- lm(formula, data = data)
-  print(summ(fit, confint = TRUE, digits = 3, ci.width = .95))
+  print(jtools::summ(fit, confint = TRUE, digits = 3, ci.width = .95))
   
   return(fit)
 }
