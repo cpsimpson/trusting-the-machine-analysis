@@ -623,6 +623,22 @@ s2_cleaned_data |> descriptives_by_group(Condition, anthropomorphism_score)
 s2_cleaned_data |> run_simple_effects_t_tests(anthropomorphism_score ~ Condition)
 ```
 
+##### Correlations
+
+```{r}
+
+# s2_cleaned_data$Appelman_6 <- as.numeric(s2_cleaned_data$Appelman_6)
+# s2_cleaned_data |> test_correlation("anthropomorphism_score", "Appelman_6")
+# 
+# plot <- correlation_plot(s2_cleaned_data,
+#             s2_study,
+#             "Appelman_6",
+#             "anthropomorphism_score"
+#             )
+# 
+# plot
+```
+
 #### Likeability
 
 We were not explicitly intending to manipulate likeability
@@ -635,6 +651,18 @@ violin_plot(s2_cleaned_data,
             "Condition",
             "likeability_score",
             include_legend = FALSE)
+```
+
+```{r}
+
+s2_cleaned_data |> test_correlation("anthropomorphism_score", "likeability_score")
+
+plot <- correlation_plot(s2_cleaned_data,
+            s2_study,
+            "anthropomorphism_score",
+            "likeability_score")
+
+plot
 ```
 
 ##### Descriptive Statistics
@@ -661,6 +689,31 @@ violin_plot(s2_cleaned_data,
             "Condition",
             "competence_score",
             include_legend = FALSE)
+```
+
+```{r}
+
+s2_cleaned_data |> test_correlation("anthropomorphism_score", "competence_score")
+
+plot <- correlation_plot(s2_cleaned_data,
+            s2_study,
+            "anthropomorphism_score",
+            "competence_score")
+
+plot
+```
+
+```{r}
+
+
+s2_cleaned_data |> test_correlation("competence_score", "likeability_score")
+
+plot <- correlation_plot(s2_cleaned_data,
+            s2_study,
+            "competence_score",
+            "likeability_score")
+
+plot
 ```
 
 ##### Descriptive Statistics
@@ -1279,6 +1332,270 @@ plot
 ###### Path Analysis
 
 ```{r}
+s2_cleaned_data$ScienceContent_ordinal <- as.numeric(factor(s2_cleaned_data$ScienceContent_regrouped,
+                                              levels = c("rarely", "occasionally", "frequently")))
+
+s2_cleaned_data$AIChatbotsFrequency_ordinal <- as.numeric(factor(s2_cleaned_data$AIChatbotsFrequency_regrouped,
+                                              levels = c("rarely", "occasionally", "frequently")))
+
+  s2_cleaned_data$Appelman_4_n <- as.numeric(as.character(s2_cleaned_data$Appelman_4))
+  s2_cleaned_data$Appelman_5_n <- as.numeric(as.character(s2_cleaned_data$Appelman_5))
+  s2_cleaned_data$Appelman_6_n <- as.numeric(as.character(s2_cleaned_data$Appelman_6))
+```
+
+```{r}
+model_design <- '
+    # Core paths
+  anthropomorphism_score ~ a1*Condition
+  likeability_score ~ b1*anthropomorphism_score + c1*Condition
+  competence_score ~ b2*anthropomorphism_score + b3*likeability_score
+  author_trust_combined_score ~ d1*Condition + d2*anthropomorphism_score + d3*likeability_score + d4*competence_score
+  content_trust_combined_score ~ e1*author_trust_combined_score + e2*ScienceContent_ordinal + f1*Condition
+
+  # Covariances
+  likeability_score ~~ competence_score
+  anthropomorphism_score ~~ likeability_score
+
+  # Additional predictors
+  likeability_score ~ fear_of_ai_score + AIChatbotsFrequency_ordinal + Appelman_4_n + Appelman_5_n + Appelman_6_n
+  competence_score ~ fear_of_ai_score + AIChatbotsFrequency_ordinal + Appelman_4_n + Appelman_5_n + Appelman_6_n
+  anthropomorphism_score ~ AIChatbotsFrequency_ordinal + Appelman_4_n + Appelman_5_n + Appelman_6_n
+  author_trust_combined_score ~ fear_of_ai_score + intention_to_use_score + AIChatbotsFrequency_ordinal + professional_content_expertise + Appelman_4_n + Appelman_5_n + Appelman_6_n
+  content_trust_combined_score ~ fear_of_ai_score + intention_to_use_score + AIChatbotsFrequency_ordinal + professional_content_expertise + Appelman_4_n + Appelman_5_n + Appelman_6_n
+
+  # Indirect effects (retain prior ones for consistency)
+  ind1_likeablty := a1 * b1
+  ind3_thr_tr___ := a1 * b1 * d3
+  ind8_nthr_lk__ := b1 * d3 * e1
+'
+poster_fit_1 <- s2_cleaned_data |> test_med_mod_model(model_design)
+# poster_fit <- sem(model, data = your_data, std.lv = TRUE)
+# summary(poster_fit, fit.measures = TRUE, standardized = TRUE)
+```
+
+```{r}
+lavaan::summary(poster_fit_1, fit.measures = TRUE, standardized = TRUE, ci = TRUE)
+```
+
+```{r}
+plot <- plot_model(poster_fit_1, s2_study)
+plot
+```
+
+```{r}
+
+
+model_design <- '
+  # Regressions (labeled)
+  anthropomorphism_score ~ a1*Condition
+  likeability_score ~ b1*anthropomorphism_score + c1*Condition
+  competence_score ~ b2*anthropomorphism_score + b3*likeability_score
+  author_trust_combined_score ~ d1*Condition + d2*anthropomorphism_score + d3*likeability_score + d4*competence_score
+  content_trust_combined_score ~ e1*author_trust_combined_score + e2*ScienceContent_ordinal
+
+  # Correlations
+  likeability_score ~~ competence_score
+  anthropomorphism_score ~~ likeability_score
+
+  # Indirect effects
+  ind1_likeability := a1 * b1
+  ind2_author_trust_via_anthro := a1 * d2
+  ind3_author_trust_via_anthro_likeability := a1 * b1 * d3
+  ind4_author_trust_full_path := a1 * b1 * b3 * d4
+  ind5_content_trust := e1 * d2 * a1   # Just one of many possible content trust pathways
+  
+'
+poster_fit_2 <- s2_cleaned_data |> test_med_mod_model(model_design)
+# poster_fit <- sem(model, data = your_data, std.lv = TRUE)
+```
+
+```{r}
+lavaan::summary(poster_fit_2, fit.measures = TRUE, standardized = TRUE, ci = TRUE)
+```
+
+```{r}
+plot <- plot_model(poster_fit_2, s2_study)
+plot
+```
+
+```{r}
+model_design <- '
+    # Regressions (with path labels)
+  anthropomorphism_score ~ a1*Condition
+  likeability_score ~ b1*anthropomorphism_score + c1*Condition
+  competence_score ~ b2*anthropomorphism_score + b3*likeability_score
+  author_trust_combined_score ~ d1*Condition + d2*anthropomorphism_score + d3*likeability_score + d4*competence_score
+  content_trust_combined_score ~ e1*author_trust_combined_score + e2*ScienceContent_ordinal + f1*Condition
+
+  # Correlations
+  likeability_score ~~ competence_score
+  anthropomorphism_score ~~ likeability_score
+
+  # Indirect effects
+  ind1_likeablty := a1 * b1
+  ind2_thr_trs__ := a1 * d2
+  ind3_thr_tr___ := a1 * b1 * d3
+  ind4_thr_trs__ := a1 * b1 * b3 * d4
+  ind5_cntnt_trs := e1 * d2 * a1
+
+  # NEW indirect effects
+  ind6_cond_to_content_direct := f1
+  ind7_cond_likeability_author_content := c1 * d3 * e1
+  ind8_anthro_likeability_author_content := b1 * d3 * e1
+  
+'
+poster_fit_3 <- s2_cleaned_data |> test_med_mod_model(model_design)
+# poster_fit <- sem(model, data = your_data, std.lv = TRUE)
+```
+
+```{r}
+lavaan::summary(poster_fit_3, fit.measures = TRUE, standardized = TRUE, ci = TRUE)
+```
+
+```{r}
+plot <- plot_model(poster_fit_3, s2_study)
+plot
+
+```
+
+```{r}
+
+# + e2*ScienceContent_ordinal
+# + h1*AIChatbotsFrequency_ordinal
+# ind7 := h1 * f1 * e1                # AI Usage → Competence → Author Trust → Content Trust
+#   AIChatbotsFrequency_ordinal ~~ competence_score
+  # AIChatbotsFrequency_ordinal ~~ likeability_score
+  # AIChatbotsFrequency_ordinal ~~ anthropomorphism_score
+
+s2_model_trimmed <- '
+  # Core theoretical path
+  anthropomorphism_score ~ a1*Condition
+  likeability_score ~ b1*Condition
+  competence_score ~ c1*Condition
+  author_trust_combined_score ~ likeability_score + competence_score + anthropomorphism_score
+  content_trust_combined_score ~ e1*author_trust_combined_score  + Appelman_4_n
+
+  # Correlations
+  ScienceContent_ordinal ~~ content_trust_combined_score
+  competence_score ~~ b2*anthropomorphism_score 
+  likeability_score ~~ anthropomorphism_score
+  competence_score ~~ likeability_score
+  
+  # Indirect effects
+  ind1 := b1 * e1                # Condition → Anthro → Likeability → Author Trust  → Content Trust
+  ind2 := a1 * e1           # Condition → Likeability → Author Trust → Content Trust
+  ind3 := c1 * e1                     # Competence → Author Trust → Content Trust
+
+'
+
+s2_trimmed_model_fit <- s2_cleaned_data |> test_med_mod_model(s2_model_trimmed)
+```
+
+```{r}
+lavaan::summary(s2_trimmed_model_fit, fit.measures = TRUE, standardized = TRUE, ci = TRUE)
+```
+
+```{r}
+
+lavaan::inspect(s2_trimmed_model_fit, "r2")
+```
+
+
+```{r}
+plot <- plot_model(s2_trimmed_model_fit, s2_study)
+plot
+```
+
+```{r}
+
+# Mean center variables
+s2_cleaned_data$anthropomorphism_c <- scale(s2_cleaned_data$anthropomorphism_score, scale = FALSE)
+s2_cleaned_data$AIUsage_c <- scale(as.numeric(s2_cleaned_data$AIChatbotsFrequency_regrouped), scale = FALSE)
+
+# Interaction term
+s2_cleaned_data$anthro_x_usage <- s2_cleaned_data$anthropomorphism_c * s2_cleaned_data$AIUsage_c
+
+model_design <- '
+  # Regressions
+  anthropomorphism_score ~ a1 * Condition
+  likeability_score ~ a3 * anthropomorphism_score + e * Condition 
+  author_trust_combined_score ~ a2 * anthropomorphism_score + d * Condition + b3 * likeability_score + m1 * anthro_x_usage
+  content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + c_prime * Condition
+
+  # Indirect Effects
+  indirect1 := a1 * b2
+  indirect2 := a1 * a2 * b1
+  moderated_indirect := a1 * m1 * b1
+  indirect3 := d * b1
+  indirect4 := e * b3 * b1
+  indirect5 := a1 * a3 * b3 * b1
+
+  # Total effect
+  total := c_prime + indirect1 + indirect2 + indirect3 + indirect4 + indirect5 + moderated_indirect
+'
+
+# s2_fit_basic <- s2_cleaned_data |> test_med_mod_model(model_design)
+
+```
+
+```{r}
+# plot <- plot_model(s2_fit_basic, s2_study)
+# 
+# plot
+```
+
+```{r}
+
+# Mean center variables
+s2_cleaned_data$anthropomorphism_c <- scale(s2_cleaned_data$anthropomorphism_score, scale = FALSE)
+s2_cleaned_data$AIUsage_c <- scale(as.numeric(s2_cleaned_data$AIChatbotsFrequency_regrouped), scale = FALSE)
+
+# Interaction term
+s2_cleaned_data$anthro_x_usage <- s2_cleaned_data$anthropomorphism_c * s2_cleaned_data$AIUsage_c
+
+model_design <- '
+  
+  # Define the latent variable
+  author_trust_behaviour =~ author_trust_behavioural_score
+  
+  expertise =~ z.GodspeedMETI_10 + z.GodspeedMETI_13 + z.GodspeedMETI_15r + z.GodspeedMETI_16r + z.GodspeedMETI_17r + z.GodspeedMETI_18r
+  integreity =~ z.GodspeedMETI_19r + z.GodspeedMETI_20r + z.GodspeedMETI_21r + z.GodspeedMETI_22r
+  benevolence =~ z.GodspeedMETI_23r + z.GodspeedMETI_24r + z.GodspeedMETI_25r + z.GodspeedMETI_26r
+  author_trust_traits =~ expertise + integreity + benevolence 
+  
+  perceived_author_trust =~ author_trust_behaviour + author_trust_traits
+  
+  # Mediation paths
+  anthropomorphism_score ~ a1 * Condition
+  perceived_author_trust ~ a2 * anthropomorphism_score + d * Condition + m1 * anthro_x_usage
+  content_trust_combined_score ~ b1 * perceived_author_trust + b2 * anthropomorphism_score + c_prime * Condition
+
+  # Indirect effects
+  indirect1 := a1 * b2
+  indirect2 := a1 * a2 * b1
+  indirect3 := d * b1
+  moderated_indirect := a1 * m1 * b1
+
+  # Total effect
+  total := c_prime + indirect1 + indirect2 + indirect3 + moderated_indirect
+  
+'
+
+
+# s2_fit_basic <- s2_cleaned_data |> test_med_mod_model(model_design)
+
+```
+
+```{r}
+
+# subset = c("Condition", "anthropomorphism_score", "perceived_author_trust", "content_trust_combined_score", "anthro_x_usage", "expertise", "integrity", "benevolence", "author_trust_traits", "author_trust_behaviour")
+
+# plot <- plot_model(s2_fit_basic, s2_study)
+# 
+# plot
+```
+
+```{r}
 model_design <- '
   # Mediation paths
   anthropomorphism_score ~ a1 * Condition
@@ -1293,13 +1610,13 @@ model_design <- '
   # Total effect
   total := c_prime + indirect1 + indirect2 + indirect3
 '
-s2_fit_basic <- s2_cleaned_data |> test_med_mod_model(model_design)
+# s2_fit_basic <- s2_cleaned_data |> test_med_mod_model(model_design)
 ```
 
 ```{r}
-plot <- plot_model(s2_fit_basic, s2_study)
-
-plot
+# plot <- plot_model(s2_fit_basic, s2_study)
+# 
+# plot
 ```
 
 ```{r}
@@ -1328,18 +1645,18 @@ model_design <- '
   # Total effect
   total := c_prime + indirect1 + indirect2 + indirect3
 '
-s2_fit_basic <- s2_cleaned_data |> test_med_mod_model(model_design)
+# s2_fit_basic <- s2_cleaned_data |> test_med_mod_model(model_design)
 ```
 
 ```{r}
-summary_table <- get_sem_summary_table(s2_fit_basic, save_doc = TRUE, outfile = "plots/s2/sem_summary_table.docx")
-knitr::kable(summary_table)
+# summary_table <- get_sem_summary_table(s2_fit_basic, save_doc = TRUE, outfile = "plots/s2/sem_summary_table.docx")
+# knitr::kable(summary_table)
 ```
 
 ```{r}
-plot <- plot_model(s2_fit_basic, s2_study)
-
-plot
+# plot <- plot_model(s2_fit_basic, s2_study)
+# 
+# plot
 ```
 
 ```{r}
@@ -1360,13 +1677,13 @@ model_design <- '
   # Total effect
   total := c_prime + indirect1 + indirect2 + indirect3 + indirect4 + indirect5
 '
-s2_fit_with_likeability <- s2_cleaned_data |> test_med_mod_model(model_design)
+# s2_fit_with_likeability <- s2_cleaned_data |> test_med_mod_model(model_design)
 ```
 
 ```{r}
-plot <- plot_model(s2_fit_with_likeability, s2_study)
-
-plot
+# plot <- plot_model(s2_fit_with_likeability, s2_study)
+# 
+# plot
 ```
 
 ```{r}
@@ -1391,13 +1708,13 @@ model_design <- '
   # Total effect
   total := c_prime + indirect1 + indirect2 + indirect3 + indirect4 + indirect5 + indirect6 + indirect7 + indirect8
 '
-s2_fit_with_likeability_and_competence <- s2_cleaned_data |> test_med_mod_model(model_design)
+# s2_fit_with_likeability_and_competence <- s2_cleaned_data |> test_med_mod_model(model_design)
 ```
 
 ```{r}
-plot <- plot_model(s2_fit_with_likeability_and_competence, s2_study)
-
-plot
+# plot <- plot_model(s2_fit_with_likeability_and_competence, s2_study)
+# 
+# plot
 ```
 
 ```{r}

@@ -46,6 +46,26 @@ basic_descriptives <- function(x, digits = 2){
   )
 }
 
+descriptives_by_group <- function(df, formula) {
+  dv <- all.vars(formula)[1]
+  group <- all.vars(formula)[2]
+  
+  df %>%
+    group_by(.data[[group]]) %>%
+    summarise(
+      n = n(),
+      Min = min(.data[[dv]], na.rm = TRUE),
+      Q1 = quantile(.data[[dv]], 0.25, na.rm = TRUE),
+      Median = median(.data[[dv]], na.rm = TRUE),
+      Mean = mean(.data[[dv]], na.rm = TRUE),
+      Q3 = quantile(.data[[dv]], 0.75, na.rm = TRUE),
+      Max = max(.data[[dv]], na.rm = TRUE),
+      SD = sd(.data[[dv]], na.rm = TRUE),
+      var = var(.data[[dv]], na.rm = TRUE),
+      .groups = "drop"
+    )
+}
+
 descriptives_by_group <- function(df, group_col, target_col) {
   df %>%
     group_by({{ group_col }}) %>%

@@ -1274,18 +1274,26 @@ s1_cleaned_data |> descriptives_by_group(Condition, author_trust_combined_score)
 
 ###### Main Effect ANOVA
 
-```{r include=FALSE}
+```{r}
 
-s1_cleaned_data |> descriptives_by_group(Condition, author_trust_combined_score) 
 
-aov_model <- s1_cleaned_data |>
-  group_by(Condition) |> filter(n() > 3) |> ungroup() |>
-  droplevels() |>
-  run_between_subjects_anova(author_trust_combined_score ~ Condition, "author_trust_combined_score")
+result <- s1_cleaned_data |> run_inferential(author_trust_combined_score ~ Condition)
+result
 
-s1_cleaned_data |>
-  droplevels() |>
-  run_simple_effects_t_tests(author_trust_combined_score ~ Condition)
+```
+
+```{r}
+
+#s1_cleaned_data |> descriptives_by_group(Condition, author_trust_combined_score)
+
+# aov_model <- s1_cleaned_data |>
+#   group_by(Condition) |> filter(n() > 3) |> ungroup() |>
+#   droplevels() |>
+#   run_between_subjects_anova(author_trust_combined_score ~ Condition, "author_trust_combined_score")
+# 
+# s1_cleaned_data |>
+#   droplevels() |>
+#   run_simple_effects_t_tests(author_trust_combined_score ~ Condition)
 
 ```
 
@@ -1322,135 +1330,216 @@ s1_cleaned_data$Condition_Compressed <- ifelse(s1_cleaned_data$Condition == "Hig
 s1_cleaned_data$Condition_Medium <- ifelse(s1_cleaned_data$Condition == "Medium", 1, 0)
 s1_cleaned_data$Condition_High <- ifelse(s1_cleaned_data$Condition == "High", 1, 0)
 
+s1_cleaned_data$ScienceContent_ordinal <- as.numeric(factor(s1_cleaned_data$ScienceContent_regrouped,
+                                              levels = c("rarely", "occasionally", "frequently")))
+
+s1_cleaned_data$AIChatbotsFrequency_ordinal <- as.numeric(factor(s1_cleaned_data$AIChatbotsFrequency_regrouped,
+                                              levels = c("rarely", "occasionally", "frequently")))
+
+  s1_cleaned_data$Appelman_4_n <- as.numeric(as.character(s1_cleaned_data$Appelman_4))
+  s1_cleaned_data$Appelman_5_n <- as.numeric(as.character(s1_cleaned_data$Appelman_5))
+  s1_cleaned_data$Appelman_6_n <- as.numeric(as.character(s1_cleaned_data$Appelman_6))
+  
 s1_gen_ai_con_only_data <- s1_cleaned_data |> filter(Condition != "High") 
 s1_gen_ai_con_only_data$Condition <- factor(s1_gen_ai_con_only_data$Condition, levels = c("Low", "Medium"))
 
+
+
+
 ```
 
 ```{r}
-model_design <- '
-  # Mediation paths
-  anthropomorphism_score ~ a1 * Condition
-  author_trust_combined_score ~ a2 * anthropomorphism_score + d * Condition 
-  content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + c_prime * Condition
+s1_model_trimmed <- '
+    # Core theoretical path
+  anthropomorphism_score ~ a1*Condition_Compressed
+  likeability_score ~ b1*Condition_Compressed
+  competence_score ~ c1*Condition_Compressed
+  author_trust_combined_score ~ likeability_score + competence_score + anthropomorphism_score
+  content_trust_combined_score ~ e1*author_trust_combined_score  + Appelman_4_n
 
+  # Correlations
+  ScienceContent_ordinal ~~ content_trust_combined_score
+  competence_score ~~ b2*anthropomorphism_score 
+  likeability_score ~~ anthropomorphism_score
+  competence_score ~~ likeability_score
+  
   # Indirect effects
-  indirect1 := a1 * b2
-  indirect2 := a1 * a2 * b1
-  indirect3 := d * b1
+  ind1 := b1 * e1           # Condition → Anthro → Author Trust  → Content Trust
+  ind2 := a1 * e1           # Condition → Likeability → Author Trust → Content Trust
+  ind3 := c1 * e1           # Condition → Competence → Author Trust → Content Trust
 
-  # Total effect
-  total := c_prime + indirect1 + indirect2 + indirect3
 '
-s1_fit_compressed <- s1_gen_ai_con_only_data |> test_med_mod_model(model_design)
 
+s1_trimmed_model_fit <- s1_cleaned_data |> test_med_mod_model(s1_model_trimmed)
 ```
 
 ```{r}
-plot_model(s1_fit_compressed, s1_study)
+lavaan::summary(s1_trimmed_model_fit, fit.measures = TRUE, standardized = TRUE, ci = TRUE)
 ```
 
 ```{r}
-model_design <- '
-  # Mediation paths
-  anthropomorphism_score ~ a1 * Condition_Compressed
-  author_trust_combined_score ~ a2 * anthropomorphism_score + d * Condition_Compressed 
-  content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + c_prime * Condition_Compressed
+lavaan::inspect(s1_trimmed_model_fit, "r2")
+```
 
+```{r}
+plot <- plot_model(s1_trimmed_model_fit, s1_study)
+plot
+```
+
+```{r}
+s1_model_trimmed_genai <- '
+    # Core theoretical path
+  anthropomorphism_score ~ a1*Condition
+  likeability_score ~ b1*Condition
+  competence_score ~ c1*Condition
+  author_trust_combined_score ~ likeability_score + competence_score + anthropomorphism_score
+  content_trust_combined_score ~ e1*author_trust_combined_score  + Appelman_4_n
+
+  # Correlations
+  ScienceContent_ordinal ~~ content_trust_combined_score
+  competence_score ~~ b2*anthropomorphism_score 
+  likeability_score ~~ anthropomorphism_score
+  competence_score ~~ likeability_score
+  
   # Indirect effects
-  indirect1 := a1 * b2
-  indirect2 := a1 * a2 * b1
-  indirect3 := d * b1
+  ind1 := b1 * e1           # Condition → Anthro → Author Trust  → Content Trust
+  ind2 := a1 * e1           # Condition → Likeability → Author Trust → Content Trust
+  ind3 := c1 * e1           # Condition → Competence → Author Trust → Content Trust
 
-  # Total effect
-  total := c_prime + indirect1 + indirect2 + indirect3
 '
-s1_fit_compressed <- s1_cleaned_data |> test_med_mod_model(model_design)
 
-plot_model(s1_fit_compressed, s1_study)
+s1_trimmed_model_fit_genai <- s1_gen_ai_con_only_data |> test_med_mod_model(s1_model_trimmed_genai)
 ```
 
 ```{r}
-model_design <- '
-  # Mediation paths
-  anthropomorphism_score ~ a1 * Condition_Medium + a2 * Condition_High
-  author_trust_combined_score ~ d1 * Condition_Medium + d2 * Condition_High + a3 * anthropomorphism_score
-  content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + c1 * Condition_Medium + c2 * Condition_High
-
-  # Indirect effects
-  indirect1_med := a1 * b2
-  indirect1_high := a2 * b2
-
-  indirect2_med := a1 * a3 * b1
-  indirect2_high := a2 * a3 * b1
-
-  indirect3_med := d1 * b1
-  indirect3_high := d2 * b1
-
-  total_med := c1 + indirect1_med + indirect2_med + indirect3_med
-  total_high := c2 + indirect1_high + indirect2_high + indirect3_high
-'
-s1_fit_basic <- s1_cleaned_data |> test_med_mod_model(model_design)
+lavaan::summary(s1_trimmed_model_fit_genai, fit.measures = TRUE, standardized = TRUE, ci = TRUE)
+lavaan::inspect(s1_trimmed_model_fit_genai, "r2")
 ```
 
 ```{r}
-plot_model(s1_fit_basic, s1_study)
+# model_design <- '
+#   # Mediation paths
+#   anthropomorphism_score ~ a1 * Condition
+#   author_trust_combined_score ~ a2 * anthropomorphism_score + d * Condition 
+#   content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + c_prime * Condition
+# 
+#   # Indirect effects
+#   indirect1 := a1 * b2
+#   indirect2 := a1 * a2 * b1
+#   indirect3 := d * b1
+# 
+#   # Total effect
+#   total := c_prime + indirect1 + indirect2 + indirect3
+# '
+# s1_fit_compressed <- s1_gen_ai_con_only_data |> test_med_mod_model(model_design)
 
 ```
 
 ```{r}
-model_design <- '
-  # Mediation paths
-  anthropomorphism_score ~ a1 * Condition
-  likeability_score ~ a3 * anthropomorphism_score + e * Condition
-  author_trust_combined_score ~ a2 * anthropomorphism_score + d * Condition + b3 * likeability_score
-  content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + c_prime * Condition
-
-  # Indirect effects
-  indirect1 := a1 * b2
-  indirect2 := a1 * a2 * b1
-  indirect3 := d * b1
-  indirect4 := e * b3 * b1
-  indirect5 := a1 * a3 * b3 * b1
-
-  # Total effect
-  total := c_prime + indirect1 + indirect2 + indirect3 + indirect4 + indirect5
-'
-s1_fit_with_likeability <- s1_gen_ai_con_only_data |> test_med_mod_model(model_design)
+# plot_model(s1_fit_compressed, s1_study)
 ```
 
 ```{r}
-plot <- plot_model(s1_fit_with_likeability, s1_study)
+# model_design <- '
+#   # Mediation paths
+#   anthropomorphism_score ~ a1 * Condition_Compressed
+#   author_trust_combined_score ~ a2 * anthropomorphism_score + d * Condition_Compressed 
+#   content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + c_prime * Condition_Compressed
+# 
+#   # Indirect effects
+#   indirect1 := a1 * b2
+#   indirect2 := a1 * a2 * b1
+#   indirect3 := d * b1
+# 
+#   # Total effect
+#   total := c_prime + indirect1 + indirect2 + indirect3
+# '
+# s1_fit_compressed <- s1_cleaned_data |> test_med_mod_model(model_design)
+# 
+# plot_model(s1_fit_compressed, s1_study)
+```
+
+```{r}
+# model_design <- '
+#   # Mediation paths
+#   anthropomorphism_score ~ a1 * Condition_Medium + a2 * Condition_High
+#   author_trust_combined_score ~ d1 * Condition_Medium + d2 * Condition_High + a3 * anthropomorphism_score
+#   content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + c1 * Condition_Medium + c2 * Condition_High
+# 
+#   # Indirect effects
+#   indirect1_med := a1 * b2
+#   indirect1_high := a2 * b2
+# 
+#   indirect2_med := a1 * a3 * b1
+#   indirect2_high := a2 * a3 * b1
+# 
+#   indirect3_med := d1 * b1
+#   indirect3_high := d2 * b1
+# 
+#   total_med := c1 + indirect1_med + indirect2_med + indirect3_med
+#   total_high := c2 + indirect1_high + indirect2_high + indirect3_high
+# '
+# s1_fit_basic <- s1_cleaned_data |> test_med_mod_model(model_design)
+```
+
+```{r}
+# plot_model(s1_fit_basic, s1_study)
 
 ```
 
 ```{r}
-model_design <- '
-  # Mediation paths
-  anthropomorphism_score ~ a1 * Condition
-  likeability_score ~ a3 * anthropomorphism_score + e * Condition
-  competence_score ~ f * Condition + b4 * likeability_score + b5 * anthropomorphism_score
-  author_trust_combined_score ~ a2 * anthropomorphism_score + d * Condition + b3 * likeability_score + b6 * competence_score
-  content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + b7 * competence_score + b8 * likeability_score + c_prime * Condition
-
-  # Indirect effects
-  indirect1 := a1 * b2
-  indirect2 := a1 * a2 * b1
-  indirect3 := d * b1
-  indirect4 := e * b3 * b1
-  indirect5 := a1 * a3 * b3 * b1
-  indirect6 := f * b7
-  indirect7 := f * b6 * b1
-  indirect8 := e * b8
-
-  # Total effect
-  total := c_prime + indirect1 + indirect2 + indirect3 + indirect4 + indirect5 + indirect6 + indirect7 + indirect8
-'
-s1_fit_with_likeability_and_competence <- s1_gen_ai_con_only_data |> test_med_mod_model(model_design)
+# model_design <- '
+#   # Mediation paths
+#   anthropomorphism_score ~ a1 * Condition
+#   likeability_score ~ a3 * anthropomorphism_score + e * Condition
+#   author_trust_combined_score ~ a2 * anthropomorphism_score + d * Condition + b3 * likeability_score
+#   content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + c_prime * Condition
+# 
+#   # Indirect effects
+#   indirect1 := a1 * b2
+#   indirect2 := a1 * a2 * b1
+#   indirect3 := d * b1
+#   indirect4 := e * b3 * b1
+#   indirect5 := a1 * a3 * b3 * b1
+# 
+#   # Total effect
+#   total := c_prime + indirect1 + indirect2 + indirect3 + indirect4 + indirect5
+# '
+# s1_fit_with_likeability <- s1_gen_ai_con_only_data |> test_med_mod_model(model_design)
 ```
 
 ```{r}
-plot <- plot_model(s1_fit_with_likeability_and_competence, s1_study)
+# plot <- plot_model(s1_fit_with_likeability, s1_study)
+
+```
+
+```{r}
+# model_design <- '
+#   # Mediation paths
+#   anthropomorphism_score ~ a1 * Condition
+#   likeability_score ~ a3 * anthropomorphism_score + e * Condition
+#   competence_score ~ f * Condition + b4 * likeability_score + b5 * anthropomorphism_score
+#   author_trust_combined_score ~ a2 * anthropomorphism_score + d * Condition + b3 * likeability_score + b6 * competence_score
+#   content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + b7 * competence_score + b8 * likeability_score + c_prime * Condition
+# 
+#   # Indirect effects
+#   indirect1 := a1 * b2
+#   indirect2 := a1 * a2 * b1
+#   indirect3 := d * b1
+#   indirect4 := e * b3 * b1
+#   indirect5 := a1 * a3 * b3 * b1
+#   indirect6 := f * b7
+#   indirect7 := f * b6 * b1
+#   indirect8 := e * b8
+# 
+#   # Total effect
+#   total := c_prime + indirect1 + indirect2 + indirect3 + indirect4 + indirect5 + indirect6 + indirect7 + indirect8
+# '
+# s1_fit_with_likeability_and_competence <- s1_gen_ai_con_only_data |> test_med_mod_model(model_design)
+```
+
+```{r}
+# plot <- plot_model(s1_fit_with_likeability_and_competence, s1_study)
 
 ```
 
@@ -1476,37 +1565,37 @@ s1_fit_with_likeability <- s1_cleaned_data |> test_med_mod_model(model_design)
 ```
 
 ```{r}
-plot <- plot_model(s1_fit_with_likeability, s1_study)
+# plot <- plot_model(s1_fit_with_likeability, s1_study)
 
 ```
 
 ```{r}
-model_design <- '
-  # Mediation paths
-  anthropomorphism_score ~ a1 * Condition_Compressed
-  likeability_score ~ a3 * anthropomorphism_score + e * Condition_Compressed
-  competence_score ~ f * Condition_Compressed + b4 * likeability_score + b5 * anthropomorphism_score
-  author_trust_combined_score ~ a2 * anthropomorphism_score + d * Condition_Compressed + b3 * likeability_score + b6 * competence_score
-  content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + b7 * competence_score + b8 * likeability_score + c_prime * Condition_Compressed
-
-  # Indirect effects
-  indirect1 := a1 * b2
-  indirect2 := a1 * a2 * b1
-  indirect3 := d * b1
-  indirect4 := e * b3 * b1
-  indirect5 := a1 * a3 * b3 * b1
-  indirect6 := f * b7
-  indirect7 := f * b6 * b1
-  indirect8 := e * b8
-
-  # Total effect
-  total := c_prime + indirect1 + indirect2 + indirect3 + indirect4 + indirect5 + indirect6 + indirect7 + indirect8
-'
-s1_fit_with_likeability_and_competence <- s1_cleaned_data |> test_med_mod_model(model_design)
+# model_design <- '
+#   # Mediation paths
+#   anthropomorphism_score ~ a1 * Condition_Compressed
+#   likeability_score ~ a3 * anthropomorphism_score + e * Condition_Compressed
+#   competence_score ~ f * Condition_Compressed + b4 * likeability_score + b5 * anthropomorphism_score
+#   author_trust_combined_score ~ a2 * anthropomorphism_score + d * Condition_Compressed + b3 * likeability_score + b6 * competence_score
+#   content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + b7 * competence_score + b8 * likeability_score + c_prime * Condition_Compressed
+# 
+#   # Indirect effects
+#   indirect1 := a1 * b2
+#   indirect2 := a1 * a2 * b1
+#   indirect3 := d * b1
+#   indirect4 := e * b3 * b1
+#   indirect5 := a1 * a3 * b3 * b1
+#   indirect6 := f * b7
+#   indirect7 := f * b6 * b1
+#   indirect8 := e * b8
+# 
+#   # Total effect
+#   total := c_prime + indirect1 + indirect2 + indirect3 + indirect4 + indirect5 + indirect6 + indirect7 + indirect8
+# '
+# s1_fit_with_likeability_and_competence <- s1_cleaned_data |> test_med_mod_model(model_design)
 ```
 
 ```{r}
-plot <- plot_model(s1_fit_with_likeability_and_competence, s1_study)
+# plot <- plot_model(s1_fit_with_likeability_and_competence, s1_study)
 
 ```
 
@@ -1583,10 +1672,16 @@ plot <- plot_model(s1_fit_with_likeability_and_competence, s1_study)
 ```{r}
 s1_cleaned_data |> descriptives_by_group(age_range, author_trust_combined_score) 
 
-aov_model <- s1_cleaned_data |>
-  group_by(age_range) |> filter(n() > 3) |> ungroup() |>
-  droplevels() |>
-  run_between_subjects_anova(author_trust_combined_score ~ age_range, "author_trust_combined_score")
+s1_cleaned_data |>
+  run_inferential(author_trust_combined_score ~ age_range)
+
+
+c(author_trust_combined_score ~ age_range, content_trust_combined_score ~ age_range)
+
+# aov_model <- s1_cleaned_data |>
+#   group_by(age_range) |> filter(n() > 3) |> ungroup() |>
+#   droplevels() |>
+#   run_between_subjects_anova(author_trust_combined_score ~ age_range, "author_trust_combined_score")
 
 ```
 

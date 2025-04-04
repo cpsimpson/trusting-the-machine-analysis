@@ -5,12 +5,11 @@
 test_med_mod_model <- function(data, model){
   
   fit <- lavaan::sem(model, data = data, se = "bootstrap", bootstrap = 5000)
-  summary(fit, standardized = TRUE, fit.measures = TRUE)
+  lavaan::summary(fit, standardized = TRUE, fit.measures = TRUE, ci = TRUE)
   
   return(fit)
   
 }
-
 
 # Main function to generate tidy SEM summary table
 get_sem_summary_table <- function(fit, save_doc = FALSE, outfile = "") {

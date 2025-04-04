@@ -302,8 +302,12 @@ get_sem_label <- function(column_name) {
     "Experience_7" = "Could Write Blog Post",
     "fear_of_ai_score" = "Fear of AI",
     "professional_content_expertise" = "Professional Experience with Content or Writing",
-    "Appelman_4" = "Writing Quality",
+    "AIChatbotsFrequency_ordinal" = "AI Usage Frequency", 
+    "ScienceContent_ordinal" = "Science Content Frequency", 
+    "Appelman_4_n" = "Writing Quality",
+    "Appelman_6_n" = "Writing Engagement",
     "SurveyTopicCheck_coded" = "Reported Survey Purpose",
+    "anthro_x_usage" = "AI Usage Frequency",
     column_name
   )
 }
@@ -317,76 +321,176 @@ add_stars <- function(p) {
   return("")
 }
 
-plot_model <- function(fit, study){
+# plot_model <- function(fit, study, subset_nodes=NULL){
+#   # plot the variables with edges represented by standardized effect size (Beta) and significance stars
+#   
+#   # Create semPlotModel object
+#   sem_model <- semPlot::semPlotModel(fit)
+# 
+#   
+#   # 3. Keep only desired Vars
+#   keep_vars <- which(sem_model@Vars$name %in% subset_nodes)
+#   sem_model@Vars <- sem_model@Vars[keep_vars, ]
+#   
+#   # 4. Remove edges (Pars) connected to dropped variables
+#   remaining_names <- sem_model@Vars$name
+#   keep_edges <- sem_model@Pars$lhs %in% remaining_names & sem_model@Pars$rhs %in% remaining_names
+#   sem_model@Pars <- sem_model@Pars[keep_edges, ]
+#   
+#   node_names <- sem_model@Vars$name
+#   node_labels <- map_chr(node_names, get_sem_label)
+#   
+#   
+#   std_estimates <- lavaan::parameterEstimates(fit, standardized = TRUE)
+#   
+#   
+#   std_estimates$starred_label <- ifelse(
+#     is.na(std_estimates$std.all),
+#     "",  # If there's no standardized estimate, leave blank
+#     paste0(
+#       format(round(std_estimates$std.all, 2), nsmall = 2),
+#       sapply(std_estimates$pvalue, add_stars)
+#     )
+#   )
+# 
+# 
+#   
+#   regression_labels <- std_estimates$starred_label[std_estimates$op == "~"]
+#   # loading_labels <- std_estimates$starred_label[std_estimates$op == "=~"]
+#   # correlation_labels <- std_estimates$starred_label[std_estimates$op == "~~"]
+#   # indirect_labels <- std_estimates$starred_label[std_estimates$op == ":="]
+#   # 
+#   all_labels <- std_estimates$starred_label
+#   
+#   filename <- paste0("sem_", paste(node_names[1:5], collapse="_"))
+#   path <- paste(sep = "/", "plots", study, filename)
+#   
+#   sem_obj <- semPlot::semPaths(
+#     object = fit,              # your lavaan model object
+#     what = "std",
+#     whatLabels = "est",
+#     edgeLabels = regression_labels,
+#     # edgeLabels = all_labels,
+#     layout = "spring",           # "tree", "circle", "spring", etc.
+#     # edge.label.cex = 1.2,      # size of edge (path) labels
+#     # sizeMan = 10,               # size of variable boxes
+#     # sizeLat = 0,               
+#     residuals = FALSE,         # don't show residual variances
+#     nCharNodes = 0,            # show full variable names
+#     title = FALSE,
+#     nodeLabels = node_labels,
+#     label.scale = FALSE, 
+#     label.cex = 0.5, 
+#     # filetype = "png",
+#     # filename = path,
+#     repulsion = 0.9,
+#     # curveAll = TRUE,
+#     bg = "transparent",
+#     curvePivot = TRUE     # improves curve spacing
+#     
+#   )
+#   
+#   ragg::agg_png(paste0(path, "_transparent.png"), width = 2400, height = 1800, res = 300, background = "transparent")
+#   plot(sem_obj)
+#   dev.off()
+#   
+# 
+#   return(sem_obj)
+# }
+
+node_colors <- c(
+  "#196389",  # an_ (Anthropomorphism)
+  "#2f2589",  # lk_ (Likeability)
+  "#267843",  # a__ (Author Trust)
+  "#f4849f",  # c__ (Content Trust)
+  "#2f2589",  # cm_ (Competence)
+  "#7F2543",  # Cnd (Condition)
+  "#f4849f",  # AIC (Chatbot Frequency)
+  "#f4849f",  # A_6 (Appelman 6)
+  "#f4849f",  # SC_ (Science Content Frequency)
+  "#f4849f"   # A_4 (Appelman 4)
+)
+
+
+plot_model <- function(fit, study, subset=NULL){
   # plot the variables with edges represented by standardized effect size (Beta) and significance stars
-  
+
   sem_model <- semPlot::semPlotModel(fit)
+  
   node_names <- sem_model@Vars$name
   node_labels <- map_chr(node_names, get_sem_label)
-  
-  
-  std_estimates <- lavaan::parameterEstimates(fit, standardized = TRUE)
-  
-  
-  # std_estimates$starred_label <- ifelse(
-  #   is.na(std_estimates$std.all),
-  #   "",  # If there's no standardized estimate, leave blank
-  #   paste0(
-  #     format(round(std_estimates$std.all, 2), nsmall = 2),
-  #     sapply(std_estimates$pvalue, add_stars)
-  #   )
+  # 
+  # std_estimates <- lavaan::parameterEstimates(fit, standardized = TRUE)
+  # 
+  # # Remove non-significant regressions (p >= .05)
+  # sig_regressions <- std_estimates$op == "~" & std_estimates$pvalue < 0.05
+  # 
+  # # Get all parameters (paths) in the SEM diagram
+  # sem_pars <- sem_model@Pars
+  # 
+  # # Mark non-significant regression paths as invisible
+  # is_regression <- sem_model@Pars$edge == "regression"
+  # is_significant <- sem_model@Pars$p < 0.05
+  # sem_model@Pars$t <- !is_regression | (is_regression & is_significant)
+  # 
+  # format_estimate <- function(est, pval) {
+  #   if (is.na(est)) return("")
+  #   stars <- if (is.na(pval)) "" else if (pval < .001) "***" else if (pval < .01) "**" else if (pval < .05) "*" else ""
+  #   paste0(formatC(est, format = "f", digits = 2), stars)
+  # }
+  # 
+  # # Apply across all visible paths
+  # all_labels <- mapply(
+  #   format_estimate,
+  #   sem_model@Pars$std,
+  #   sem_model@Pars$p
   # )
   # 
-  # std_estimates$label_type <- dplyr::case_when(
-  #   std_estimates$op == "~" ~ "regression",
-  #   std_estimates$op == "=~" ~ "loading",
-  #   std_estimates$op == "~~" ~ "covariance",
-  #   std_estimates$op == ":=" ~ "indirect effect",
-  #   TRUE ~ "other"
-  # )
-  
-  # Create custom labels for paths
-  std_estimates$starred_label <- paste0(
-    round(std_estimates$std.all, 2),
-    sapply(std_estimates$pvalue, add_stars)
-  )
-  
-  regression_labels <- std_estimates$starred_label[std_estimates$op == "~"]
-  # loading_labels <- std_estimates$starred_label[std_estimates$op == "=~"]
-  # correlation_labels <- std_estimates$starred_label[std_estimates$op == "~~"]
-  # indirect_labels <- std_estimates$starred_label[std_estimates$op == ":="]
-  # 
-  # all_labels <- std_estimates$starred_label
+  # edgeLabels_filtered <- all_labels[sem_model@Pars$t]
+  #   
+  # is_displayed <- sem_model@Pars$t
+  # is_sig <- sem_model@Pars$p < 0.05
+  # edgeLabels_filtered <- ifelse(is_displayed & is_sig, all_labels[is_displayed], "")
+
   
   filename <- paste0("sem_", paste(node_names[1:5], collapse="_"))
   path <- paste(sep = "/", "plots", study, filename)
-  
-  plot <- semPlot::semPaths(
-    object = fit,              # your lavaan model object
+
+  sem_obj <- semPlot::semPaths(
+    object = sem_model,          # <- use sem_model, not fit
     what = "std",
     whatLabels = "est",
-    edgeLabels = regression_labels,
-    # edgeLabels = all_labels,
-    layout = "spring",           # "tree", "circle", "spring", etc.
-    # edge.label.cex = 1.2,      # size of edge (path) labels
-    # sizeMan = 10,               # size of variable boxes
-    # sizeLat = 0,               
-    residuals = FALSE,         # don't show residual variances
-    nCharNodes = 0,            # show full variable names
+    # edgeLabels = edgeLabels_filtered,
+    layout = "spring",
+    residuals = FALSE,
+    nCharNodes = 0,
     title = FALSE,
     nodeLabels = node_labels,
-    label.scale = FALSE, 
-    label.cex = 0.5, 
-    filetype = "png",
-    filename = path,
-    repulsion = 0.9,
-    # curveAll = TRUE,
-    curvePivot = TRUE     # improves curve spacing
-    
+    label.scale = FALSE,
+    label.cex = 0.5,
+    # repulsion = 0.9,
+    bg = "transparent",
+    edge.label.cex = 0.9,
+    sizeMan = 7,
+    sizeLat = 8,
+    fade = FALSE,
+    mar = c(3, 3, 3, 3),
+    style = "lisrel",
+    curvePivot = TRUE,
+    intercepts = FALSE
+    # color = node_colors  # You can keep this as long as node_colors is correctly ordered
   )
-  
+
+  # Save with transparency
+  # svglite::svglite(paste0(path, "_transparent.svg"), width = 10, height = 8, bg = "transparent")
+  ragg::agg_png(paste0(path, "_transparent.png"), width = 2400, height = 1800, res = 300, background = "transparent")
+  plot(sem_obj)
+  dev.off()
+
+
   # indirects <- std_estimates[std_estimates$op == ":=", c("lhs", "rhs", "label", "std.all", "pvalue")]
   # indirects$starred <- paste0(round(indirects$std.all, 2), sapply(indirects$pvalue, add_stars))
   # print(indirects)
-  return(plot)
+  return(sem_obj)
 }
+
