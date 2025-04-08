@@ -2,8 +2,8 @@
 safe_pal <- rcartocolor::carto_pal(12, "Safe")
 
 
-pal = c("#7F2543", "#196389", "#2f2589", "#267843", "#f4849f")
-fill_pal = c("#7F254350", "#19638950", "#2f258950", "#26784350", "#f4849f50")
+pal = c("#7F2543", "#196389", "#2f2589", "#267843", "grey40", "#f4849f")
+fill_pal = c("#7F254350", "#19638950", "#2f258950", "#26784350", "grey80", "#f4849f50")
 
 
 # Create a customized ggplot2::theme and apply it as the default in this rmarkdown file.
@@ -44,11 +44,11 @@ get_label <- function(column_name) {
     "Education_regrouped" = "Education",
     "ScienceContent_regrouped" = "Science Content Consumption Frequency",
     "intention_to_use_score" = "Intention to Use AI",
-    "Experience_4" = "Changed Opinion of AI",
-    "Experience_7" = "Could Write Blog Post",
+    "ChangedOpinionOfAI" = "Changed Opinion of AI",
+    "CouldWriteContent" = "Could Write Blog Post",
     "fear_of_ai_score" = "Fear of AI",
     "professional_content_expertise" = "Professional Experience with Content or Writing",
-    "Appelman_4" = "Writing Quality",
+    "WellWritten" = "Writing Quality",
     "SurveyTopicCheck_coded" = "Reported Survey Purpose",
     "unknown"
   )
@@ -298,14 +298,14 @@ get_sem_label <- function(column_name) {
     "Education_regrouped" = "Education",
     "ScienceContent_regrouped" = "Science Content Consumption Frequency",
     "intention_to_use_score" = "Intention to Use AI",
-    "Experience_4" = "Changed Opinion of AI",
-    "Experience_7" = "Could Write Blog Post",
+    "ChangedOpinionOfAI" = "Changed Opinion of AI",
+    "CouldWriteContent" = "Could Write Blog Post",
     "fear_of_ai_score" = "Fear of AI",
     "professional_content_expertise" = "Professional Experience with Content or Writing",
     "AIChatbotsFrequency_ordinal" = "AI Usage Frequency", 
     "ScienceContent_ordinal" = "Science Content Frequency", 
-    "Appelman_4_n" = "Writing Quality",
-    "Appelman_6_n" = "Writing Engagement",
+    "WellWritten_n" = "Writing Quality",
+    "Engaging_n" = "Writing Engagement",
     "SurveyTopicCheck_coded" = "Reported Survey Purpose",
     "anthro_x_usage" = "AI Usage Frequency",
     column_name

@@ -4,7 +4,7 @@
 # library(performance)
 
 test_between_subjects_anova_assumptions <- function(data, formula, aov_model, dv_name){
-  
+  message("Starting test_between_subjects_anova_assumptions")
   dv <- data |> pull({{dv_name}})
   
   # # Test for Normality
@@ -22,9 +22,12 @@ test_between_subjects_anova_assumptions <- function(data, formula, aov_model, dv
   
   print(bartlett.test(formula, data = data))
   
+  return()
+  
 }
 
 test_within_subjects_anova_assumptions <- function(aov_model){
+  message("Starting test_within_subjects_anova_assumptions")
   performance::check_homogeneity(aov_model)
   performance::check_sphericity(aov_model)
 }
@@ -58,6 +61,7 @@ test_within_subjects_anova_assumptions <- function(aov_model){
 # }
 
 run_simple_effects_t_tests <- function(data, formula) {
+  message("Starting run_simple_effects_t_tests")
   data <- base::droplevels(data)
   vars <- all.vars(formula)
   dv <- vars[1]
@@ -118,6 +122,7 @@ run_simple_effects_t_tests <- function(data, formula) {
 }
 
 run_between_subjects_anova <- function(data, formula, ...){
+  message("Starting run_between_subjects_anova")
   dv_name <- all.vars(formula)[1]
   grouping_var <- all.vars(formula)[2]
   
@@ -148,10 +153,12 @@ run_between_subjects_anova <- function(data, formula, ...){
   # Extract p-value from the ANOVA summary
   p_value <- model_summ[[1]]["Pr(>F)"][[1]][1]
   
+  message("The ANOVA p value is", p_value)
   # If the p-value is significant, run assumption tests and simple effects t-tests
   if (!is.na(p_value) && p_value < 0.05) {
     test_between_subjects_anova_assumptions(data, formula, aov_model, dv_name)
-    run_simple_effects_t_tests(data, formula)
+    pwt_results <- run_simple_effects_t_tests(data, formula)
+    print(pwt_results)
   }
   
   return(aov_model)
@@ -159,6 +166,8 @@ run_between_subjects_anova <- function(data, formula, ...){
 
 
 run_inferential <- function(data, formula) {
+  
+  message("Starting run_inferential.")
   dv_name <- all.vars(formula)[1]
   grouping_var <- all.vars(formula)[2]
   
@@ -214,9 +223,15 @@ run_inferential <- function(data, formula) {
     # Extract p-value
     p_value <- model_summ[[1]]["Pr(>F)"][[1]][1]
     
+    message("The ANOVA p value is", p_value)
+    # If the p-value is significant, run assumption tests and simple effects t-tests
     if (!is.na(p_value) && p_value < 0.05) {
+      message("ANOVA was significant, checking assumptioins.")
       test_between_subjects_anova_assumptions(data, formula, aov_model, dv_name)
-      run_simple_effects_t_tests(data, formula)
+      
+      message("ANOVA was significant, running pairwise t-tests.")
+      pwt_result <- run_simple_effects_t_tests(data, formula)
+      pwt_result |> rmarkdown::paged_table() |> print()
     }
     
     return(invisible(list(

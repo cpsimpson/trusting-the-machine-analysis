@@ -50,6 +50,7 @@ source("./scripts/analysis-descriptives.R", local = TRUE)
 source("./scripts/analysis-reliability.R", local = TRUE)
 source("./scripts/analysis-inferential.R", local = TRUE)
 source("./scripts/analysis-correlation.R", local = TRUE)
+source("./scripts/analysis-regression.R", local = TRUE)
 source("./scripts/analysis-moderation-mediation.R", local = TRUE)
 source("./scripts/plotting.R", local = TRUE)
 source("./scripts/common.R", local = TRUE)
@@ -66,56 +67,6 @@ s1_study <- "s1"
 **Research Question**: What effect does anthropomorphism have on level of trust in generative AI and the content it creates?
 
 My **hypothesis** is that there will be an increase in epistemic trust with increasing levels of anthropomorphism.
-
-## Highlights
-
--   Anthropomorphism manipulation did not work as expected. No significant difference in Anthropomorphism ratings between Low and Medium conditions.
-
-    -   All of Anthropomorphism, Likeability, Competence, Expertise, Integrity, and Benevolence showed the same patterns of variance.
-
--   No significant difference in Trust ratings for the Content based on Anthropomorphism condition
-
--   Main effect of AI Usage Frequency on Content Trust. Significant difference between those that rarely use AI (lower trust) and those that frequently use it, and those that rarely use it and occasional users. No difference between frequent and occasional users. \[ This is based on the regrouped frequencies, the more granular raw data was less straightforward to interpret. \]
-
-    -   Interaction effect with AI Usage Frequency and Condition. Significant difference between High and Medium, and High and Low for occasional users only.
-
--   Main effect of Science Content Consumption Frequency on Content Trust. Significant difference between those that rarely consume science content (lower trust) than frequent or occasional consumers of such content. (No interaction with anthropomorphism condition.)
-
--   Main effect of Intention to Use AI in the future on Content Trust. Positive correlation. (No interaction with anthropomorphism condition.)
-
--   Main effect on Content Trust for rating of "Well-written". Perception of more well-written correlates to higher Content Trust.
-
--   Main effect on Content Trust for rating of "Boring". Perception of less boring correlates to higher Content Trust.
-
--   Main effect on Content Trust for rating of "Engaging". Perception of more engaging correlates to higher Content Trust.
-
--   Main effect of the Survey Purpose check response. Those that stated being unsure of the purpose of the survey had lower trust in the content than those that gave a purpose either related to AI or not. (No interaction with anthropomorphism condition.)
-
--   No significant difference in Content Trust among those that found something unbelievable in the survey compared to those that did not
-
--   Main effect of Condition on Author Trust. Significant difference between High and Medium comparison and High and Low (with higher trust for High condition in both cases). No significant difference between Low and Medium.
-
--   Author trust very highly correlated to expertise, integrity, benevolence, competence, and likeability (with likeability being the lowest at .9). The correlations for Content trust are much lower with author competence and expertise being the lowest at 0.69. (This is across all data.) These vary by Condition (I have not checked if the difference is significant yet).
-
--   Main effect of perceived unrealistic reason on Author Trust (p = 0.04). When I did pairwise t-tests no significant results. (closest would be "Description Not Believable", but these all have small n). When I look at the LM there are significant values for "Description Not Believable".
-
--   Main effect on Author Trust for rating of "Well-written". Perception of more well-written correlates to higher Author Trust.
-
--   Main effect on Author Trust for rating of "Boring". Perception of less boring correlates to higher Author Trust.
-
--   Main effect on Author Trust for rating of "Engaging". Perception of more engaging correlates to higher Author Trust.
-
--   Additionally, main effects of changed opinion of ai based on study experience, fear of AI rating, belief they could write the content on Content Trust and Author Trust, but need to look at this data more still to verify. No effect of professional writing or content area expertise on Content Trust and Author Trust.
-
--   
-
-## Next Steps
-
--   Look at correlation between anthropomorphism and trust scores ignoring groups
-
--   Address anthropomorphism manipulation not working?
-
--   Replication of Author vs Content trust discrepancy?
 
 ## Data Analysis
 
@@ -573,17 +524,17 @@ s1_cleaned_data |>
 
 # changed opinion of AI
 s1_cleaned_data |> 
-  summarize_columns(Experience_4) 
+  summarize_columns(ChangedOpinionOfAI) 
 
 s1_cleaned_data |> 
-  summarize_columns(Experience_4, Condition) 
+  summarize_columns(ChangedOpinionOfAI, Condition) 
 
 
 s1_cleaned_data |> 
-  summarize_columns(Experience_7) 
+  summarize_columns(CouldWriteContent) 
 
 s1_cleaned_data |> 
-  summarize_columns(Experience_7, Condition) 
+  summarize_columns(CouldWriteContent, Condition) 
 
 
 ```
@@ -755,6 +706,19 @@ s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ Con
 
 ##### Post-hoc Analysis
 
+
+```{r}
+
+result <- run_post_hoc_regression_analysis(
+  data = s1_cleaned_data,
+  dv = "content_trust_combined_score",
+  study = s1_study
+)
+
+print(result)
+
+
+```
 ###### Anthropomorphism
 
 ```{r}
@@ -774,480 +738,468 @@ plot <- correlation_plot(s1_cleaned_data,
 plot
 ```
 
-###### Author / Content Trust Interaction
+<!-- ###### Author / Content Trust Interaction -->
 
-```{r}
 
-s1_cleaned_data |> test_correlation("author_trust_combined_score", "content_trust_combined_score")
 
-plots <- correlation_plot(s1_cleaned_data, 
-            s1_study,
-            "author_trust_combined_score",
-            "content_trust_combined_score")
+<!-- ```{r} -->
 
-# Display the plots
-plots$lm
-plots$loess
-```
 
-```{r}
+<!-- lm_model <- s1_cleaned_data |> linear_model(content_trust_combined_score ~  author_trust_combined_score * anthropomorphism_score) -->
 
+<!-- plot <- s1_cleaned_data |> interaction_plot_3( -->
+<!--   lm_model,  -->
+<!--   pred_name = "author_trust_combined_score", -->
+<!--   mod_name = "anthropomorphism_score",  -->
+<!--   target_name = "content_trust_combined_score",  -->
+<!--   study = s1_study) -->
 
-lm_model <- s1_cleaned_data |> linear_model(content_trust_combined_score ~  author_trust_combined_score * anthropomorphism_score)
+<!-- plot -->
 
-plot <- s1_cleaned_data |> interaction_plot_3(
-  lm_model, 
-  pred_name = "author_trust_combined_score",
-  mod_name = "anthropomorphism_score", 
-  target_name = "content_trust_combined_score", 
-  study = s1_study)
 
-plot
+<!-- ``` -->
 
+<!-- ```{r} -->
 
-```
 
-```{r}
+<!-- lm_model <- s1_cleaned_data |> linear_model(content_trust_combined_score ~ anthropomorphism_score * author_trust_combined_score * AIChatbotsFrequency_regrouped) -->
 
+<!-- plot <- s1_cleaned_data |> interaction_plot_4( -->
+<!--   lm_model,  -->
+<!--   pred_name = "author_trust_combined_score", -->
+<!--   mod_name = "anthropomorphism_score",  -->
+<!--   mod2_name = "AIChatbotsFrequency_regrouped", -->
+<!--   mod2_v = c("frequently", "occasionally", "rarely"), -->
+<!--   target_name = "content_trust_combined_score",  -->
+<!--   study = s1_study) -->
 
-lm_model <- s1_cleaned_data |> linear_model(content_trust_combined_score ~ anthropomorphism_score * author_trust_combined_score * AIChatbotsFrequency_regrouped)
+<!-- plot -->
 
-plot <- s1_cleaned_data |> interaction_plot_4(
-  lm_model, 
-  pred_name = "author_trust_combined_score",
-  mod_name = "anthropomorphism_score", 
-  mod2_name = "AIChatbotsFrequency_regrouped",
-  mod2_v = c("frequently", "occasionally", "rarely"),
-  target_name = "content_trust_combined_score", 
-  study = s1_study)
+<!-- ``` -->
 
-plot
+<!-- ###### Age -->
 
-```
+<!-- ```{r} -->
 
-###### Age
+<!-- aov_model <- s1_cleaned_data |> run_between_subjects_anova(content_trust_combined_score ~ age_range, "content_trust_combined_score") -->
 
-```{r}
+<!-- ``` -->
 
-aov_model <- s1_cleaned_data |> run_between_subjects_anova(content_trust_combined_score ~ age_range, "content_trust_combined_score")
+<!-- ```{r} -->
 
-```
+<!-- s1_cleaned_data |> test_correlation("Age_1", "content_trust_combined_score") -->
 
-```{r}
+<!-- plots <- correlation_plot(s1_cleaned_data,  -->
+<!--             s1_study, -->
+<!--             "Age_1", -->
+<!--             "content_trust_combined_score") -->
 
-s1_cleaned_data |> test_correlation("Age_1", "content_trust_combined_score")
+<!-- # Display the plots -->
+<!-- plots$lm -->
+<!-- plots$loess -->
 
-plots <- correlation_plot(s1_cleaned_data, 
-            s1_study,
-            "Age_1",
-            "content_trust_combined_score")
+<!-- ``` -->
 
-# Display the plots
-plots$lm
-plots$loess
+<!-- ###### Gender -->
 
-```
+<!-- ```{r} -->
 
-###### Gender
+<!-- aov_model <- s1_cleaned_data |> -->
+<!--   droplevels() |> -->
+<!--   run_between_subjects_anova(content_trust_combined_score ~ Gender, "content_trust_combined_score") -->
 
-```{r}
+<!-- s1_cleaned_data |> -->
+<!--   droplevels() |> run_simple_effects_t_tests(content_trust_combined_score ~ Gender) -->
 
-aov_model <- s1_cleaned_data |>
-  droplevels() |>
-  run_between_subjects_anova(content_trust_combined_score ~ Gender, "content_trust_combined_score")
 
-s1_cleaned_data |>
-  droplevels() |> run_simple_effects_t_tests(content_trust_combined_score ~ Gender)
+<!-- ``` -->
 
+<!-- ###### Sex -->
 
-```
+<!-- ```{r} -->
 
-###### Sex
+<!-- aov_model <- s1_cleaned_data |> -->
+<!--   droplevels() |> -->
+<!--   run_between_subjects_anova(content_trust_combined_score ~ Sex, "content_trust_combined_score") -->
 
-```{r}
+<!-- ``` -->
 
-aov_model <- s1_cleaned_data |>
-  droplevels() |>
-  run_between_subjects_anova(content_trust_combined_score ~ Sex, "content_trust_combined_score")
+<!-- ###### Education -->
 
-```
+<!-- ```{r} -->
 
-###### Education
+<!-- aov_model <- s1_cleaned_data |> -->
+<!--   droplevels() |> -->
+<!--   run_between_subjects_anova(content_trust_combined_score ~ Education_regrouped, "content_trust_combined_score") -->
 
-```{r}
+<!-- ``` -->
 
-aov_model <- s1_cleaned_data |>
-  droplevels() |>
-  run_between_subjects_anova(content_trust_combined_score ~ Education_regrouped, "content_trust_combined_score")
+<!-- ###### AI Usage Experience -->
 
-```
+<!-- ```{r} -->
 
-###### AI Usage Experience
+<!-- aov_model <- s1_cleaned_data |> -->
+<!--   run_between_subjects_anova(content_trust_combined_score ~ AIChatbotsFrequency_regrouped, "content_trust_combined_score") -->
 
-```{r}
+<!-- s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ AIChatbotsFrequency_regrouped) -->
 
-aov_model <- s1_cleaned_data |>
-  run_between_subjects_anova(content_trust_combined_score ~ AIChatbotsFrequency_regrouped, "content_trust_combined_score")
+<!-- plot <- violin_plot(s1_cleaned_data,  -->
+<!--             s1_study, -->
+<!--             "AIChatbotsFrequency_regrouped", -->
+<!--             "content_trust_combined_score", -->
+<!--             include_legend = FALSE,  -->
+<!--             comparisons = list(  c("rarely", "occasionally"), -->
+<!--     c("rarely", "frequently"), -->
+<!--     c("occasionally", "frequently") )) -->
 
-s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ AIChatbotsFrequency_regrouped)
+<!-- plot -->
 
-plot <- violin_plot(s1_cleaned_data, 
-            s1_study,
-            "AIChatbotsFrequency_regrouped",
-            "content_trust_combined_score",
-            include_legend = FALSE, 
-            comparisons = list(  c("rarely", "occasionally"),
-    c("rarely", "frequently"),
-    c("occasionally", "frequently") ))
+<!-- ``` -->
 
-plot
+<!-- ```{r} -->
+<!-- lm_model <- s1_cleaned_data |> linear_model(content_trust_combined_score ~ Condition * AIChatbotsFrequency_regrouped) -->
 
-```
+<!-- plot <- s1_cleaned_data |> -->
+<!--   categorical_interaction_plot_3(lm_model, -->
+<!--                                 pred_name = "Condition", -->
+<!--                                 mod_name = "AIChatbotsFrequency_regrouped", -->
+<!--                                 target_name = "content_trust_combined_score", -->
+<!--                                 study = s1_study -->
+<!--                                 ) -->
 
-```{r}
-lm_model <- s1_cleaned_data |> linear_model(content_trust_combined_score ~ Condition * AIChatbotsFrequency_regrouped)
+<!-- plot -->
 
-plot <- s1_cleaned_data |>
-  categorical_interaction_plot_3(lm_model,
-                                pred_name = "Condition",
-                                mod_name = "AIChatbotsFrequency_regrouped",
-                                target_name = "content_trust_combined_score",
-                                study = s1_study
-                                )
+<!-- ``` -->
 
-plot
+<!-- ###### Science Content Experience -->
 
-```
+<!-- ```{r} -->
 
-###### Science Content Experience
+<!-- aov_model <- s1_cleaned_data |> -->
+<!--   run_between_subjects_anova(content_trust_combined_score ~ ScienceContent_regrouped, "content_trust_combined_score") -->
 
-```{r}
+<!-- s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ ScienceContent_regrouped) -->
 
-aov_model <- s1_cleaned_data |>
-  run_between_subjects_anova(content_trust_combined_score ~ ScienceContent_regrouped, "content_trust_combined_score")
+<!-- plot <- violin_plot(s1_cleaned_data,  -->
+<!--             s1_study, -->
+<!--             "ScienceContent_regrouped", -->
+<!--             "content_trust_combined_score", -->
+<!--             include_legend = FALSE,  -->
+<!--             comparisons = list(  c("rarely", "occasionally"), -->
+<!--     c("rarely", "frequently"), -->
+<!--     c("occasionally", "frequently") )) -->
 
-s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ ScienceContent_regrouped)
+<!-- plot -->
 
-plot <- violin_plot(s1_cleaned_data, 
-            s1_study,
-            "ScienceContent_regrouped",
-            "content_trust_combined_score",
-            include_legend = FALSE, 
-            comparisons = list(  c("rarely", "occasionally"),
-    c("rarely", "frequently"),
-    c("occasionally", "frequently") ))
 
-plot
+<!-- ``` -->
 
+<!-- ```{r} -->
 
-```
+<!-- lm_model <- s1_cleaned_data |> linear_model(content_trust_combined_score ~ Condition * ScienceContent_regrouped) -->
 
-```{r}
+<!-- plot <- s1_cleaned_data |> -->
+<!--   categorical_interaction_plot_3(lm_model, -->
+<!--                                 pred_name = "Condition", -->
+<!--                                 mod_name = "ScienceContent_regrouped", -->
+<!--                                 target_name = "content_trust_combined_score", -->
+<!--                                 study = s1_study -->
+<!--                                 ) -->
 
-lm_model <- s1_cleaned_data |> linear_model(content_trust_combined_score ~ Condition * ScienceContent_regrouped)
+<!-- plot -->
 
-plot <- s1_cleaned_data |>
-  categorical_interaction_plot_3(lm_model,
-                                pred_name = "Condition",
-                                mod_name = "ScienceContent_regrouped",
-                                target_name = "content_trust_combined_score",
-                                study = s1_study
-                                )
 
-plot
+<!-- ``` -->
 
+<!-- ###### Intention to Use AI -->
 
-```
+<!-- ```{r} -->
+<!-- s1_cleaned_data |> test_correlation("intention_to_use_score", "content_trust_combined_score") -->
 
-###### Intention to Use AI
+<!-- plots <- correlation_plot(s1_cleaned_data,  -->
+<!--             s1_study, -->
+<!--             "intention_to_use_score", -->
+<!--             "content_trust_combined_score") -->
 
-```{r}
-s1_cleaned_data |> test_correlation("intention_to_use_score", "content_trust_combined_score")
+<!-- # Display the plots -->
+<!-- plots$lm -->
+<!-- plots$loess -->
 
-plots <- correlation_plot(s1_cleaned_data, 
-            s1_study,
-            "intention_to_use_score",
-            "content_trust_combined_score")
 
-# Display the plots
-plots$lm
-plots$loess
+<!-- ``` -->
 
+<!-- ###### Changed Opinion -->
 
-```
+<!-- ```{r} -->
 
-###### Changed Opinion
+<!-- s1_cleaned_data |> descriptives_by_group(ChangedOpinionOfAI, content_trust_combined_score)  -->
 
-```{r}
+<!-- aov_model <- s1_cleaned_data |> -->
+<!--   run_between_subjects_anova(content_trust_combined_score ~ ChangedOpinionOfAI, "content_trust_combined_score") -->
 
-s1_cleaned_data |> descriptives_by_group(Experience_4, content_trust_combined_score) 
+<!-- s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ ChangedOpinionOfAI) -->
 
-aov_model <- s1_cleaned_data |>
-  run_between_subjects_anova(content_trust_combined_score ~ Experience_4, "content_trust_combined_score")
+<!-- plot <- violin_plot(s1_cleaned_data, -->
+<!--             s1_study, -->
+<!--             "ChangedOpinionOfAI", -->
+<!--             "content_trust_combined_score", -->
+<!--             include_legend = FALSE, -->
+<!--             comparisons = list(   -->
+<!--               c("1", "2"), -->
+<!--               c("2", "3"), -->
+<!--               c("3", "4"), -->
+<!--               c("4", "5"), -->
+<!--               c("1", "3"), -->
+<!--               c("2", "4"), -->
+<!--               c("3", "5"), -->
+<!--               c("1", "4"), -->
+<!--               c("2", "5"), -->
+<!--               c("1", "5") -->
+<!--               ) -->
+<!--     ) -->
 
-s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ Experience_4)
+<!-- ``` -->
 
-plot <- violin_plot(s1_cleaned_data,
-            s1_study,
-            "Experience_4",
-            "content_trust_combined_score",
-            include_legend = FALSE,
-            comparisons = list(  
-              c("1", "2"),
-              c("2", "3"),
-              c("3", "4"),
-              c("4", "5"),
-              c("1", "3"),
-              c("2", "4"),
-              c("3", "5"),
-              c("1", "4"),
-              c("2", "5"),
-              c("1", "5")
-              )
-    )
+<!-- ###### Fear of AI -->
 
-```
+<!-- ```{r} -->
 
-###### Fear of AI
 
-```{r}
+<!-- s1_cleaned_data |> test_correlation("fear_of_ai_score", "content_trust_combined_score") -->
 
+<!-- plots <- correlation_plot(s1_cleaned_data,  -->
+<!--             s1_study, -->
+<!--             "fear_of_ai_score", -->
+<!--             "content_trust_combined_score") -->
 
-s1_cleaned_data |> test_correlation("fear_of_ai_score", "content_trust_combined_score")
+<!-- # Display the plots -->
+<!-- plots$lm -->
+<!-- plots$loess -->
 
-plots <- correlation_plot(s1_cleaned_data, 
-            s1_study,
-            "fear_of_ai_score",
-            "content_trust_combined_score")
+<!-- ``` -->
 
-# Display the plots
-plots$lm
-plots$loess
+<!-- ###### Could Write -->
 
-```
+<!-- ```{r} -->
 
-###### Could Write
+<!-- s1_cleaned_data |> descriptives_by_group(CouldWriteContent, content_trust_combined_score)  -->
 
-```{r}
+<!-- aov_model <- s1_cleaned_data |> -->
+<!--   run_between_subjects_anova(content_trust_combined_score ~ CouldWriteContent, "content_trust_combined_score") -->
 
-s1_cleaned_data |> descriptives_by_group(Experience_7, content_trust_combined_score) 
+<!-- s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ CouldWriteContent) -->
 
-aov_model <- s1_cleaned_data |>
-  run_between_subjects_anova(content_trust_combined_score ~ Experience_7, "content_trust_combined_score")
+<!-- plot <- violin_plot(s1_cleaned_data, -->
+<!--             s1_study, -->
+<!--             "CouldWriteContent", -->
+<!--             "content_trust_combined_score", -->
+<!--             include_legend = FALSE, -->
+<!--             comparisons = list(   -->
+<!--               c("1", "2"), -->
+<!--               c("2", "3"), -->
+<!--               c("3", "4"), -->
+<!--               c("4", "5"), -->
+<!--               c("1", "3"), -->
+<!--               c("2", "4"), -->
+<!--               c("3", "5"), -->
+<!--               c("1", "4"), -->
+<!--               c("2", "5"), -->
+<!--               c("1", "5") -->
+<!--               ) -->
+<!--     ) -->
 
-s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ Experience_7)
+<!-- ``` -->
 
-plot <- violin_plot(s1_cleaned_data,
-            s1_study,
-            "Experience_7",
-            "content_trust_combined_score",
-            include_legend = FALSE,
-            comparisons = list(  
-              c("1", "2"),
-              c("2", "3"),
-              c("3", "4"),
-              c("4", "5"),
-              c("1", "3"),
-              c("2", "4"),
-              c("3", "5"),
-              c("1", "4"),
-              c("2", "5"),
-              c("1", "5")
-              )
-    )
+<!-- ###### Professional Content / Writing Expertise -->
 
-```
+<!-- ```{r} -->
 
-###### Professional Content / Writing Expertise
+<!-- s1_cleaned_data |> test_correlation("professional_content_expertise", "content_trust_combined_score") -->
 
-```{r}
+<!-- plots <- correlation_plot(s1_cleaned_data,  -->
+<!--             s1_study, -->
+<!--             "professional_content_expertise", -->
+<!--             "content_trust_combined_score") -->
 
-s1_cleaned_data |> test_correlation("professional_content_expertise", "content_trust_combined_score")
+<!-- # Display the plots -->
+<!-- plots$lm -->
+<!-- plots$loess -->
 
-plots <- correlation_plot(s1_cleaned_data, 
-            s1_study,
-            "professional_content_expertise",
-            "content_trust_combined_score")
+<!-- ``` -->
 
-# Display the plots
-plots$lm
-plots$loess
+<!-- ###### Content Properties -->
 
-```
+<!-- Well-written -->
 
-###### Content Properties
+<!-- ```{r} -->
+<!-- s1_cleaned_data |> descriptives_by_group(WellWritten, content_trust_combined_score)  -->
 
-Well-written
+<!-- aov_model <- s1_cleaned_data |> -->
+<!--   run_between_subjects_anova(content_trust_combined_score ~ WellWritten, "content_trust_combined_score") -->
 
-```{r}
-s1_cleaned_data |> descriptives_by_group(Appelman_4, content_trust_combined_score) 
+<!-- s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ WellWritten) -->
 
-aov_model <- s1_cleaned_data |>
-  run_between_subjects_anova(content_trust_combined_score ~ Appelman_4, "content_trust_combined_score")
+<!-- plot <- violin_plot(s1_cleaned_data, -->
+<!--             s1_study, -->
+<!--             "WellWritten", -->
+<!--             "content_trust_combined_score", -->
+<!--             include_legend = FALSE, -->
+<!--             comparisons = list(   -->
+<!--               c("-2", "-1"), -->
+<!--               c("-1", "0"), -->
+<!--               c("0", "1"), -->
+<!--               c("1", "2"), -->
+<!--               c("-2", "0"), -->
+<!--               c("-1", "1"), -->
+<!--               c("0", "2"), -->
+<!--               c("-2", "1"), -->
+<!--               c("-1", "2"), -->
+<!--               c("-2", "2") -->
+<!--               ) -->
+<!--     ) -->
+<!-- ``` -->
 
-s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ Appelman_4)
+<!-- ```{r} -->
 
-plot <- violin_plot(s1_cleaned_data,
-            s1_study,
-            "Appelman_4",
-            "content_trust_combined_score",
-            include_legend = FALSE,
-            comparisons = list(  
-              c("-2", "-1"),
-              c("-1", "0"),
-              c("0", "1"),
-              c("1", "2"),
-              c("-2", "0"),
-              c("-1", "1"),
-              c("0", "2"),
-              c("-2", "1"),
-              c("-1", "2"),
-              c("-2", "2")
-              )
-    )
-```
+<!-- lm_model <- s1_cleaned_data |> linear_model(content_trust_combined_score ~ Condition * WellWritten) -->
 
-```{r}
+<!-- plot <- s1_cleaned_data |> -->
+<!--   categorical_interaction_plot_3(lm_model, -->
+<!--                                 pred_name = "Condition", -->
+<!--                                 mod_name = "WellWritten", -->
+<!--                                 target_name = "content_trust_combined_score", -->
+<!--                                 study = s1_study -->
+<!--                                 ) -->
 
-lm_model <- s1_cleaned_data |> linear_model(content_trust_combined_score ~ Condition * Appelman_4)
+<!-- plot -->
 
-plot <- s1_cleaned_data |>
-  categorical_interaction_plot_3(lm_model,
-                                pred_name = "Condition",
-                                mod_name = "Appelman_4",
-                                target_name = "content_trust_combined_score",
-                                study = s1_study
-                                )
+<!-- ``` -->
 
-plot
+<!-- Boring -->
 
-```
+<!-- ```{r} -->
+<!-- s1_cleaned_data |> descriptives_by_group(Boring, content_trust_combined_score)  -->
 
-Boring
+<!-- aov_model <- s1_cleaned_data |> -->
+<!--   run_between_subjects_anova(content_trust_combined_score ~ Boring, "content_trust_combined_score") -->
 
-```{r}
-s1_cleaned_data |> descriptives_by_group(Appelman_5, content_trust_combined_score) 
+<!-- s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ Boring) -->
 
-aov_model <- s1_cleaned_data |>
-  run_between_subjects_anova(content_trust_combined_score ~ Appelman_5, "content_trust_combined_score")
+<!-- plot <- violin_plot(s1_cleaned_data, -->
+<!--             s1_study, -->
+<!--             "Boring", -->
+<!--             "content_trust_combined_score", -->
+<!--             include_legend = FALSE, -->
+<!--             comparisons = list(   -->
+<!--               c("-2", "-1"), -->
+<!--               c("-1", "0"), -->
+<!--               c("0", "1"), -->
+<!--               c("1", "2"), -->
+<!--               c("-2", "0"), -->
+<!--               c("-1", "1"), -->
+<!--               c("0", "2"), -->
+<!--               c("-2", "1"), -->
+<!--               c("-1", "2"), -->
+<!--               c("-2", "2") -->
+<!--               ) -->
+<!--     ) -->
+<!-- ``` -->
 
-s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ Appelman_5)
+<!-- ```{r} -->
 
-plot <- violin_plot(s1_cleaned_data,
-            s1_study,
-            "Appelman_5",
-            "content_trust_combined_score",
-            include_legend = FALSE,
-            comparisons = list(  
-              c("-2", "-1"),
-              c("-1", "0"),
-              c("0", "1"),
-              c("1", "2"),
-              c("-2", "0"),
-              c("-1", "1"),
-              c("0", "2"),
-              c("-2", "1"),
-              c("-1", "2"),
-              c("-2", "2")
-              )
-    )
-```
+<!-- lm_model <- s1_cleaned_data |> linear_model(content_trust_combined_score ~ Condition * Boring) -->
 
-```{r}
+<!-- plot <- s1_cleaned_data |> -->
+<!--   categorical_interaction_plot_3(lm_model, -->
+<!--                                 pred_name = "Condition", -->
+<!--                                 mod_name = "Boring", -->
+<!--                                 target_name = "content_trust_combined_score", -->
+<!--                                 study = s1_study -->
+<!--                                 ) -->
 
-lm_model <- s1_cleaned_data |> linear_model(content_trust_combined_score ~ Condition * Appelman_5)
+<!-- plot -->
 
-plot <- s1_cleaned_data |>
-  categorical_interaction_plot_3(lm_model,
-                                pred_name = "Condition",
-                                mod_name = "Appelman_5",
-                                target_name = "content_trust_combined_score",
-                                study = s1_study
-                                )
+<!-- ``` -->
 
-plot
+<!-- Engaging -->
 
-```
+<!-- ```{r} -->
+<!-- s1_cleaned_data |> descriptives_by_group(Engaging, content_trust_combined_score)  -->
 
-Engaging
+<!-- aov_model <- s1_cleaned_data |> -->
+<!--   run_between_subjects_anova(content_trust_combined_score ~ Engaging, "content_trust_combined_score") -->
 
-```{r}
-s1_cleaned_data |> descriptives_by_group(Appelman_6, content_trust_combined_score) 
+<!-- s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ Engaging) -->
 
-aov_model <- s1_cleaned_data |>
-  run_between_subjects_anova(content_trust_combined_score ~ Appelman_6, "content_trust_combined_score")
+<!-- plot <- violin_plot(s1_cleaned_data, -->
+<!--             s1_study, -->
+<!--             "Engaging", -->
+<!--             "content_trust_combined_score", -->
+<!--             include_legend = FALSE, -->
+<!--             comparisons = list(   -->
+<!--               c("-2", "-1"), -->
+<!--               c("-1", "0"), -->
+<!--               c("0", "1"), -->
+<!--               c("1", "2"), -->
+<!--               c("-2", "0"), -->
+<!--               c("-1", "1"), -->
+<!--               c("0", "2"), -->
+<!--               c("-2", "1"), -->
+<!--               c("-1", "2"), -->
+<!--               c("-2", "2") -->
+<!--               ) -->
+<!--     ) -->
+<!-- ``` -->
 
-s1_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ Appelman_6)
+<!-- ```{r} -->
 
-plot <- violin_plot(s1_cleaned_data,
-            s1_study,
-            "Appelman_6",
-            "content_trust_combined_score",
-            include_legend = FALSE,
-            comparisons = list(  
-              c("-2", "-1"),
-              c("-1", "0"),
-              c("0", "1"),
-              c("1", "2"),
-              c("-2", "0"),
-              c("-1", "1"),
-              c("0", "2"),
-              c("-2", "1"),
-              c("-1", "2"),
-              c("-2", "2")
-              )
-    )
-```
+<!-- lm_model <- s1_cleaned_data |> linear_model(content_trust_combined_score ~ Condition * Engaging) -->
 
-```{r}
+<!-- plot <- s1_cleaned_data |> -->
+<!--   categorical_interaction_plot_3(lm_model, -->
+<!--                                 pred_name = "Condition", -->
+<!--                                 mod_name = "Engaging", -->
+<!--                                 target_name = "content_trust_combined_score", -->
+<!--                                 study = s1_study -->
+<!--                                 ) -->
 
-lm_model <- s1_cleaned_data |> linear_model(content_trust_combined_score ~ Condition * Appelman_6)
+<!-- plot -->
 
-plot <- s1_cleaned_data |>
-  categorical_interaction_plot_3(lm_model,
-                                pred_name = "Condition",
-                                mod_name = "Appelman_6",
-                                target_name = "content_trust_combined_score",
-                                study = s1_study
-                                )
+<!-- ``` -->
 
-plot
+<!-- ###### Survey Purpose Check -->
 
-```
+<!-- ```{r} -->
+<!-- s1_cleaned_data |> descriptives_by_group(SurveyTopicCheck_coded, content_trust_combined_score)  -->
 
-###### Survey Purpose Check
+<!-- aov_model <- s1_cleaned_data |> -->
+<!--   run_between_subjects_anova(content_trust_combined_score ~ SurveyTopicCheck_coded, "content_trust_combined_score") -->
 
-```{r}
-s1_cleaned_data |> descriptives_by_group(SurveyTopicCheck_coded, content_trust_combined_score) 
+<!-- ``` -->
 
-aov_model <- s1_cleaned_data |>
-  run_between_subjects_anova(content_trust_combined_score ~ SurveyTopicCheck_coded, "content_trust_combined_score")
+<!-- ###### Unrealistic Check -->
 
-```
+<!-- ```{r} -->
+<!-- s1_cleaned_data |> descriptives_by_group(Unrealistic, content_trust_combined_score)  -->
 
-###### Unrealistic Check
+<!-- aov_model <- s1_cleaned_data |> -->
+<!--   run_between_subjects_anova(content_trust_combined_score ~ Unrealistic, "content_trust_combined_score") -->
 
-```{r}
-s1_cleaned_data |> descriptives_by_group(Unrealistic, content_trust_combined_score) 
+<!-- ``` -->
 
-aov_model <- s1_cleaned_data |>
-  run_between_subjects_anova(content_trust_combined_score ~ Unrealistic, "content_trust_combined_score")
+<!-- ```{r} -->
+<!-- s1_cleaned_data |> descriptives_by_group(Unrealistic_coded, content_trust_combined_score)  -->
 
-```
+<!-- aov_model <- s1_cleaned_data |> -->
+<!--    group_by(Unrealistic_coded) |> filter(n() > 3) |> ungroup() |> -->
+<!--   run_between_subjects_anova(content_trust_combined_score ~ Unrealistic_coded, "content_trust_combined_score") -->
 
-```{r}
-s1_cleaned_data |> descriptives_by_group(Unrealistic_coded, content_trust_combined_score) 
+<!-- s1_cleaned_data |> -->
+<!--   droplevels() |> -->
+<!--   run_simple_effects_t_tests(content_trust_combined_score ~ Unrealistic_coded) -->
 
-aov_model <- s1_cleaned_data |>
-   group_by(Unrealistic_coded) |> filter(n() > 3) |> ungroup() |>
-  run_between_subjects_anova(content_trust_combined_score ~ Unrealistic_coded, "content_trust_combined_score")
 
-s1_cleaned_data |>
-  droplevels() |>
-  run_simple_effects_t_tests(content_trust_combined_score ~ Unrealistic_coded)
-
-
-```
+<!-- ``` -->
 
 #### Author Trust
 
@@ -1299,6 +1251,20 @@ result
 
 ##### Post-hoc Analysis
 
+
+```{r}
+
+result <- run_post_hoc_regression_analysis(
+  data = s1_cleaned_data,
+  dv = "author_trust_combined_score",
+  study = s1_study
+)
+
+print(result)
+
+
+```
+
 ###### Anthropomorphism
 
 ```{r}
@@ -1321,7 +1287,431 @@ plot
 
 ```
 
-###### Anthro / Author Trust Interaction
+
+<!-- ###### Age -->
+
+<!-- ```{r} -->
+<!-- s1_cleaned_data |> descriptives_by_group(age_range, author_trust_combined_score)  -->
+
+<!-- s1_cleaned_data |> -->
+<!--   run_inferential(author_trust_combined_score ~ age_range) -->
+
+
+<!-- c(author_trust_combined_score ~ age_range, content_trust_combined_score ~ age_range) -->
+
+<!-- ``` -->
+
+<!-- ```{r} -->
+<!-- s1_cleaned_data |> test_correlation("Age_1", "author_trust_combined_score") -->
+
+<!-- plots <- correlation_plot(s1_cleaned_data,  -->
+<!--             s1_study, -->
+<!--             "Age_1", -->
+<!--             "author_trust_combined_score") -->
+
+<!-- # Display the plots -->
+<!-- plots$lm -->
+<!-- plots$loess -->
+<!-- ``` -->
+
+<!-- ###### Gender (Man / Woman only) -->
+
+<!-- ```{r} -->
+
+<!-- s1_cleaned_data |> descriptives_by_group(Gender, author_trust_combined_score)  -->
+
+<!-- s1_cleaned_data |> -->
+<!--   run_inferential(author_trust_combined_score ~ Gender) -->
+
+<!-- ``` -->
+
+<!-- ###### Sex (Male / Female only) -->
+
+<!-- ```{r} -->
+
+<!-- s1_cleaned_data |> descriptives_by_group(Sex, author_trust_combined_score)  -->
+
+<!-- s1_cleaned_data |> -->
+<!--   run_inferential(author_trust_combined_score ~ Sex) -->
+<!-- ``` -->
+
+<!-- ###### Education -->
+
+<!-- ```{r} -->
+
+<!-- s1_cleaned_data |> descriptives_by_group(Education, author_trust_combined_score)  -->
+
+<!-- s1_cleaned_data |> -->
+<!--   run_inferential(author_trust_combined_score ~ Education) -->
+
+
+<!-- s1_cleaned_data |> descriptives_by_group(Education_regrouped, author_trust_combined_score)  -->
+
+<!-- s1_cleaned_data |> -->
+<!--   run_inferential(author_trust_combined_score ~ Education_regrouped) -->
+
+<!-- ``` -->
+
+<!-- ###### AI Usage Experience -->
+
+<!-- ```{r} -->
+<!-- s1_cleaned_data |> descriptives_by_group(AIChatbotsFrequency_regrouped, author_trust_combined_score)  -->
+
+<!-- s1_cleaned_data |> -->
+<!--   run_inferential(author_trust_combined_score ~ AIChatbotsFrequency_regrouped) -->
+
+<!-- ``` -->
+
+
+<!-- ###### Science Content Experience -->
+
+<!-- ```{r} -->
+<!-- s1_cleaned_data |> descriptives_by_group(ScienceContent, author_trust_combined_score)  -->
+
+<!-- s1_cleaned_data |> -->
+<!--   run_inferential(author_trust_combined_score ~ ScienceContent) -->
+
+
+<!-- s1_cleaned_data |> descriptives_by_group(ScienceContent_regrouped, author_trust_combined_score)  -->
+
+<!-- s1_cleaned_data |> -->
+<!--   run_inferential(author_trust_combined_score ~ ScienceContent_regrouped) -->
+
+<!-- ``` -->
+
+<!-- ###### Intention to Use AI -->
+
+<!-- ```{r} -->
+<!-- s1_cleaned_data |> test_correlation("intention_to_use_score", "author_trust_combined_score") -->
+
+<!-- plots <- correlation_plot(s1_cleaned_data,  -->
+<!--             s1_study, -->
+<!--             "intention_to_use_score", -->
+<!--             "author_trust_combined_score") -->
+
+<!-- # Display the plots -->
+<!-- plots$lm -->
+<!-- plots$loess -->
+<!-- ``` -->
+
+
+<!-- ###### Changed Opinion -->
+
+<!-- ```{r} -->
+
+<!-- # s1_cleaned_data |> test_correlation("ChangedOpinionOfAI", "author_trust_combined_score") -->
+<!-- #  -->
+<!-- # plots <- correlation_plot(s1_cleaned_data,  -->
+<!-- #             s1_study, -->
+<!-- #             "ChangedOpinionOfAI", -->
+<!-- #             "author_trust_combined_score") -->
+<!-- #  -->
+<!-- # # Display the plots -->
+<!-- # plots$lm -->
+<!-- # plots$loess -->
+
+<!-- # comparisons = list(   -->
+<!-- #               c("1", "2"), -->
+<!-- #               c("2", "3"), -->
+<!-- #               c("3", "4"), -->
+<!-- #               c("4", "5"), -->
+<!-- #               c("1", "3"), -->
+<!-- #               c("2", "4"), -->
+<!-- #               c("3", "5"), -->
+<!-- #               c("1", "4"), -->
+<!-- #               c("2", "5"), -->
+<!-- #               c("1", "5") -->
+<!-- #               ) -->
+<!-- s1_cleaned_data |> descriptives_by_group(ChangedOpinionOfAI, author_trust_combined_score) -->
+
+<!-- s1_cleaned_data |> -->
+<!--   run_inferential(author_trust_combined_score ~ ChangedOpinionOfAI) -->
+
+<!-- ``` -->
+
+<!-- ###### Fear of AI -->
+
+<!-- ```{r} -->
+<!-- s1_cleaned_data |> test_correlation("fear_of_ai_score", "author_trust_combined_score") -->
+
+<!-- plots <- correlation_plot(s1_cleaned_data,  -->
+<!--             s1_study, -->
+<!--             "fear_of_ai_score", -->
+<!--             "author_trust_combined_score") -->
+
+<!-- # Display the plots -->
+<!-- plots$lm -->
+<!-- plots$loess -->
+<!-- ``` -->
+
+<!-- ###### Could Write -->
+
+<!-- ```{r} -->
+
+<!-- # s1_cleaned_data |> test_correlation("CouldWriteContent", "author_trust_combined_score") -->
+<!-- #  -->
+<!-- # plots <- correlation_plot(s1_cleaned_data,  -->
+<!-- #             s1_study, -->
+<!-- #             "CouldWriteContent", -->
+<!-- #             "author_trust_combined_score") -->
+<!-- #  -->
+<!-- # # Display the plots -->
+<!-- # plots$lm -->
+<!-- # plots$loess -->
+
+<!-- s1_cleaned_data |> descriptives_by_group(CouldWriteContent, author_trust_combined_score) -->
+
+<!-- s1_cleaned_data |> -->
+<!--   run_inferential(author_trust_combined_score ~ CouldWriteContent) -->
+
+
+
+<!-- # s1_cleaned_data |> run_simple_effects_t_tests(author_trust_combined_score ~ CouldWriteContent) -->
+<!-- #  -->
+<!-- # plot <- violin_plot(s1_cleaned_data, -->
+<!-- #             s1_study, -->
+<!-- #             "CouldWriteContent", -->
+<!-- #             "author_trust_combined_score", -->
+<!-- #             include_legend = FALSE, -->
+<!-- #             comparisons = list(   -->
+<!-- #               c("1", "2"), -->
+<!-- #               c("2", "3"), -->
+<!-- #               c("3", "4"), -->
+<!-- #               c("4", "5"), -->
+<!-- #               c("1", "3"), -->
+<!-- #               c("2", "4"), -->
+<!-- #               c("3", "5"), -->
+<!-- #               c("1", "4"), -->
+<!-- #               c("2", "5"), -->
+<!-- #               c("1", "5") -->
+<!-- #               ) -->
+<!-- #     ) -->
+<!-- ``` -->
+
+<!-- ###### Professional Content / Writing Expertise -->
+
+<!-- ```{r} -->
+<!-- s1_cleaned_data |> test_correlation("professional_content_expertise", "author_trust_combined_score") -->
+
+<!-- plots <- correlation_plot(s1_cleaned_data,  -->
+<!--             s1_study, -->
+<!--             "professional_content_expertise", -->
+<!--             "author_trust_combined_score") -->
+
+<!-- # Display the plots -->
+<!-- plots$lm -->
+<!-- plots$loess -->
+<!-- ``` -->
+
+<!-- ###### Content Properties -->
+
+<!-- ####### Well-written -->
+
+<!-- ```{r} -->
+<!-- s1_cleaned_data |> descriptives_by_group(WellWritten, author_trust_combined_score)  -->
+
+
+<!-- s1_cleaned_data |> -->
+<!--   run_inferential(author_trust_combined_score ~ WellWritten) -->
+
+<!-- # aov_model <- s1_cleaned_data |> -->
+<!-- #   run_between_subjects_anova(author_trust_combined_score ~ WellWritten, "author_trust_combined_score") -->
+<!-- #  -->
+<!-- # s1_cleaned_data |> run_simple_effects_t_tests(author_trust_combined_score ~ WellWritten) -->
+<!-- #  -->
+<!-- # plot <- violin_plot(s1_cleaned_data, -->
+<!-- #             s1_study, -->
+<!-- #             "WellWritten", -->
+<!-- #             "author_trust_combined_score", -->
+<!-- #             include_legend = FALSE, -->
+<!-- #             comparisons = list(   -->
+<!-- #               c("-2", "-1"), -->
+<!-- #               c("-1", "0"), -->
+<!-- #               c("0", "1"), -->
+<!-- #               c("1", "2"), -->
+<!-- #               c("-2", "0"), -->
+<!-- #               c("-1", "1"), -->
+<!-- #               c("0", "2"), -->
+<!-- #               c("-2", "1"), -->
+<!-- #               c("-1", "2"), -->
+<!-- #               c("-2", "2") -->
+<!-- #               ) -->
+<!-- #     ) -->
+
+<!-- # s1_cleaned_data |> test_correlation("WellWritten", "author_trust_combined_score") -->
+<!-- #  -->
+<!-- # plots <- correlation_plot(s1_cleaned_data,  -->
+<!-- #             s1_study, -->
+<!-- #             "WellWritten", -->
+<!-- #             "author_trust_combined_score") -->
+<!-- #  -->
+<!-- # # Display the plots -->
+<!-- # plots$lm -->
+<!-- # plots$loess -->
+
+<!-- ``` -->
+
+<!-- ####### Boring -->
+
+<!-- ```{r} -->
+<!-- s1_cleaned_data |> descriptives_by_group(Boring, author_trust_combined_score)  -->
+
+<!-- s1_cleaned_data |> -->
+<!--   run_inferential(author_trust_combined_score ~ Boring) -->
+
+<!-- # s1_cleaned_data |> test_correlation("Boring", "author_trust_combined_score") -->
+<!-- #  -->
+<!-- # plots <- correlation_plot(s1_cleaned_data,  -->
+<!-- #             s1_study, -->
+<!-- #             "Boring", -->
+<!-- #             "author_trust_combined_score") -->
+<!-- #  -->
+<!-- # # Display the plots -->
+<!-- # plots$lm -->
+<!-- # plots$loess -->
+
+<!-- # aov_model <- s1_cleaned_data |> -->
+<!-- #   run_between_subjects_anova(author_trust_combined_score ~ Boring, "author_trust_combined_score") -->
+<!-- #  -->
+<!-- # s1_cleaned_data |> run_simple_effects_t_tests(author_trust_combined_score ~ Boring) -->
+<!-- #  -->
+<!-- # plot <- violin_plot(s1_cleaned_data, -->
+<!-- #             s1_study, -->
+<!-- #             "Boring", -->
+<!-- #             "author_trust_combined_score", -->
+<!-- #             include_legend = FALSE, -->
+<!-- #             comparisons = list(   -->
+<!-- #               c("-2", "-1"), -->
+<!-- #               c("-1", "0"), -->
+<!-- #               c("0", "1"), -->
+<!-- #               c("1", "2"), -->
+<!-- #               c("-2", "0"), -->
+<!-- #               c("-1", "1"), -->
+<!-- #               c("0", "2"), -->
+<!-- #               c("-2", "1"), -->
+<!-- #               c("-1", "2"), -->
+<!-- #               c("-2", "2") -->
+<!-- #               ) -->
+<!-- #     ) -->
+<!-- #  -->
+<!-- #  -->
+<!-- # lm_model <- s1_cleaned_data |> linear_model(author_trust_combined_score ~ Condition * Boring) -->
+<!-- #  -->
+<!-- # plot <- s1_cleaned_data |> -->
+<!-- #   categorical_interaction_plot_3(lm_model, -->
+<!-- #                                 pred_name = "Condition", -->
+<!-- #                                 mod_name = "Boring", -->
+<!-- #                                 target_name = "author_trust_combined_score", -->
+<!-- #                                 study = s1_study -->
+<!-- #                                 ) -->
+<!-- #  -->
+<!-- # plot -->
+<!-- ``` -->
+
+<!-- ####### Engaging -->
+
+<!-- ```{r} -->
+<!-- s1_cleaned_data |> descriptives_by_group(Engaging, author_trust_combined_score)  -->
+
+<!-- s1_cleaned_data |> -->
+<!--   run_inferential(author_trust_combined_score ~ Engaging) -->
+
+<!-- # s1_cleaned_data |> test_correlation("Engaging", "author_trust_combined_score") -->
+<!-- #  -->
+<!-- # plots <- correlation_plot(s1_cleaned_data,  -->
+<!-- #             s1_study, -->
+<!-- #             "Engaging", -->
+<!-- #             "author_trust_combined_score") -->
+<!-- #  -->
+<!-- # # Display the plots -->
+<!-- # plots$lm -->
+<!-- # plots$loess -->
+
+<!-- # aov_model <- s1_cleaned_data |> -->
+<!-- #   run_between_subjects_anova(author_trust_combined_score ~ Engaging, "author_trust_combined_score") -->
+<!-- #  -->
+<!-- # s1_cleaned_data |> run_simple_effects_t_tests(author_trust_combined_score ~ Engaging) -->
+<!-- #  -->
+<!-- # plot <- violin_plot(s1_cleaned_data, -->
+<!-- #             s1_study, -->
+<!-- #             "Engaging", -->
+<!-- #             "author_trust_combined_score", -->
+<!-- #             include_legend = FALSE, -->
+<!-- #             comparisons = list(   -->
+<!-- #               c("-2", "-1"), -->
+<!-- #               c("-1", "0"), -->
+<!-- #               c("0", "1"), -->
+<!-- #               c("1", "2"), -->
+<!-- #               c("-2", "0"), -->
+<!-- #               c("-1", "1"), -->
+<!-- #               c("0", "2"), -->
+<!-- #               c("-2", "1"), -->
+<!-- #               c("-1", "2"), -->
+<!-- #               c("-2", "2") -->
+<!-- #               ) -->
+<!-- #     ) -->
+<!-- # lm_model <- s1_cleaned_data |> linear_model(author_trust_combined_score ~ Condition * Engaging) -->
+<!-- #  -->
+<!-- # plot <- s1_cleaned_data |> -->
+<!-- #   categorical_interaction_plot_3(lm_model, -->
+<!-- #                                 pred_name = "Condition", -->
+<!-- #                                 mod_name = "Engaging", -->
+<!-- #                                 target_name = "author_trust_combined_score", -->
+<!-- #                                 study = s1_study -->
+<!-- #                                 ) -->
+<!-- #  -->
+<!-- # plot -->
+<!-- ``` -->
+
+<!-- ###### Survey Purpose Check -->
+
+<!-- ```{r} -->
+
+<!-- s1_cleaned_data |> descriptives_by_group(SurveyTopicCheck_coded, author_trust_combined_score)  -->
+
+<!-- # aov_model <- s1_cleaned_data |> -->
+<!-- #   run_between_subjects_anova(author_trust_combined_score ~ SurveyTopicCheck_coded, "author_trust_combined_score") -->
+<!-- #  -->
+<!-- # s1_cleaned_data |> -->
+<!-- #   droplevels() |> -->
+<!-- #   run_simple_effects_t_tests(author_trust_combined_score ~ SurveyTopicCheck_coded) -->
+
+
+<!-- s1_cleaned_data |> -->
+<!--   run_inferential(author_trust_combined_score ~ SurveyTopicCheck_coded) -->
+
+<!-- ``` -->
+
+<!-- ###### Unrealistic Check -->
+
+<!-- ```{r} -->
+
+<!-- s1_cleaned_data |> descriptives_by_group(Unrealistic, author_trust_combined_score) -->
+
+<!-- s1_cleaned_data |> -->
+<!--   run_inferential(author_trust_combined_score ~ Unrealistic) -->
+<!-- #  -->
+<!-- # aov_model <- s1_cleaned_data |> -->
+<!-- #   run_between_subjects_anova(author_trust_combined_score ~ Unrealistic, "author_trust_combined_score") -->
+<!-- #  -->
+<!-- # s1_cleaned_data |> descriptives_by_group(Unrealistic_coded, author_trust_combined_score)  -->
+
+<!-- # aov_model <- s1_cleaned_data |> -->
+<!-- #    group_by(Unrealistic_coded) |> filter(n() > 3) |> ungroup() |> -->
+<!-- #   run_between_subjects_anova(author_trust_combined_score ~ Unrealistic_coded, "author_trust_combined_score") -->
+<!-- #  -->
+<!-- # s1_cleaned_data |> -->
+<!-- #   droplevels() |> -->
+<!-- #   run_simple_effects_t_tests(author_trust_combined_score ~ Unrealistic_coded) -->
+
+<!-- s1_cleaned_data |> descriptives_by_group(Unrealistic_coded, author_trust_combined_score) -->
+
+
+<!-- s1_cleaned_data |> -->
+<!--   run_inferential(author_trust_combined_score ~ Unrealistic_coded) -->
+
+<!-- ``` -->
+#### Path Analysis
 
 ```{r}
 
@@ -1336,9 +1726,9 @@ s1_cleaned_data$ScienceContent_ordinal <- as.numeric(factor(s1_cleaned_data$Scie
 s1_cleaned_data$AIChatbotsFrequency_ordinal <- as.numeric(factor(s1_cleaned_data$AIChatbotsFrequency_regrouped,
                                               levels = c("rarely", "occasionally", "frequently")))
 
-  s1_cleaned_data$Appelman_4_n <- as.numeric(as.character(s1_cleaned_data$Appelman_4))
-  s1_cleaned_data$Appelman_5_n <- as.numeric(as.character(s1_cleaned_data$Appelman_5))
-  s1_cleaned_data$Appelman_6_n <- as.numeric(as.character(s1_cleaned_data$Appelman_6))
+  s1_cleaned_data$WellWritten_n <- as.numeric(s1_cleaned_data$WellWritten)
+  s1_cleaned_data$Boring_n <- as.numeric(s1_cleaned_data$Boring)
+  s1_cleaned_data$Engaging_n <- as.numeric(s1_cleaned_data$Engaging)
   
 s1_gen_ai_con_only_data <- s1_cleaned_data |> filter(Condition != "High") 
 s1_gen_ai_con_only_data$Condition <- factor(s1_gen_ai_con_only_data$Condition, levels = c("Low", "Medium"))
@@ -1355,7 +1745,14 @@ s1_model_trimmed <- '
   likeability_score ~ b1*Condition_Compressed
   competence_score ~ c1*Condition_Compressed
   author_trust_combined_score ~ likeability_score + competence_score + anthropomorphism_score
-  content_trust_combined_score ~ e1*author_trust_combined_score  + Appelman_4_n
+  content_trust_combined_score ~ e1*author_trust_combined_score  + WellWritten_n
+
+  # Optional: bidirectional path (uncomment if theoretically justified)
+  author_trust_combined_score ~ f1*content_trust_combined_score
+
+  # Optional: or use covariance if you don’t want to assume direction
+  # author_trust_combined_score ~~ content_trust_combined_score
+
 
   # Correlations
   ScienceContent_ordinal ~~ content_trust_combined_score
@@ -1380,6 +1777,10 @@ lavaan::summary(s1_trimmed_model_fit, fit.measures = TRUE, standardized = TRUE, 
 ```{r}
 lavaan::inspect(s1_trimmed_model_fit, "r2")
 ```
+```{r}
+export_sem_results_to_word(s1_trimmed_model_fit, s1_study, "trimmed_model")
+```
+
 
 ```{r}
 plot <- plot_model(s1_trimmed_model_fit, s1_study)
@@ -1387,33 +1788,33 @@ plot
 ```
 
 ```{r}
-s1_model_trimmed_genai <- '
-    # Core theoretical path
-  anthropomorphism_score ~ a1*Condition
-  likeability_score ~ b1*Condition
-  competence_score ~ c1*Condition
-  author_trust_combined_score ~ likeability_score + competence_score + anthropomorphism_score
-  content_trust_combined_score ~ e1*author_trust_combined_score  + Appelman_4_n
+# s1_model_trimmed_genai <- '
+#     # Core theoretical path
+#   anthropomorphism_score ~ a1*Condition
+#   likeability_score ~ b1*Condition
+#   competence_score ~ c1*Condition
+#   author_trust_combined_score ~ likeability_score + competence_score + anthropomorphism_score
+#   content_trust_combined_score ~ e1*author_trust_combined_score  + WellWritten_n
+# 
+#   # Correlations
+#   ScienceContent_ordinal ~~ content_trust_combined_score
+#   competence_score ~~ b2*anthropomorphism_score 
+#   likeability_score ~~ anthropomorphism_score
+#   competence_score ~~ likeability_score
+#   
+#   # Indirect effects
+#   ind1 := b1 * e1           # Condition → Anthro → Author Trust  → Content Trust
+#   ind2 := a1 * e1           # Condition → Likeability → Author Trust → Content Trust
+#   ind3 := c1 * e1           # Condition → Competence → Author Trust → Content Trust
+# 
+# '
 
-  # Correlations
-  ScienceContent_ordinal ~~ content_trust_combined_score
-  competence_score ~~ b2*anthropomorphism_score 
-  likeability_score ~~ anthropomorphism_score
-  competence_score ~~ likeability_score
-  
-  # Indirect effects
-  ind1 := b1 * e1           # Condition → Anthro → Author Trust  → Content Trust
-  ind2 := a1 * e1           # Condition → Likeability → Author Trust → Content Trust
-  ind3 := c1 * e1           # Condition → Competence → Author Trust → Content Trust
-
-'
-
-s1_trimmed_model_fit_genai <- s1_gen_ai_con_only_data |> test_med_mod_model(s1_model_trimmed_genai)
+# s1_trimmed_model_fit_genai <- s1_gen_ai_con_only_data |> test_med_mod_model(s1_model_trimmed_genai)
 ```
 
 ```{r}
-lavaan::summary(s1_trimmed_model_fit_genai, fit.measures = TRUE, standardized = TRUE, ci = TRUE)
-lavaan::inspect(s1_trimmed_model_fit_genai, "r2")
+# lavaan::summary(s1_trimmed_model_fit_genai, fit.measures = TRUE, standardized = TRUE, ci = TRUE)
+# lavaan::inspect(s1_trimmed_model_fit_genai, "r2")
 ```
 
 ```{r}
@@ -1544,24 +1945,24 @@ lavaan::inspect(s1_trimmed_model_fit_genai, "r2")
 ```
 
 ```{r}
-model_design <- '
-  # Mediation paths
-  anthropomorphism_score ~ a1 * Condition_Compressed
-  likeability_score ~ a3 * anthropomorphism_score + e * Condition_Compressed
-  author_trust_combined_score ~ a2 * anthropomorphism_score + d * Condition_Compressed + b3 * likeability_score
-  content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + c_prime * Condition_Compressed
-
-  # Indirect effects
-  indirect1 := a1 * b2
-  indirect2 := a1 * a2 * b1
-  indirect3 := d * b1
-  indirect4 := e * b3 * b1
-  indirect5 := a1 * a3 * b3 * b1
-
-  # Total effect
-  total := c_prime + indirect1 + indirect2 + indirect3 + indirect4 + indirect5
-'
-s1_fit_with_likeability <- s1_cleaned_data |> test_med_mod_model(model_design)
+# model_design <- '
+#   # Mediation paths
+#   anthropomorphism_score ~ a1 * Condition_Compressed
+#   likeability_score ~ a3 * anthropomorphism_score + e * Condition_Compressed
+#   author_trust_combined_score ~ a2 * anthropomorphism_score + d * Condition_Compressed + b3 * likeability_score
+#   content_trust_combined_score ~ b1 * author_trust_combined_score + b2 * anthropomorphism_score + c_prime * Condition_Compressed
+# 
+#   # Indirect effects
+#   indirect1 := a1 * b2
+#   indirect2 := a1 * a2 * b1
+#   indirect3 := d * b1
+#   indirect4 := e * b3 * b1
+#   indirect5 := a1 * a3 * b3 * b1
+# 
+#   # Total effect
+#   total := c_prime + indirect1 + indirect2 + indirect3 + indirect4 + indirect5
+# '
+# s1_fit_with_likeability <- s1_cleaned_data |> test_med_mod_model(model_design)
 ```
 
 ```{r}
@@ -1667,469 +2068,50 @@ s1_fit_with_likeability <- s1_cleaned_data |> test_med_mod_model(model_design)
 
 ```
 
-###### Age
-
-```{r}
-s1_cleaned_data |> descriptives_by_group(age_range, author_trust_combined_score) 
-
-s1_cleaned_data |>
-  run_inferential(author_trust_combined_score ~ age_range)
-
-
-c(author_trust_combined_score ~ age_range, content_trust_combined_score ~ age_range)
-
-# aov_model <- s1_cleaned_data |>
-#   group_by(age_range) |> filter(n() > 3) |> ungroup() |>
-#   droplevels() |>
-#   run_between_subjects_anova(author_trust_combined_score ~ age_range, "author_trust_combined_score")
-
-```
-
-```{r}
-s1_cleaned_data |> test_correlation("Age_1", "author_trust_combined_score")
-
-plots <- correlation_plot(s1_cleaned_data, 
-            s1_study,
-            "Age_1",
-            "author_trust_combined_score")
-
-# Display the plots
-plots$lm
-plots$loess
-```
-
-###### Gender (Man / Woman only)
-
-```{r}
-
-s1_cleaned_data |> descriptives_by_group(Gender, author_trust_combined_score) 
-
-aov_model <- s1_cleaned_data |>
-  group_by(Gender) |> filter(n() > 3) |> ungroup() |>
-  droplevels() |>
-  run_between_subjects_anova(author_trust_combined_score ~ Gender, "author_trust_combined_score")
-
-```
-
-###### Sex (Male / Female only)
-
-```{r}
-
-s1_cleaned_data |> descriptives_by_group(Sex, author_trust_combined_score) 
-
-aov_model <- s1_cleaned_data |>
-  group_by(Sex) |> filter(n() > 3) |> ungroup() |>
-  droplevels() |>
-  run_between_subjects_anova(author_trust_combined_score ~ Sex, "author_trust_combined_score")
-
-```
-
-###### Education
-
-```{r}
-
-s1_cleaned_data |> descriptives_by_group(Education, author_trust_combined_score) 
-
-aov_model <- s1_cleaned_data |>
-  group_by(Education) |> filter(n() > 3) |> ungroup() |>
-  droplevels() |>
-  run_between_subjects_anova(author_trust_combined_score ~ Education, "author_trust_combined_score")
-
-```
-
-###### AI Usage Experience
-
-```{r}
-s1_cleaned_data |> descriptives_by_group(AIChatbotsFrequency_regrouped, author_trust_combined_score) 
-
-aov_model <- s1_cleaned_data |>
-  group_by(AIChatbotsFrequency_regrouped) |> filter(n() > 3) |> ungroup() |>
-  droplevels() |>
-  run_between_subjects_anova(author_trust_combined_score ~ AIChatbotsFrequency_regrouped, "author_trust_combined_score")
-
-s1_cleaned_data |>
-  droplevels() |>
-  run_simple_effects_t_tests(author_trust_combined_score ~ AIChatbotsFrequency_regrouped)
-
-plot <- violin_plot(s1_cleaned_data, 
-            s1_study,
-            "AIChatbotsFrequency_regrouped",
-            "author_trust_combined_score",
-            include_legend = FALSE, 
-            comparisons = list(  c("rarely", "occasionally"),
-    c("rarely", "frequently"),
-    c("occasionally", "frequently") ))
-
-plot
-
-```
-
-```{r}
-
-lm_model <- s1_cleaned_data |> linear_model(author_trust_combined_score ~ Condition * AIChatbotsFrequency_regrouped)
-
-
-plot <- s1_cleaned_data |>
-  categorical_interaction_plot_3(lm_model,
-                                pred_name = "Condition",
-                                mod_name = "AIChatbotsFrequency_regrouped",
-                                target_name = "author_trust_combined_score",
-                                study = s1_study
-                                )
-
-plot
-```
-
-###### Science Content Experience
-
-```{r}
-s1_cleaned_data |> descriptives_by_group(ScienceContent, author_trust_combined_score) 
-
-aov_model <- s1_cleaned_data |>
-  group_by(ScienceContent) |> filter(n() > 3) |> ungroup() |>
-  droplevels() |>
-  run_between_subjects_anova(author_trust_combined_score ~ ScienceContent, "author_trust_combined_score")
-
-
-s1_cleaned_data |> descriptives_by_group(ScienceContent_regrouped, author_trust_combined_score) 
-
-aov_model <- s1_cleaned_data |>
-  group_by(ScienceContent_regrouped) |> filter(n() > 3) |> ungroup() |>
-  droplevels() |>
-  run_between_subjects_anova(author_trust_combined_score ~ ScienceContent_regrouped, "author_trust_combined_score")
-
-```
-
-###### Intention to Use AI
-
-```{r}
-s1_cleaned_data |> test_correlation("intention_to_use_score", "author_trust_combined_score")
-
-plots <- correlation_plot(s1_cleaned_data, 
-            s1_study,
-            "intention_to_use_score",
-            "author_trust_combined_score")
-
-# Display the plots
-plots$lm
-plots$loess
-```
-
-```{r}
-
-lm_model <- s1_cleaned_data |> linear_model(author_trust_combined_score ~ Condition * intention_to_use_score)
-
-
-plot <- s1_cleaned_data |>
-  categorical_interaction_plot_3(lm_model,
-                                pred_name = "Condition",
-                                mod_name = "intention_to_use_score",
-                                target_name = "author_trust_combined_score",
-                                study = s1_study
-                                )
-
-plot
-```
-
-###### Changed Opinion
-
-```{r}
-s1_cleaned_data |> descriptives_by_group(Experience_4, author_trust_combined_score) 
-
-aov_model <- s1_cleaned_data |>
-  run_between_subjects_anova(author_trust_combined_score ~ Experience_4, "author_trust_combined_score")
-
-s1_cleaned_data |> run_simple_effects_t_tests(author_trust_combined_score ~ Experience_4)
-
-plot <- violin_plot(s1_cleaned_data,
-            s1_study,
-            "Experience_4",
-            "author_trust_combined_score",
-            include_legend = FALSE,
-            comparisons = list(  
-              c("1", "2"),
-              c("2", "3"),
-              c("3", "4"),
-              c("4", "5"),
-              c("1", "3"),
-              c("2", "4"),
-              c("3", "5"),
-              c("1", "4"),
-              c("2", "5"),
-              c("1", "5")
-              )
-    )
-```
-
-###### Fear of AI
-
-```{r}
-s1_cleaned_data |> test_correlation("fear_of_ai_score", "author_trust_combined_score")
-
-plots <- correlation_plot(s1_cleaned_data, 
-            s1_study,
-            "fear_of_ai_score",
-            "author_trust_combined_score")
-
-# Display the plots
-plots$lm
-plots$loess
-```
-
-###### Could Write
-
-```{r}
-s1_cleaned_data |> descriptives_by_group(Experience_7, author_trust_combined_score) 
-
-aov_model <- s1_cleaned_data |>
-  run_between_subjects_anova(author_trust_combined_score ~ Experience_7, "author_trust_combined_score")
-
-s1_cleaned_data |> run_simple_effects_t_tests(author_trust_combined_score ~ Experience_7)
-
-plot <- violin_plot(s1_cleaned_data,
-            s1_study,
-            "Experience_7",
-            "author_trust_combined_score",
-            include_legend = FALSE,
-            comparisons = list(  
-              c("1", "2"),
-              c("2", "3"),
-              c("3", "4"),
-              c("4", "5"),
-              c("1", "3"),
-              c("2", "4"),
-              c("3", "5"),
-              c("1", "4"),
-              c("2", "5"),
-              c("1", "5")
-              )
-    )
-```
-
-###### Professional Content / Writing Expertise
-
-```{r}
-s1_cleaned_data |> test_correlation("professional_content_expertise", "author_trust_combined_score")
-
-plots <- correlation_plot(s1_cleaned_data, 
-            s1_study,
-            "professional_content_expertise",
-            "author_trust_combined_score")
-
-# Display the plots
-plots$lm
-plots$loess
-```
-
-###### Content Properties
-
-####### Well-written
-
-```{r}
-s1_cleaned_data |> descriptives_by_group(Appelman_4, author_trust_combined_score) 
-
-aov_model <- s1_cleaned_data |>
-  run_between_subjects_anova(author_trust_combined_score ~ Appelman_4, "author_trust_combined_score")
-
-s1_cleaned_data |> run_simple_effects_t_tests(author_trust_combined_score ~ Appelman_4)
-
-plot <- violin_plot(s1_cleaned_data,
-            s1_study,
-            "Appelman_4",
-            "author_trust_combined_score",
-            include_legend = FALSE,
-            comparisons = list(  
-              c("-2", "-1"),
-              c("-1", "0"),
-              c("0", "1"),
-              c("1", "2"),
-              c("-2", "0"),
-              c("-1", "1"),
-              c("0", "2"),
-              c("-2", "1"),
-              c("-1", "2"),
-              c("-2", "2")
-              )
-    )
-
-lm_model <- s1_cleaned_data |> linear_model(author_trust_combined_score ~ Condition * Appelman_4)
-
-plot <- s1_cleaned_data |>
-  categorical_interaction_plot_3(lm_model,
-                                pred_name = "Condition",
-                                mod_name = "Appelman_4",
-                                target_name = "author_trust_combined_score",
-                                study = s1_study
-                                )
-
-plot
-```
-
-####### Boring
-
-```{r}
-s1_cleaned_data |> descriptives_by_group(Appelman_5, author_trust_combined_score) 
-
-aov_model <- s1_cleaned_data |>
-  run_between_subjects_anova(author_trust_combined_score ~ Appelman_5, "author_trust_combined_score")
-
-s1_cleaned_data |> run_simple_effects_t_tests(author_trust_combined_score ~ Appelman_5)
-
-plot <- violin_plot(s1_cleaned_data,
-            s1_study,
-            "Appelman_5",
-            "author_trust_combined_score",
-            include_legend = FALSE,
-            comparisons = list(  
-              c("-2", "-1"),
-              c("-1", "0"),
-              c("0", "1"),
-              c("1", "2"),
-              c("-2", "0"),
-              c("-1", "1"),
-              c("0", "2"),
-              c("-2", "1"),
-              c("-1", "2"),
-              c("-2", "2")
-              )
-    )
-
-
-lm_model <- s1_cleaned_data |> linear_model(author_trust_combined_score ~ Condition * Appelman_5)
-
-plot <- s1_cleaned_data |>
-  categorical_interaction_plot_3(lm_model,
-                                pred_name = "Condition",
-                                mod_name = "Appelman_5",
-                                target_name = "author_trust_combined_score",
-                                study = s1_study
-                                )
-
-plot
-```
-
-####### Engaging
-
-```{r}
-s1_cleaned_data |> descriptives_by_group(Appelman_6, author_trust_combined_score) 
-
-aov_model <- s1_cleaned_data |>
-  run_between_subjects_anova(author_trust_combined_score ~ Appelman_6, "author_trust_combined_score")
-
-s1_cleaned_data |> run_simple_effects_t_tests(author_trust_combined_score ~ Appelman_6)
-
-plot <- violin_plot(s1_cleaned_data,
-            s1_study,
-            "Appelman_6",
-            "author_trust_combined_score",
-            include_legend = FALSE,
-            comparisons = list(  
-              c("-2", "-1"),
-              c("-1", "0"),
-              c("0", "1"),
-              c("1", "2"),
-              c("-2", "0"),
-              c("-1", "1"),
-              c("0", "2"),
-              c("-2", "1"),
-              c("-1", "2"),
-              c("-2", "2")
-              )
-    )
-lm_model <- s1_cleaned_data |> linear_model(author_trust_combined_score ~ Condition * Appelman_6)
-
-plot <- s1_cleaned_data |>
-  categorical_interaction_plot_3(lm_model,
-                                pred_name = "Condition",
-                                mod_name = "Appelman_6",
-                                target_name = "author_trust_combined_score",
-                                study = s1_study
-                                )
-
-plot
-```
-
-###### Survey Purpose Check
-
-```{r}
-
-s1_cleaned_data |> descriptives_by_group(SurveyTopicCheck_coded, author_trust_combined_score) 
-
-aov_model <- s1_cleaned_data |>
-  run_between_subjects_anova(author_trust_combined_score ~ SurveyTopicCheck_coded, "author_trust_combined_score")
-
-s1_cleaned_data |>
-  droplevels() |>
-  run_simple_effects_t_tests(author_trust_combined_score ~ SurveyTopicCheck_coded)
-
-
-```
-
-###### Unrealistic Check
-
-```{r}
-
-s1_cleaned_data |> descriptives_by_group(Unrealistic, author_trust_combined_score) 
-
-aov_model <- s1_cleaned_data |>
-  run_between_subjects_anova(author_trust_combined_score ~ Unrealistic, "author_trust_combined_score")
-
-s1_cleaned_data |> descriptives_by_group(Unrealistic_coded, author_trust_combined_score) 
-
-aov_model <- s1_cleaned_data |>
-   group_by(Unrealistic_coded) |> filter(n() > 3) |> ungroup() |>
-  run_between_subjects_anova(author_trust_combined_score ~ Unrealistic_coded, "author_trust_combined_score")
-
-s1_cleaned_data |>
-  droplevels() |>
-  run_simple_effects_t_tests(author_trust_combined_score ~ Unrealistic_coded)
-
-
-```
 
 #### Correlations
 
 ```{r}
 
-correlation_data <- s1_cleaned_data |> select(author_trust_combined_score,
-
-                                           content_trust_combined_score,
-
-                                           likeability_score,
-
-                                           competence_score,
-
-                                           expertise_score,
-
-                                           integrity_score,
-
-                                           benevolence_score,
-
-                                           anthropomorphism_score,
-
-                                           content_trust_appelman_score,
-
-                                           content_trust_behaviour_score,
-
-                                           author_trust_METI_score,
-
-                                           author_trust_behaviour_score)
-
-corr_matrix = cor(correlation_data)
-
-corr_matrix_p <- psych::corr.test(correlation_data)
-
-kable(head(corr_matrix))
-
-corrplot::corrplot(corr_matrix, type="upper", method = "circle", order = "hclust",
-
-         addCoef.col = "white", # Add coefficient of correlation
-
-         tl.col="black", tl.srt=45, #Text label color and rotation
-
-         p.mat = corr_matrix_p$p, sig.level = 0.01, insig = "blank",
-
-         diag = FALSE)
+# correlation_data <- s1_cleaned_data |> select(author_trust_combined_score,
+# 
+#                                            content_trust_combined_score,
+# 
+#                                            likeability_score,
+# 
+#                                            competence_score,
+# 
+#                                            expertise_score,
+# 
+#                                            integrity_score,
+# 
+#                                            benevolence_score,
+# 
+#                                            anthropomorphism_score,
+# 
+#                                            content_trust_appelman_score,
+# 
+#                                            content_trust_behaviour_score,
+# 
+#                                            author_trust_METI_score,
+# 
+#                                            author_trust_behaviour_score)
+# 
+# corr_matrix = cor(correlation_data)
+# 
+# corr_matrix_p <- psych::corr.test(correlation_data)
+# 
+# kable(head(corr_matrix))
+# 
+# corrplot::corrplot(corr_matrix, type="upper", method = "circle", order = "hclust",
+# 
+#          addCoef.col = "white", # Add coefficient of correlation
+# 
+#          tl.col="black", tl.srt=45, #Text label color and rotation
+# 
+#          p.mat = corr_matrix_p$p, sig.level = 0.01, insig = "blank",
+# 
+#          diag = FALSE)
 
 ```
 
@@ -2137,27 +2119,27 @@ corrplot::corrplot(corr_matrix, type="upper", method = "circle", order = "hclust
 
 ```{r}
 
-correlation_data_high <- s1_cleaned_data |>
-
-  filter(Condition == "High") |>
-
-  select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
-
-corr_matrix_high = cor(correlation_data_high)
-
-corr_matrix_p_high <- psych::corr.test(correlation_data_high)
-
-kable(head(corr_matrix_high))
-
-corrplot::corrplot(corr_matrix_high, type="upper", method = "circle", order = "hclust",
-
-         addCoef.col = "white", # Add coefficient of correlation
-
-         tl.col="black", tl.srt=45, #Text label color and rotation
-
-         p.mat = corr_matrix_p_high$p, sig.level = 0.01, insig = "blank",
-
-         diag = FALSE)
+# correlation_data_high <- s1_cleaned_data |>
+# 
+#   filter(Condition == "High") |>
+# 
+#   select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
+# 
+# corr_matrix_high = cor(correlation_data_high)
+# 
+# corr_matrix_p_high <- psych::corr.test(correlation_data_high)
+# 
+# kable(head(corr_matrix_high))
+# 
+# corrplot::corrplot(corr_matrix_high, type="upper", method = "circle", order = "hclust",
+# 
+#          addCoef.col = "white", # Add coefficient of correlation
+# 
+#          tl.col="black", tl.srt=45, #Text label color and rotation
+# 
+#          p.mat = corr_matrix_p_high$p, sig.level = 0.01, insig = "blank",
+# 
+#          diag = FALSE)
 
 ```
 
@@ -2165,27 +2147,27 @@ corrplot::corrplot(corr_matrix_high, type="upper", method = "circle", order = "h
 
 ```{r}
 
-correlation_data_medium <- s1_cleaned_data |>
-
-  filter(Condition == "Medium") |>
-
-  select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
-
-corr_matrix_medium = cor(correlation_data_medium)
-
-corr_matrix_p_medium <- psych::corr.test(correlation_data_medium)
-
-kable(head(corr_matrix_medium))
-
-corrplot::corrplot(corr_matrix_medium, type="upper", method = "circle", order = "hclust",
-
-         addCoef.col = "white", # Add coefficient of correlation
-
-         tl.col="black", tl.srt=45, #Text label color and rotation
-
-         p.mat = corr_matrix_p_medium$p, sig.level = 0.01, insig = "blank",
-
-         diag = FALSE)
+# correlation_data_medium <- s1_cleaned_data |>
+# 
+#   filter(Condition == "Medium") |>
+# 
+#   select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
+# 
+# corr_matrix_medium = cor(correlation_data_medium)
+# 
+# corr_matrix_p_medium <- psych::corr.test(correlation_data_medium)
+# 
+# kable(head(corr_matrix_medium))
+# 
+# corrplot::corrplot(corr_matrix_medium, type="upper", method = "circle", order = "hclust",
+# 
+#          addCoef.col = "white", # Add coefficient of correlation
+# 
+#          tl.col="black", tl.srt=45, #Text label color and rotation
+# 
+#          p.mat = corr_matrix_p_medium$p, sig.level = 0.01, insig = "blank",
+# 
+#          diag = FALSE)
 
 ```
 
@@ -2193,108 +2175,58 @@ corrplot::corrplot(corr_matrix_medium, type="upper", method = "circle", order = 
 
 ```{r}
 
-correlation_data_low <- s1_cleaned_data |>
-
-  filter(Condition == "Low") |>
-
-  select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
-
-corr_matrix_low = cor(correlation_data_low)
-
-corr_matrix_p_low <- psych::corr.test(correlation_data_low)
-
-kable(head(corr_matrix_low))
-
-corrplot::corrplot(corr_matrix_low, type="upper", method = "circle", order = "hclust",
-
-         addCoef.col = "white", # Add coefficient of correlation
-
-         tl.col="black", tl.srt=45, #Text label color and rotation
-
-         p.mat = corr_matrix_p_low$p, sig.level = 0.01, insig = "blank",
-
-         diag = FALSE)
-
-```
-
-```{r}
-
-cocor::cocor(~ `content_trust_combined_score` + `expertise_score` | `content_trust_combined_score` + `expertise_score`,
-
-      data = list(
-
-        as.data.frame(s1_cleaned_data |> filter(Condition == "High")),
-
-        as.data.frame(s1_cleaned_data |> filter(Condition == "Low"))
-
-      )
-
-)
+# correlation_data_low <- s1_cleaned_data |>
+# 
+#   filter(Condition == "Low") |>
+# 
+#   select(author_trust_combined_score, content_trust_combined_score, likeability_score, competence_score, expertise_score, integrity_score, benevolence_score)
+# 
+# corr_matrix_low = cor(correlation_data_low)
+# 
+# corr_matrix_p_low <- psych::corr.test(correlation_data_low)
+# 
+# kable(head(corr_matrix_low))
+# 
+# corrplot::corrplot(corr_matrix_low, type="upper", method = "circle", order = "hclust",
+# 
+#          addCoef.col = "white", # Add coefficient of correlation
+# 
+#          tl.col="black", tl.srt=45, #Text label color and rotation
+# 
+#          p.mat = corr_matrix_p_low$p, sig.level = 0.01, insig = "blank",
+# 
+#          diag = FALSE)
 
 ```
 
 ```{r}
 
-cocor::cocor(~ `content_trust_combined_score` + `competence_score` | `content_trust_combined_score` + `competence_score`,
-
-      data = list(
-
-        as.data.frame(s1_cleaned_data |> filter(Condition == "High")),
-
-        as.data.frame(s1_cleaned_data |> filter(Condition == "Low"))
-
-      )
-
-)
-
-```
-
-```{r}
-
-cocor::cocor(~ `content_trust_combined_score` + `likeability_score` | `content_trust_combined_score` + `likeability_score`,
-
-      data = list(
-
-        as.data.frame(s1_cleaned_data |> filter(Condition == "High")),
-
-        as.data.frame(s1_cleaned_data |> filter(Condition == "Low"))
-
-      )
-
-)
+# cocor::cocor(~ `content_trust_combined_score` + `expertise_score` | `content_trust_combined_score` + `expertise_score`,
+# 
+#       data = list(
+# 
+#         as.data.frame(s1_cleaned_data |> filter(Condition == "High")),
+# 
+#         as.data.frame(s1_cleaned_data |> filter(Condition == "Low"))
+# 
+#       )
+# 
+# )
 
 ```
 
 ```{r}
 
-cocor::cocor(~ `content_trust_combined_score` + `benevolence_score` | `content_trust_combined_score` + `benevolence_score`,
+s1_cleaned_data |> test_correlation("author_trust_combined_score", "content_trust_combined_score")
 
-      data = list(
+plots <- correlation_plot(s1_cleaned_data, 
+            s1_study,
+            "author_trust_combined_score",
+            "content_trust_combined_score")
 
-        as.data.frame(s1_cleaned_data |> filter(Condition == "High")),
-
-        as.data.frame(s1_cleaned_data |> filter(Condition == "Low"))
-
-      )
-
-)
-
-```
-
-```{r}
-
-cocor::cocor(~ `content_trust_combined_score` + `integrity_score` | `content_trust_combined_score` + `integrity_score`,
-
-      data = list(
-
-        as.data.frame(s1_cleaned_data |> filter(Condition == "High")),
-
-        as.data.frame(s1_cleaned_data |> filter(Condition == "Low"))
-
-      )
-
-)
-
+# Display the plots
+plots$lm
+plots$loess
 ```
 
 ```{r}
@@ -2310,6 +2242,94 @@ cocor::cocor(~ `content_trust_combined_score` + `author_trust_combined_score` | 
       )
 
 )
+
+cocor::cocor(~ `content_trust_combined_score` + `author_trust_combined_score` | `content_trust_combined_score` + `author_trust_combined_score`,
+
+      data = list(
+
+        as.data.frame(s1_cleaned_data |> filter(Condition == "High")),
+
+        as.data.frame(s1_cleaned_data |> filter(Condition == "Medium"))
+
+      )
+
+)
+
+cocor::cocor(~ `content_trust_combined_score` + `author_trust_combined_score` | `content_trust_combined_score` + `author_trust_combined_score`,
+
+      data = list(
+
+        as.data.frame(s1_cleaned_data |> filter(Condition == "Low")),
+
+        as.data.frame(s1_cleaned_data |> filter(Condition == "Medium"))
+
+      )
+
+)
+
+```
+
+```{r}
+
+# cocor::cocor(~ `content_trust_combined_score` + `likeability_score` | `content_trust_combined_score` + `likeability_score`,
+# 
+#       data = list(
+# 
+#         as.data.frame(s1_cleaned_data |> filter(Condition == "High")),
+# 
+#         as.data.frame(s1_cleaned_data |> filter(Condition == "Low"))
+# 
+#       )
+# 
+# )
+
+```
+
+```{r}
+
+# cocor::cocor(~ `content_trust_combined_score` + `benevolence_score` | `content_trust_combined_score` + `benevolence_score`,
+# 
+#       data = list(
+# 
+#         as.data.frame(s1_cleaned_data |> filter(Condition == "High")),
+# 
+#         as.data.frame(s1_cleaned_data |> filter(Condition == "Low"))
+# 
+#       )
+# 
+# )
+
+```
+
+```{r}
+
+# cocor::cocor(~ `content_trust_combined_score` + `integrity_score` | `content_trust_combined_score` + `integrity_score`,
+# 
+#       data = list(
+# 
+#         as.data.frame(s1_cleaned_data |> filter(Condition == "High")),
+# 
+#         as.data.frame(s1_cleaned_data |> filter(Condition == "Low"))
+# 
+#       )
+# 
+# )
+
+```
+
+```{r}
+
+# cocor::cocor(~ `content_trust_combined_score` + `author_trust_combined_score` | `content_trust_combined_score` + `author_trust_combined_score`,
+# 
+#       data = list(
+# 
+#         as.data.frame(s1_cleaned_data |> filter(Condition == "High")),
+# 
+#         as.data.frame(s1_cleaned_data |> filter(Condition == "Low"))
+# 
+#       )
+# 
+# )
 
 ```
 
