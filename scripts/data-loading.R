@@ -23,18 +23,21 @@ factorize_data <- function(study, raw_data){
   raw_data$Appelman_1 <- as.numeric(as.character(raw_data$Appelman_1))
   raw_data$Appelman_2 <- as.numeric(as.character(raw_data$Appelman_2))
   raw_data$Appelman_3 <- as.numeric(as.character(raw_data$Appelman_3))
-  raw_data$WellWritten <- factor(as.numeric(raw_data$Appelman_4), 
-                                 levels = c(-2, -1, 0, 1, 2), 
-                                 labels = c("Describes very poorly", "Describes poorly", "Neutral", "Describes well", "Describes very well")
-                                 )
-  raw_data$Boring <- factor(as.numeric(raw_data$Appelman_5), 
-                            levels = c(-2, -1, 0, 1, 2), 
-                            labels = c("Describes very poorly", "Describes poorly", "Neutral", "Describes well", "Describes very well")
-                            )
-  raw_data$Engaging <- factor(as.numeric(raw_data$Appelman_6), 
-                              levels = c(-2, -1, 0, 1, 2), 
-                              labels = c("Describes very poorly", "Describes poorly", "Neutral", "Describes well", "Describes very well")
-                              )
+  raw_data$Appelman_4 <- as.numeric(as.character(raw_data$Appelman_4))
+    # factor(as.numeric(raw_data$Appelman_4), 
+    #                              levels = c(-2, -1, 0, 1, 2), 
+    #                              labels = c("Describes very poorly", "Describes poorly", "Neutral", "Describes well", "Describes very well")
+    #                              )
+  raw_data$Appelman_5 <- as.numeric(as.character(raw_data$Appelman_5))
+  # raw_data$Boring <- factor(as.numeric(raw_data$Appelman_5), 
+  #                           levels = c(-2, -1, 0, 1, 2), 
+  #                           labels = c("Describes very poorly", "Describes poorly", "Neutral", "Describes well", "Describes very well")
+  #                           )
+  raw_data$Appelman_6 <- as.numeric(as.character(raw_data$Appelman_6))
+  # raw_data$Engaging <- factor(as.numeric(raw_data$Appelman_6), 
+  #                             levels = c(-2, -1, 0, 1, 2), 
+  #                             labels = c("Describes very poorly", "Describes poorly", "Neutral", "Describes well", "Describes very well")
+  #                             )
   
   
   raw_data$TrustBehaviour_1 <- as.numeric(as.character(raw_data$TrustBehaviour_1))
@@ -87,7 +90,7 @@ factorize_data <- function(study, raw_data){
                                  levels = c(1, 2), 
                                  labels = c("No", "Yes"))
   
-  raw_data$TechnicalIssues <- factor(as.numeric(raw_data$Unrealistic), 
+  raw_data$TechnicalIssues <- factor(as.numeric(raw_data$TechnicalIssues), 
                                      levels = c(1, 2), 
                                      labels = c("No", "Yes"))
   

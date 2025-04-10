@@ -1,6 +1,7 @@
 
 
 
+
 # Helper: drop rare levels by proportion
 drop_rare_levels_by_share <- function(data, vars, share_fraction) {
   dropped_levels <- list()
@@ -95,7 +96,7 @@ build_regression_table_apa <- function(data,
                                        predictors,
                                        study,
                                        block_name,
-                                       share_fraction = 1 / 3,
+                                       share_fraction,
                                        title = NULL,
                                        caption = NULL) {
   if (!requireNamespace("car", quietly = TRUE))
@@ -276,8 +277,7 @@ build_regression_table_apa <- function(data,
       p = formatC(round(p.value, 3), format = "f", digits = 3),
       `95% CI` = paste0("[", round(conf.low, 2), ", ", round(conf.high, 2), "]"),
       Variable = dplyr::case_when(
-        term == "(Intercept)" ~ "(Intercept)",
-        !is.na(base_predictor) &
+        term == "(Intercept)" ~ "(Intercept)",!is.na(base_predictor) &
           !is.na(Reference) ~ paste0(
             format_variable_name(base_predictor),
             " (",
@@ -414,24 +414,22 @@ run_post_hoc_regression_analysis <- function(data, dv, study, share_fraction = 1
                                       "Sex", "Education_regrouped"),
       author_trust = c("author_trust_combined_score"),
       author_perceptions = c("likeability_score", "competence_score"),
-                             participant_experience = c(
-                               "AIChatbotsFrequency_regrouped",
-                               "professional_content_expertise",
-                               "ScienceContent_regrouped",
-                               "CouldWriteContent"
-                             ),
-                             ai_attitudes = c(
-                               "intention_to_use_score",
-                               "ChangedOpinionOfAI",
-                               "fear_of_ai_score"
-                             ),
-                             content_quality = c("WellWritten", "Boring", "Engaging"),
-                             manipulation = c("Condition")
-      )
       
-      trust_block_name <- "author_trust"
-      # trust_predictors <- c("author_trust_combined_score")
-      trust_title <- paste("Author Trust Predicting", dv_label)
+      ai_attitudes = c(
+        "AIChatbotsFrequency_regrouped",
+        "intention_to_use_score",
+        "ChangedOpinionOfAI",
+        "fear_of_ai_score"
+      ),
+      content_experience = c("science_expertise", "ScienceContent_regrouped"),
+      writing_experience = c("writing_expertise"),
+      content_quality = c("writing_quality"),
+      manipulation = c("Condition")
+    )
+    
+    trust_block_name <- "author_trust"
+    # trust_predictors <- c("author_trust_combined_score")
+    trust_title <- paste("Author Trust Predicting", dv_label)
   } else if (dv == "author_trust_combined_score") {
     predictor_blocks <- list(
       study_quality = c(
@@ -442,25 +440,21 @@ run_post_hoc_regression_analysis <- function(data, dv, study, share_fraction = 1
       ),
       participant_characteristics = c("Age_1", # "Gender",
                                       "Sex", "Education_regrouped"),
-      participant_experience = c(
-        "AIChatbotsFrequency_regrouped",
-        "professional_content_expertise",
-        "ScienceContent_regrouped",
-        "CouldWriteContent"
-      ),
+      content_experience = c("science_expertise", "ScienceContent_regrouped"),
+      writing_experience = c("writing_expertise"),
+      content_quality = c("writing_quality"),
+      content_trust = c("content_trust_combined_score"),
       ai_attitudes = c(
         "intention_to_use_score",
         "ChangedOpinionOfAI",
         "fear_of_ai_score"
       ),
       author_perceptions = c("likeability_score", "competence_score"),
-                             content_quality = c("WellWritten", "Boring", "Engaging"),
-                             content_trust = c("content_trust_combined_score"),
-                             manipulation = c("Condition")
-      )
-      trust_block_name <- "content_trust"
-      # trust_predictors <- c("content_trust_combined_score")
-      trust_title <- paste("Content Trust Predicting", dv_label)
+      manipulation = c("Condition")
+    )
+    trust_block_name <- "content_trust"
+    # trust_predictors <- c("content_trust_combined_score")
+    trust_title <- paste("Content Trust Predicting", dv_label)
   } else {
     stop("Unknown DV provided.")
   }

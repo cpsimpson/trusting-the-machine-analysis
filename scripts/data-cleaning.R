@@ -211,6 +211,7 @@ recode_data <- function(data, study) {
       GodspeedMETI_24r = 100 - GodspeedMETI_24,
       GodspeedMETI_25r = 100 - GodspeedMETI_25,
       GodspeedMETI_26r = 100 - GodspeedMETI_26,
+      Appelman_5r = -1 * Appelman_5
     )
   
   if (study == "s2") {
@@ -229,10 +230,10 @@ standardize_data <- function(data) {
       c(
         starts_with("TrustBehaviour"),
         starts_with("GodspeedMETI"),
-        Appelman_1:Appelman_3,
+        starts_with("Appelman"),
+        # Appelman_1:Appelman_3,
         starts_with("Experience"), 
-        -Experience_4, 
-        -Experience_7
+        -Experience_4
       ),
       ~ (. - mean(., na.rm = TRUE)) / sd(., na.rm = TRUE),
       .names = "z.{.col}"
@@ -349,8 +350,20 @@ get_intention_cols <- function(){
 get_fear_cols <- function(){
   return(c("z.Experience_5", "z.Experience_6"))
 }
-get_participant_expertise_cols <- function(){
-  return(c("z.Experience_8", "z.Experience_9", "z.Experience_10", "z.Experience_11"))
+# get_participant_expertise_cols <- function(){
+#   return(c("z.Experience_8", "z.Experience_9", "z.Experience_10", "z.Experience_11"))
+# }
+
+get_writing_experience_cols <- function(){
+  return(c("z.Experience_7", "z.Experience_10", "z.Experience_11"))
+}
+
+get_science_experience_cols <- function(){
+  return(c("z.Experience_8", "z.Experience_9"))
+}
+
+get_writing_quality_cols <- function(){
+  return(c("z.Appelman_4", "z.Appelman_5r", "z.Appelman_6"))
 }
 
 
@@ -376,13 +389,12 @@ compute_scores <- function(data, study){
   # intention to use AI 
   intention_cols = get_intention_cols()
   
-  # changed opinion Experience_4
-  
   fear_cols = get_fear_cols()
   
-  # could write this Experience_7
+  writing_expertise_cols = get_writing_experience_cols()
+  science_expertise_cols = get_science_experience_cols()
   
-  participant_expertise_cols = get_participant_expertise_cols()
+  writing_quality_cols = get_writing_quality_cols()
   
   data <- data |>
     mutate(
@@ -414,9 +426,13 @@ compute_scores <- function(data, study){
         select(data, all_of(intention_cols)), na.rm = TRUE), 
       fear_of_ai_score = rowMeans(
         select(data, all_of(fear_cols)), na.rm = TRUE), 
-      professional_content_expertise = rowMeans(
-        select(data, all_of(participant_expertise_cols)), na.rm = TRUE), 
-    ) 
+      writing_expertise = rowMeans(
+        select(data, all_of(writing_expertise_cols)), na.rm = TRUE), 
+      science_expertise = rowMeans(
+        select(data, all_of(science_expertise_cols)), na.rm = TRUE),
+      writing_quality = rowMeans(
+        select(data, all_of(writing_quality_cols)), na.rm = TRUE)
+    )
   
   return(data)
   

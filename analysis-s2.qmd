@@ -406,9 +406,16 @@ basic_descriptives(s2_cleaned_data$fear_of_ai_score)
 s2_cleaned_data |> cronbachs_alpha(get_fear_cols())
 
 
-basic_descriptives(s2_cleaned_data$professional_content_expertise)
-s2_cleaned_data |> cronbachs_alpha(get_participant_expertise_cols())
+basic_descriptives(s2_cleaned_data$writing_expertise)
+s2_cleaned_data |> cronbachs_alpha(get_writing_experience_cols())
 
+
+basic_descriptives(s2_cleaned_data$science_expertise)
+s2_cleaned_data |> cronbachs_alpha(get_science_experience_cols())
+
+
+basic_descriptives(s2_cleaned_data$writing_quality)
+s2_cleaned_data |> cronbachs_alpha(get_writing_quality_cols())
 ```
 
 ### Sample Characteristics
@@ -429,11 +436,24 @@ basic_descriptives(s2_cleaned_data$`Duration (in seconds)` / 60)
 s2_cleaned_data |> 
   summarize_columns(TechnicalIssues) 
 
+s2_cleaned_data |> 
+  summarize_columns(TechnicalIssues, Condition) 
+
+
 ```
 
 ```{r}
 s2_cleaned_data |> 
+  summarize_columns(Unrealistic) 
+
+s2_cleaned_data |> 
+  summarize_columns(Unrealistic, Condition)
+
+s2_cleaned_data |> 
   summarize_columns(Unrealistic_coded) 
+
+s2_cleaned_data |> 
+  summarize_columns(Unrealistic_coded, Condition) 
 ```
 
 #### Participants per condition.
@@ -558,10 +578,22 @@ s2_cleaned_data |>
   summarize_columns(fear_of_ai_score, Condition) 
 
 s2_cleaned_data |> 
-  summarize_columns(professional_content_expertise)
+  summarize_columns(writing_expertise)
 
 s2_cleaned_data |> 
-  summarize_columns(professional_content_expertise, Condition) 
+  summarize_columns(writing_expertise, Condition) 
+
+s2_cleaned_data |> 
+  summarize_columns(science_expertise)
+
+s2_cleaned_data |> 
+  summarize_columns(science_expertise, Condition) 
+
+s2_cleaned_data |> 
+  summarize_columns(writing_quality)
+
+s2_cleaned_data |> 
+  summarize_columns(writing_quality, Condition) 
 
 # changed opinion of AI
 s2_cleaned_data |> 
@@ -617,7 +649,12 @@ s2_cleaned_data |> descriptives_by_group(Condition, anthropomorphism_score)
 ###### T-tests
 
 ```{r}
-s2_cleaned_data |> run_simple_effects_t_tests(anthropomorphism_score ~ Condition)
+# s2_cleaned_data |> run_simple_effects_t_tests(anthropomorphism_score ~ Condition)
+
+result <- s2_cleaned_data |> run_inferential(anthropomorphism_score ~ Condition)
+
+result$model
+result$effect_size
 ```
 
 ##### Correlations
@@ -673,7 +710,12 @@ s2_cleaned_data |> descriptives_by_group(Condition, likeability_score)
 ###### T-tests
 
 ```{r}
-s2_cleaned_data |> run_simple_effects_t_tests(likeability_score ~ Condition)
+# s2_cleaned_data |> run_simple_effects_t_tests(likeability_score ~ Condition)
+
+result <- s2_cleaned_data |> run_inferential(likeability_score ~ Condition)
+
+result$model
+result$effect_size
 ```
 
 #### Competence
@@ -724,7 +766,12 @@ s2_cleaned_data |> descriptives_by_group(Condition, competence_score)
 ###### T-tests
 
 ```{r}
-s2_cleaned_data |> run_simple_effects_t_tests(competence_score ~ Condition)
+# s2_cleaned_data |> run_simple_effects_t_tests(competence_score ~ Condition)
+
+result <- s2_cleaned_data |> run_inferential(competence_score ~ Condition)
+
+result$model
+result$effect_size
 ```
 
 ### Main Analysis
@@ -757,11 +804,66 @@ s2_cleaned_data |> descriptives_by_group(Condition, content_trust_combined_score
 ###### T-tests
 
 ```{r}
-s2_cleaned_data |> run_simple_effects_t_tests(content_trust_combined_score ~ Condition)
+result <- s2_cleaned_data |> run_inferential(content_trust_combined_score ~ Condition)
+
+result$model
+result$effect_size
 ```
 
 ##### Post-hoc Analysis
 
+
+###### Sample Characteristics
+
+```{r}
+
+result <- s2_cleaned_data |> test_correlation(Age_1, content_trust_combined_score)
+result
+
+# result <- s2_cleaned_data |> test_correlation(fear_of_ai_score, content_trust_combined_score)
+# result
+# 
+# result <- s2_cleaned_data |> test_correlation(intention_to_use_score, content_trust_combined_score)
+# result
+# 
+# result <- s2_cleaned_data |> test_correlation(professional_content_expertise, content_trust_combined_score)
+# result
+
+
+
+formulas <- c(content_trust_combined_score ~ Gender, 
+              content_trust_combined_score ~ Sex, 
+              content_trust_combined_score ~ Education #,
+              # content_trust_combined_score ~ Education_regrouped,
+              # content_trust_combined_score ~ AIChatbotsFrequency,
+              # content_trust_combined_score ~ AIChatbotsFrequency_regrouped,
+              # content_trust_combined_score ~ ScienceContent,
+              # content_trust_combined_score ~ ScienceContent_regrouped, 
+              # content_trust_combined_score ~ ChangedOpinionOfAI,
+              # content_trust_combined_score ~ CouldWriteContent,
+              # content_trust_combined_score ~ TechnicalIssues,
+              # content_trust_combined_score ~ Unrealistic,
+              # content_trust_combined_score ~ Unrealistic_coded
+              )
+
+
+for (i_formula in formulas){
+  result <- s2_cleaned_data |> run_inferential(i_formula, share_fraction = 1 / 3)
+
+if (!is.null(result) && result$test == "ANOVA"){
+  result$apa_output
+  result$omega_squared
+} else if (!is.null(result) && result$test == "t-test"){
+  result$model
+  result$effect_size
+}
+}
+
+
+
+```
+
+###### Hierarchical Regression
 ```{r}
 result <- run_post_hoc_regression_analysis(
   data = s2_cleaned_data,
@@ -1335,12 +1437,68 @@ s2_cleaned_data |> descriptives_by_group(Condition, author_trust_combined_score)
 
 ```{r}
 
-s2_cleaned_data |> run_simple_effects_t_tests(author_trust_combined_score ~ Condition)
+result <- s2_cleaned_data |> run_inferential(author_trust_combined_score ~ Condition)
+
+result$model
+result$effect_size
 
 ```
 
 ##### Post-hoc Analysis
 
+
+###### Sample Characteristics
+
+```{r}
+
+result <- s2_cleaned_data |> test_correlation(Age_1, author_trust_combined_score)
+result
+
+# result <- s2_cleaned_data |> test_correlation(fear_of_ai_score, author_trust_combined_score)
+# result
+# 
+# result <- s2_cleaned_data |> test_correlation(intention_to_use_score, author_trust_combined_score)
+# result
+# 
+# result <- s2_cleaned_data |> test_correlation(professional_content_expertise, author_trust_combined_score)
+# result
+
+
+
+formulas <- c(author_trust_combined_score ~ Gender, 
+              author_trust_combined_score ~ Sex, 
+              author_trust_combined_score ~ Education #,
+              # author_trust_combined_score ~ Education_regrouped,
+              # author_trust_combined_score ~ AIChatbotsFrequency,
+              # author_trust_combined_score ~ AIChatbotsFrequency_regrouped,
+              # author_trust_combined_score ~ ScienceContent,
+              # author_trust_combined_score ~ ScienceContent_regrouped, 
+              # author_trust_combined_score ~ ChangedOpinionOfAI,
+              # author_trust_combined_score ~ CouldWriteContent,
+              # author_trust_combined_score ~ TechnicalIssues,
+              # author_trust_combined_score ~ Unrealistic,
+              # author_trust_combined_score ~ Unrealistic_coded
+              )
+
+
+for (i_formula in formulas){
+  result <- s2_cleaned_data |> run_inferential(i_formula, share_fraction = 1 / 3)
+
+if (!is.null(result) && result$test == "ANOVA"){
+  result$apa_output
+  result$omega_squared
+} else if (!is.null(result) && result$test == "t-test"){
+  result$model
+  result$effect_size
+}
+}
+
+
+
+```
+
+
+###### Hierarchical Regression Analysis
 ```{r}
 
 result <- run_post_hoc_regression_analysis(
@@ -1409,35 +1567,42 @@ s2_cleaned_data$ScienceContent_ordinal <- as.numeric(factor(s2_cleaned_data$Scie
 s2_cleaned_data$AIChatbotsFrequency_ordinal <- as.numeric(factor(s2_cleaned_data$AIChatbotsFrequency_regrouped,
                                               levels = c("rarely", "occasionally", "frequently")))
 
-  s2_cleaned_data$WellWritten_n <- as.numeric(s2_cleaned_data$WellWritten)
-  s2_cleaned_data$Boring_n <- as.numeric(s2_cleaned_data$Boring)
-  s2_cleaned_data$Engaging_n <- as.numeric(s2_cleaned_data$Engaging)
+  # s2_cleaned_data$WellWritten_n <- as.numeric(s2_cleaned_data$WellWritten)
+  # s2_cleaned_data$Boring_n <- as.numeric(s2_cleaned_data$Boring)
+  # s2_cleaned_data$Engaging_n <- as.numeric(s2_cleaned_data$Engaging)
 ```
 
 ```{r}
 model_design <- '
     # Core paths
   anthropomorphism_score ~ a1*Condition
-  likeability_score ~ b1*anthropomorphism_score + c1*Condition
-  competence_score ~ b2*anthropomorphism_score + b3*likeability_score
-  author_trust_combined_score ~ d1*Condition + d2*anthropomorphism_score + d3*likeability_score + d4*competence_score
-  content_trust_combined_score ~ e1*author_trust_combined_score + e2*ScienceContent_ordinal + f1*Condition
+  likeability_score ~ c1*Condition
+  competence_score ~ c1*Condition
+  
+  # # Latent Constructs 
+  # perceptions_of_author
+  # attitudes_towards_ai
+  # content_experience
+  # writing_quality
+  # 
+  # 
+  # author_trust_combined_score ~ d1*Condition + d2*anthropomorphism_score + d3*likeability_score + d4*competence_score + fear_of_ai_score + intention_to_use_score + AIChatbotsFrequency_ordinal 
+  # content_trust_combined_score ~ e1*author_trust_combined_score + e2*ScienceContent_ordinal + WellWritten_n + Boring_n + Engaging_n + professional_content_expertise
+  # 
+  # # Covariances
+  # likeability_score ~~ competence_score
+  # anthropomorphism_score ~~ likeability_score
+  # anthropomorphism_score ~~ competence_score
+  # 
+  # # Additional predictors
+  # likeability_score ~ fear_of_ai_score + AIChatbotsFrequency_ordinal + WellWritten_n + Boring_n + Engaging_n + anthropomorphism_score + Condition
+  # competence_score ~ fear_of_ai_score + AIChatbotsFrequency_ordinal + WellWritten_n + Boring_n + Engaging_n + Condition + likeability_score + anthropomorphism_score
+  # anthropomorphism_score ~ AIChatbotsFrequency_ordinal + Condition
+  # # author_trust_combined_score ~ fear_of_ai_score + intention_to_use_score + AIChatbotsFrequency_ordinal + professional_content_expertise + WellWritten_n + Boring_n + Engaging_n
+  # # content_trust_combined_score ~ fear_of_ai_score + intention_to_use_score + AIChatbotsFrequency_ordinal + professional_content_expertise + WellWritten_n + Boring_n + Engaging_n
+  # 
+  # # Indirect effects (retain prior ones for consistency)
 
-  # Covariances
-  likeability_score ~~ competence_score
-  anthropomorphism_score ~~ likeability_score
-
-  # Additional predictors
-  likeability_score ~ fear_of_ai_score + AIChatbotsFrequency_ordinal + WellWritten_n + Boring_n + Engaging_n
-  competence_score ~ fear_of_ai_score + AIChatbotsFrequency_ordinal + WellWritten_n + Boring_n + Engaging_n
-  anthropomorphism_score ~ AIChatbotsFrequency_ordinal + WellWritten_n + Boring_n + Engaging_n
-  author_trust_combined_score ~ fear_of_ai_score + intention_to_use_score + AIChatbotsFrequency_ordinal + professional_content_expertise + WellWritten_n + Boring_n + Engaging_n
-  content_trust_combined_score ~ fear_of_ai_score + intention_to_use_score + AIChatbotsFrequency_ordinal + professional_content_expertise + WellWritten_n + Boring_n + Engaging_n
-
-  # Indirect effects (retain prior ones for consistency)
-  ind1_likeablty := a1 * b1
-  ind3_thr_tr___ := a1 * b1 * d3
-  ind8_nthr_lk__ := b1 * d3 * e1
 '
 poster_fit_1 <- s2_cleaned_data |> test_med_mod_model(model_design)
 # poster_fit <- sem(model, data = your_data, std.lv = TRUE)
@@ -1445,12 +1610,42 @@ poster_fit_1 <- s2_cleaned_data |> test_med_mod_model(model_design)
 ```
 
 ```{r}
-lavaan::summary(poster_fit_1, fit.measures = TRUE, standardized = TRUE, ci = TRUE)
+# model_design <- '
+#     # Core paths
+#   anthropomorphism_score ~ a1*Condition
+#   likeability_score ~ b1*anthropomorphism_score + c1*Condition
+#   competence_score ~ b2*anthropomorphism_score + b3*likeability_score
+#   author_trust_combined_score ~ d1*Condition + d2*anthropomorphism_score + d3*likeability_score + d4*competence_score
+#   content_trust_combined_score ~ e1*author_trust_combined_score + e2*ScienceContent_ordinal + f1*Condition
+# 
+#   # Covariances
+#   likeability_score ~~ competence_score
+#   anthropomorphism_score ~~ likeability_score
+# 
+#   # Additional predictors
+#   likeability_score ~ fear_of_ai_score + AIChatbotsFrequency_ordinal + WellWritten_n + Boring_n + Engaging_n
+#   competence_score ~ fear_of_ai_score + AIChatbotsFrequency_ordinal + WellWritten_n + Boring_n + Engaging_n
+#   anthropomorphism_score ~ AIChatbotsFrequency_ordinal + WellWritten_n + Boring_n + Engaging_n
+#   # author_trust_combined_score ~ fear_of_ai_score + intention_to_use_score + AIChatbotsFrequency_ordinal + professional_content_expertise + WellWritten_n + Boring_n + Engaging_n
+#   # content_trust_combined_score ~ fear_of_ai_score + intention_to_use_score + AIChatbotsFrequency_ordinal + professional_content_expertise + WellWritten_n + Boring_n + Engaging_n
+# 
+#   # Indirect effects (retain prior ones for consistency)
+#   ind1_likeablty := a1 * b1
+#   ind3_thr_tr___ := a1 * b1 * d3
+#   ind8_nthr_lk__ := b1 * d3 * e1
+# '
+# poster_fit_1 <- s2_cleaned_data |> test_med_mod_model(model_design)
+# # poster_fit <- sem(model, data = your_data, std.lv = TRUE)
+# # summary(poster_fit, fit.measures = TRUE, standardized = TRUE)
 ```
 
 ```{r}
-plot <- plot_model(poster_fit_1, s2_study)
-plot
+# lavaan::summary(poster_fit_1, fit.measures = TRUE, standardized = TRUE, ci = TRUE)
+```
+
+```{r}
+# plot <- plot_model(poster_fit_1, s2_study)
+# plot
 ```
 
 
@@ -1461,7 +1656,7 @@ s2_model_trimmed <- '
   likeability_score ~ b1*Condition
   competence_score ~ c1*Condition
   author_trust_combined_score ~ likeability_score + competence_score + anthropomorphism_score
-  content_trust_combined_score ~ e1*author_trust_combined_score  + WellWritten_n
+  content_trust_combined_score ~ e1*author_trust_combined_score  + writing_quality
 
     # Optional: bidirectional path (uncomment if theoretically justified)
   author_trust_combined_score ~ f1*content_trust_combined_score

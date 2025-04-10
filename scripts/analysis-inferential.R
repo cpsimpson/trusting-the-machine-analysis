@@ -96,6 +96,8 @@ run_simple_effects_t_tests <- function(data, formula) {
     p.adjust.method = "bonferroni"
   )
   
+  print(t_test_results |> rmarkdown::paged_table())
+  
   # Compute Cohen's d with same filtered data
   d_results <- dplyr::rowwise(t_test_results) |>
     dplyr::mutate(
@@ -117,6 +119,8 @@ run_simple_effects_t_tests <- function(data, formula) {
       )
     ) |>
     tidyr::unnest_wider(effsize_data, names_sep = "_")
+  
+  print(d_results  |> rmarkdown::paged_table())
   
   return(d_results)
 }
@@ -165,11 +169,21 @@ run_between_subjects_anova <- function(data, formula, ...){
 }
 
 
-run_inferential <- function(data, formula) {
+
+run_inferential <- function(data, formula, share_fraction = 1 / 10) {
   
   message("Starting run_inferential.")
   dv_name <- all.vars(formula)[1]
   grouping_var <- all.vars(formula)[2]
+  
+  # Step 1: Drop rare levels by share
+  cleaned <- drop_rare_levels_by_share(data, grouping_var, share_fraction)
+  data <- cleaned$data
+  dropped_levels <- cleaned$dropped_levels
+  
+  if (length(dropped_levels) > 0) {
+    message("Dropped groups with low share of participants in ", grouping_var, ": ", paste(dropped_levels, collapse = ", "))
+  }
   
   data <- droplevels(data)
   
@@ -187,16 +201,26 @@ run_inferential <- function(data, formula) {
   # Determine number of levels in grouping variable
   num_levels <- length(unique(data[[grouping_var]]))
   
+  message("There are ", num_levels, " levels in ", grouping_var)
+  
   if (num_levels == 2) {
     message("Running independent samples t-test for ", dv_name, " ~ ", grouping_var)
     
-    t_result <- t.test(
-      formula,
+    # t_result <- t.test(
+    #   formula,
+    #   data = data,
+    #   var.equal = TRUE
+    # )
+    
+    t_result <- rstatix::pairwise_t_test(
       data = data,
-      var.equal = TRUE
+      formula = formula,
+      detailed = TRUE,
+      pool.sd = FALSE,
+      p.adjust.method = "bonferroni"
     )
     
-    d_result <- rstatix::cohens_d(data = data, formula = formula)
+    d_result <- rstatix::cohens_d(data = data, formula = formula, ci = TRUE)
     
     print(t_result)
     print(d_result)
@@ -210,6 +234,8 @@ run_inferential <- function(data, formula) {
     message("Running ANOVA for ", dv_name, " ~ ", grouping_var)
     
     aov_model <- aov(data = data, formula = formula)
+    tukey <- TukeyHSD(aov_model)
+    
     
     model_summ <- summary(aov_model)
     apa_output <- anova_apa(aov_model)
@@ -232,6 +258,8 @@ run_inferential <- function(data, formula) {
       message("ANOVA was significant, running pairwise t-tests.")
       pwt_result <- run_simple_effects_t_tests(data, formula)
       pwt_result |> rmarkdown::paged_table() |> print()
+    } else {
+      pwt_result <- NA
     }
     
     return(invisible(list(
@@ -239,9 +267,11 @@ run_inferential <- function(data, formula) {
       model = aov_model,
       summary = model_summ,
       apa = apa_output,
-      omega_squared = omega_sq
+      omega_squared = omega_sq,
+      pwt_result = pwt_result,
+      tukey = tukey
     )))
   } else {
-    stop("Not enough levels in grouping variable after filtering.")
+    message("Not enough levels in grouping variable after filtering to run inferential stats for ", grouping_var, " on ", dv_name)
   }
 }
