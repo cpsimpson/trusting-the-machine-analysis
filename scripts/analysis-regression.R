@@ -418,12 +418,12 @@ run_post_hoc_regression_analysis <- function(data, dv, study, share_fraction = 1
       ai_attitudes = c(
         "AIChatbotsFrequency_regrouped",
         "intention_to_use_score",
-        "ChangedOpinionOfAI",
+        "changed_opinion_of_ai_score",
         "fear_of_ai_score"
       ),
       content_experience = c("science_expertise", "ScienceContent_regrouped"),
       writing_experience = c("writing_expertise"),
-      content_quality = c("writing_quality"),
+      content_quality = c("writing_quality_score"),
       manipulation = c("Condition")
     )
     
@@ -442,11 +442,11 @@ run_post_hoc_regression_analysis <- function(data, dv, study, share_fraction = 1
                                       "Sex", "Education_regrouped"),
       content_experience = c("science_expertise", "ScienceContent_regrouped"),
       writing_experience = c("writing_expertise"),
-      content_quality = c("writing_quality"),
+      content_quality = c("writing_quality_score"),
       content_trust = c("content_trust_combined_score"),
       ai_attitudes = c(
         "intention_to_use_score",
-        "ChangedOpinionOfAI",
+        "changed_opinion_of_ai_score",
         "fear_of_ai_score"
       ),
       author_perceptions = c("likeability_score", "competence_score"),

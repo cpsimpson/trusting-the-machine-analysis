@@ -54,14 +54,16 @@ factorize_data <- function(study, raw_data){
   raw_data$Experience_1 <- as.numeric(as.character(raw_data$Experience_1))
   raw_data$Experience_2 <- as.numeric(as.character(raw_data$Experience_2))
   raw_data$Experience_3 <- as.numeric(as.character(raw_data$Experience_3))
-  raw_data$ChangedOpinionOfAI <- factor(as.numeric(raw_data$Experience_4),
-                                        levels = c(1, 2, 3, 4, 5), 
-                                        labels = c("Strongly disagree", "Disagree", "Neither agree or disagree", "Agree", "Strongly agree"))
+  # raw_data$Experience_4 <- factor(as.numeric(raw_data$Experience_4),
+  #                                       levels = c(1, 2, 3, 4, 5), 
+  #                                       labels = c("Strongly disagree", "Disagree", "Neither agree or disagree", "Agree", "Strongly agree"))
+  raw_data$Experience_4 <- as.numeric(as.character(raw_data$Experience_4))
   raw_data$Experience_5 <- as.numeric(as.character(raw_data$Experience_5))
   raw_data$Experience_6 <- as.numeric(as.character(raw_data$Experience_6))
-  raw_data$CouldWriteContent <- factor(as.numeric(raw_data$Experience_7),
-                                       levels = c(1, 2, 3, 4, 5), 
-                                       labels = c("Strongly disagree", "Disagree", "Neither agree or disagree", "Agree", "Strongly agree"))
+  # raw_data$Experience_7 <- factor(as.numeric(raw_data$Experience_7),
+  #                                      levels = c(1, 2, 3, 4, 5), 
+  #                                      labels = c("Strongly disagree", "Disagree", "Neither agree or disagree", "Agree", "Strongly agree"))
+  raw_data$Experience_7 <- as.numeric(as.character(raw_data$Experience_7))
   raw_data$Experience_8 <- as.numeric(as.character(raw_data$Experience_8))
   raw_data$Experience_9 <- as.numeric(as.character(raw_data$Experience_9))
   raw_data$Experience_10 <- as.numeric(as.character(raw_data$Experience_10))
