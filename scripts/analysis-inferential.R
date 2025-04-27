@@ -157,6 +157,10 @@ run_between_subjects_anova <- function(data, formula, ...){
   # Extract p-value from the ANOVA summary
   p_value <- model_summ[[1]]["Pr(>F)"][[1]][1]
   
+  adj_p_value <- p.adjust(p_value, method = "BH" )
+  print(paste0("FDR corrected p = ", adj_p_value))
+  model_summ$adj_p_value <- adj_p_value
+  
   message("The ANOVA p value is", p_value)
   # If the p-value is significant, run assumption tests and simple effects t-tests
   if (!is.na(p_value) && p_value < 0.05) {
@@ -222,8 +226,8 @@ run_inferential <- function(data, formula, share_fraction = 1 / 10) {
     
     d_result <- rstatix::cohens_d(data = data, formula = formula, ci = TRUE)
     
-    print(t_result)
-    print(d_result)
+    print(t_result, width = Inf)
+    print(d_result, width = Inf)
     
     return(invisible(list(
       test = "t-test",
@@ -245,6 +249,7 @@ run_inferential <- function(data, formula, share_fraction = 1 / 10) {
     print(apa_output)
     print(paste0("MSE = ", model_summ[[1]]["Mean Sq"][[1]][1]))
     print(omega_sq)
+    print(tukey)
     
     # Extract p-value
     p_value <- model_summ[[1]]["Pr(>F)"][[1]][1]
@@ -257,7 +262,7 @@ run_inferential <- function(data, formula, share_fraction = 1 / 10) {
       
       message("ANOVA was significant, running pairwise t-tests.")
       pwt_result <- run_simple_effects_t_tests(data, formula)
-      pwt_result |> rmarkdown::paged_table() |> print()
+      # pwt_result |> rmarkdown::paged_table() |> print()
     } else {
       pwt_result <- NA
     }

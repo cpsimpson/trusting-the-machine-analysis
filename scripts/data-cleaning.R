@@ -365,6 +365,10 @@ get_writing_quality_cols <- function(){
   return(c("z.Appelman_4", "z.Appelman_5r", "z.Appelman_6"))
 }
 
+get_chatbots_used_cols <- function(){
+  return(c("AIChatbotsUsed_ChatGPT", "AIChatbotsUsed_Grok", "AIChatbotsUsed_Gemini", "AIChatbotsUsed_Copilot", "AIChatbotsUsed_Claude", "AIChatbotsUsed_Other"))
+}
+
 
 # Calculate scores for Content Trust, Author Trust, Anthropomorphism, Likeability, Competence, Expertise, Integrity, Benevolence
 compute_scores <- function(data, study){
@@ -396,6 +400,8 @@ compute_scores <- function(data, study){
   science_expertise_cols = get_science_experience_cols()
   
   writing_quality_cols = get_writing_quality_cols()
+  
+  chatbots_used_cols = get_chatbots_used_cols()
   
   data <- data |>
     mutate(
@@ -434,9 +440,59 @@ compute_scores <- function(data, study){
       science_expertise = rowMeans(
         select(data, all_of(science_expertise_cols)), na.rm = TRUE),
       writing_quality_score = rowMeans(
-        select(data, all_of(writing_quality_cols)), na.rm = TRUE)
+        select(data, all_of(writing_quality_cols)), na.rm = TRUE), 
+      number_ai_chatbots_used = rowSums(
+        select(data, all_of(chatbots_used_cols)), na.rm = TRUE)
     )
   
   return(data)
   
+}
+
+bin_scores <- function(data, study){
+  data %>% 
+    mutate(intention_to_use_binned = factor(ntile(data$intention_to_use_score, n=3), levels = c(1,2,3), labels = c("low", "medium", "high")),
+           fear_of_ai_binned = factor(ntile(data$fear_of_ai_score, n=3), levels = c(1,2,3), labels = c("low", "medium", "high")),
+           changed_opinion_of_ai_binned = factor(ntile(data$changed_opinion_of_ai_score, n=3), levels = c(1,2,3), labels = c("low", "medium", "high")),
+           writing_expertise_binned = factor(ntile(data$writing_expertise, n=3), levels = c(1,2,3), labels = c("low", "medium", "high")),
+           science_expertise_binned = factor(ntile(data$science_expertise, n=3), levels = c(1,2,3), labels = c("low", "medium", "high")),
+           writing_quality_binned = factor(ntile(data$writing_quality_score, n=3), levels = c(1,2,3), labels = c("low", "medium", "high")),
+           likeability_binned = factor(ntile(data$likeability_score, n=3), levels = c(1,2,3), labels = c("low", "medium", "high")),
+           competence_binned = factor(ntile(data$competence_score, n=3), levels = c(1,2,3), labels = c("low", "medium", "high")),
+           anthropomorphism_binned = factor(ntile(data$anthropomorphism_score, n=3), levels = c(1,2,3), labels = c("low", "medium", "high")),
+           )
+}
+
+cast_variables <- function(data, study){
+  
+  if (study == "s1"){
+    data$English_n <- as.numeric(data$English)
+  }
+  data$number_ai_chatbots_used_f <- factor(data$number_ai_chatbots_used, levels = c(0, 1, 2, 3, 4, 5, 6))
+  data$Unrealistic_n <- as.numeric(data$Unrealistic)
+  data$TechnicalIssues_n <- as.numeric(data$TechnicalIssues)
+  data$AIChatbotsFrequency_n <- as.numeric(data$AIChatbotsFrequency)
+  data$AIChatbotsFrequency_regrouped_n <- as.numeric(data$AIChatbotsFrequency_regrouped)
+  data$ScienceContent_regrouped_n <- as.numeric(data$ScienceContent_regrouped)
+  data$ScienceContent_n <- as.numeric(data$ScienceContent)
+  data$AIChatbotsUsed_ChatGPT_n <- as.numeric(data$AIChatbotsUsed_ChatGPT)
+  data$AIChatbotsUsed_Gemini_n <- as.numeric(data$AIChatbotsUsed_Gemini)
+  data$AIChatbotsUsed_Grok_n <- as.numeric(data$AIChatbotsUsed_Grok)
+  data$AIChatbotsUsed_Claude_n <- as.numeric(data$AIChatbotsUsed_Claude)
+  data$AIChatbotsUsed_Other_n <- as.numeric(data$AIChatbotsUsed_Other)
+  data$AIChatbotsUsed_None_n <- as.numeric(data$AIChatbotsUsed_None)
+  data$AIChatbotsUsed_Copilot_n <- as.numeric(data$AIChatbotsUsed_Copilot)
+  data$intention_to_use_binned_n <- as.numeric(data$intention_to_use_binned)
+  data$fear_of_ai_binned_n <- as.numeric(data$fear_of_ai_binned)
+  data$changed_opinion_of_ai_binned_n <- as.numeric(data$changed_opinion_of_ai_binned)
+  data$writing_expertise_binned_n <- as.numeric(data$writing_expertise_binned)
+  data$science_expertise_binned_n <- as.numeric(data$science_expertise_binned)
+  data$writing_quality_binned_n <- as.numeric(data$writing_quality_binned)
+  data$likeability_binned_n <- as.numeric(data$likeability_binned)
+  data$competence_binned_n <- as.numeric(data$competence_binned)
+  data$anthropomorphism_binned_n <- as.numeric(data$anthropomorphism_binned)
+  data$Gender_n <- as.numeric(data$Gender)
+  data$Sex_n <- as.numeric(data$Sex)
+  data$Education_n <- as.numeric(data$Education)
+  return(data)
 }

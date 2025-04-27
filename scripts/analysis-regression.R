@@ -418,7 +418,7 @@ run_post_hoc_regression_analysis <- function(data, dv, study, share_fraction = 1
       ai_attitudes = c(
         "AIChatbotsFrequency_regrouped",
         "intention_to_use_score",
-        "changed_opinion_of_ai_score",
+        "number_ai_chatbots_used",
         "fear_of_ai_score"
       ),
       content_experience = c("science_expertise", "ScienceContent_regrouped"),
@@ -445,8 +445,9 @@ run_post_hoc_regression_analysis <- function(data, dv, study, share_fraction = 1
       content_quality = c("writing_quality_score"),
       content_trust = c("content_trust_combined_score"),
       ai_attitudes = c(
+        "AIChatbotsFrequency_regrouped",
         "intention_to_use_score",
-        "changed_opinion_of_ai_score",
+        "number_ai_chatbots_used",
         "fear_of_ai_score"
       ),
       author_perceptions = c("likeability_score", "competence_score"),
@@ -575,11 +576,11 @@ run_post_hoc_regression_analysis <- function(data, dv, study, share_fraction = 1
     cat("\n📊 Step:", i, "-", block_titles[[current$block]], "\n")
     cat(
       "R² =",
-      round(current$r2, 3),
+      round(current$r2, 2),
       "| ΔR² =",
-      round(delta_r2, 3),
+      round(delta_r2, 2),
       "| Adj. R² =",
-      round(current$adj_r2, 3),
+      round(current$adj_r2, 2),
       "\n"
     )
   }
@@ -612,8 +613,8 @@ run_post_hoc_regression_analysis <- function(data, dv, study, share_fraction = 1
     )), data = data)
     model_list[[i]] <- model
     
-    r2 <- round(summary(model)$r.squared, 3)
-    adj_r2 <- round(summary(model)$adj.r.squared, 3)
+    r2 <- round(summary(model)$r.squared, 2)
+    adj_r2 <- round(summary(model)$adj.r.squared, 2)
     
     
     if (i == 1) {
@@ -631,10 +632,10 @@ run_post_hoc_regression_analysis <- function(data, dv, study, share_fraction = 1
       test <- anova(model_list[[i - 1]], model)
       
       if (!is.null(test) && !is.na(test[["Pr(>F)"]][2])) {
-        delta_r2 <- round(r2 - summary(model_list[[i - 1]])$r.squared, 3)
+        delta_r2 <- round(r2 - summary(model_list[[i - 1]])$r.squared, 2)
         f_val <- round(test$F[2], 2)
         df_val <- paste0(test$Df[2], ", ", test$Res.Df[2])
-        p_val <- format.pval(as.numeric(test$`Pr(>F)`[2]),
+        p_val <- format.pval(round(as.numeric(test$`Pr(>F)`[2]), 3),
                              digits = 3,
                              eps = 0.001)
         sig <- add_sig_stars(p_val)
@@ -651,7 +652,7 @@ run_post_hoc_regression_analysis <- function(data, dv, study, share_fraction = 1
         Step = paste0("Step ", i),
         Block = format_variable_name(block_name),
         R2 = r2,
-        Delta_R2 = paste0(delta_r2, sig),
+        Delta_R2 = delta_r2,
         F = f_val,
         df = df_val,
         p = p_val,
@@ -669,27 +670,28 @@ run_post_hoc_regression_analysis <- function(data, dv, study, share_fraction = 1
   
   
   # Step 1: Significance stars
-  r2_summary$sig <- ifelse(
-    is.na(r2_summary$p),
-    "",
-    dplyr::case_when(
-      r2_summary$p < 0.001 ~ "***",
-      r2_summary$p < 0.01  ~ "**",
-      r2_summary$p < 0.05  ~ "*",
-      TRUE ~ ""
-    )
-  )
+  # r2_summary$sig <- ifelse(
+  #   is.na(r2_summary$p),
+  #   "",
+  #   dplyr::case_when(
+  #     r2_summary$p < 0.001 ~ "***",
+  #     r2_summary$p < 0.01  ~ "**",
+  #     r2_summary$p < 0.05  ~ "*",
+  #     TRUE ~ ""
+  #   )
+  # )
   
   # Step 2: p-label (for display)
   r2_summary$p_label <- ifelse(
     is.na(r2_summary$p),
     "",
     dplyr::case_when(r2_summary$p < 0.001 ~ "p < .001", TRUE ~ paste0(
-      "p = ", formatC(
-        as.numeric(r2_summary$p),
-        digits = 3,
-        format = "f"
-      )
+      "p = ", substring(r2_summary$p, 2)
+      # formatC(
+      #   as.numeric(r2_summary$p),
+      #   digits = 3,
+      #   format = "f"
+      # )
     ))
   )
   

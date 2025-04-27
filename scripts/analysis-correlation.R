@@ -9,7 +9,7 @@ test_correlation <- function(data, x_name, y_name){
   y <- data |> pull({{y_name}})
   
   cor_result <- cor.test(
-    x, y, method = "pearson")
+    as.numeric(x), as.numeric(y), method = "pearson")
   
   apa::cor_apa(cor_result, r_ci = TRUE)
   

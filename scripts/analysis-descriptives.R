@@ -46,7 +46,7 @@ basic_descriptives <- function(x, digits = 2){
   )
 }
 
-descriptives_by_group <- function(df, formula) {
+descriptives_from_formula <- function(df, formula) {
   dv <- all.vars(formula)[1]
   group <- all.vars(formula)[2]
   

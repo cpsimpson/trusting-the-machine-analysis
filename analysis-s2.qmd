@@ -265,14 +265,17 @@ Regroup the AIChatbotsFrequency, Education, and Age columns into smaller number 
 s2_cleaned_data <- s2_cleaned_data |> regroup_data()                                  
 ```
 
-### Calculate Scale Scores
-
 #### Define Score Components
 
 ```{r}
-
 s2_cleaned_data <- s2_cleaned_data |> compute_scores(s2_study)
 
+s2_cleaned_data <- s2_cleaned_data |> bin_scores(s2_study)
+```
+
+
+```{r}
+s2_cleaned_data <- s2_cleaned_data |> cast_variables(s2_study)
 ```
 
 ### Scale Inter-item Reliability Analysis
@@ -769,32 +772,14 @@ result$effect_size
 ```{r}
 
 result <- s2_cleaned_data |> test_correlation(Age_1, content_trust_combined_score)
-result
 
-# result <- s2_cleaned_data |> test_correlation(fear_of_ai_score, content_trust_combined_score)
-# result
-# 
-# result <- s2_cleaned_data |> test_correlation(intention_to_use_score, content_trust_combined_score)
-# result
-# 
-# result <- s2_cleaned_data |> test_correlation(professional_content_expertise, content_trust_combined_score)
-# result
 
 
 
 formulas <- c(content_trust_combined_score ~ Gender, 
               content_trust_combined_score ~ Sex, 
               content_trust_combined_score ~ Education #,
-              # content_trust_combined_score ~ Education_regrouped,
-              # content_trust_combined_score ~ AIChatbotsFrequency,
-              # content_trust_combined_score ~ AIChatbotsFrequency_regrouped,
-              # content_trust_combined_score ~ ScienceContent,
-              # content_trust_combined_score ~ ScienceContent_regrouped, 
-              # content_trust_combined_score ~ ChangedOpinionOfAI,
-              # content_trust_combined_score ~ CouldWriteContent,
-              # content_trust_combined_score ~ TechnicalIssues,
-              # content_trust_combined_score ~ Unrealistic,
-              # content_trust_combined_score ~ Unrealistic_coded
+              # content_trust_combined_score ~ Education_regrouped
               )
 
 
@@ -811,6 +796,79 @@ if (!is.null(result) && result$test == "ANOVA"){
 }
 
 
+
+```
+###### Sample Attitudes / Experience
+
+
+```{r}
+# Check for correlations between trust and variables
+result <- s2_cleaned_data |> test_correlation(changed_opinion_of_ai_score, content_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(fear_of_ai_score, content_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(intention_to_use_score, content_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(writing_expertise, content_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(science_expertise, content_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(writing_quality_score, content_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(changed_opinion_of_ai_score, content_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(AIChatbotsFrequency, content_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(AIChatbotsFrequency_regrouped, content_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(ScienceContent, content_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(ScienceContent_regrouped, content_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(TechnicalIssues, content_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(Unrealistic, content_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(number_ai_chatbots_used, content_trust_combined_score)
+
+```
+
+
+```{r}
+# Check for differences in means of trust across groups in various variables
+formulas <- c(
+              # content_trust_combined_score ~ AIChatbotsFrequency,
+              content_trust_combined_score ~ AIChatbotsFrequency_regrouped,
+              # content_trust_combined_score ~ ScienceContent,
+              content_trust_combined_score ~ ScienceContent_regrouped,
+              content_trust_combined_score ~ TechnicalIssues,
+              content_trust_combined_score ~ Unrealistic,
+              content_trust_combined_score ~ Unrealistic_coded, 
+              content_trust_combined_score ~ AIChatbotsUsed_ChatGPT,
+              content_trust_combined_score ~ AIChatbotsUsed_Gemini,
+              content_trust_combined_score ~ AIChatbotsUsed_Grok,
+              content_trust_combined_score ~ AIChatbotsUsed_Claude,
+              content_trust_combined_score ~ AIChatbotsUsed_Other,
+              content_trust_combined_score ~ AIChatbotsUsed_None,
+              content_trust_combined_score ~ AIChatbotsUsed_Copilot, 
+              content_trust_combined_score ~ number_ai_chatbots_used_f,
+              content_trust_combined_score ~ intention_to_use_binned,
+              content_trust_combined_score ~ fear_of_ai_binned,
+              content_trust_combined_score ~ changed_opinion_of_ai_binned,
+              content_trust_combined_score ~ writing_expertise_binned,
+              content_trust_combined_score ~ science_expertise_binned,
+              content_trust_combined_score ~ likeability_binned,
+              content_trust_combined_score ~ competence_binned,
+              content_trust_combined_score ~ anthropomorphism_binned
+              
+              )
+
+
+for (i_formula in formulas){
+  s2_cleaned_data |> descriptives_from_formula(i_formula)
+  
+  result <- s2_cleaned_data |> run_inferential(i_formula, share_fraction = 1 / 3)
+
+  if (!is.null(result) && result$test == "ANOVA"){
+    result$apa_output
+    if (!is.null(result$pwt_result) && !all(is.na(result$pwt_result))){
+      print("Summary")
+      summary(result$pwt_result)
+      print("Inf print")
+      print(result$pwt_result, width=Inf)
+    }
+    
+  } else if (!is.null(result) && result$test == "t-test"){
+    result$model
+  }
+}
 
 ```
 
@@ -1405,32 +1463,11 @@ result$effect_size
 result <- s2_cleaned_data |> test_correlation(Age_1, author_trust_combined_score)
 result
 
-# result <- s2_cleaned_data |> test_correlation(fear_of_ai_score, author_trust_combined_score)
-# result
-# 
-# result <- s2_cleaned_data |> test_correlation(intention_to_use_score, author_trust_combined_score)
-# result
-# 
-# result <- s2_cleaned_data |> test_correlation(professional_content_expertise, author_trust_combined_score)
-# result
-
-
-
 formulas <- c(author_trust_combined_score ~ Gender, 
               author_trust_combined_score ~ Sex, 
               author_trust_combined_score ~ Education #,
-              # author_trust_combined_score ~ Education_regrouped,
-              # author_trust_combined_score ~ AIChatbotsFrequency,
-              # author_trust_combined_score ~ AIChatbotsFrequency_regrouped,
-              # author_trust_combined_score ~ ScienceContent,
-              # author_trust_combined_score ~ ScienceContent_regrouped, 
-              # author_trust_combined_score ~ ChangedOpinionOfAI,
-              # author_trust_combined_score ~ CouldWriteContent,
-              # author_trust_combined_score ~ TechnicalIssues,
-              # author_trust_combined_score ~ Unrealistic,
-              # author_trust_combined_score ~ Unrealistic_coded
+              # author_trust_combined_score ~ Education_regrouped
               )
-
 
 for (i_formula in formulas){
   result <- s2_cleaned_data |> run_inferential(i_formula, share_fraction = 1 / 3)
@@ -1445,9 +1482,82 @@ if (!is.null(result) && result$test == "ANOVA"){
 }
 
 
+```
+
+###### Sample Attitudes / Experience
+
+```{r}
+# Check for correlations between trust and variables
+result <- s2_cleaned_data |> test_correlation(changed_opinion_of_ai_score, author_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(fear_of_ai_score, author_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(intention_to_use_score, author_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(writing_expertise, author_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(science_expertise, author_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(writing_quality_score, author_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(changed_opinion_of_ai_score, author_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(AIChatbotsFrequency, author_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(AIChatbotsFrequency_regrouped, author_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(ScienceContent, author_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(ScienceContent_regrouped, author_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(TechnicalIssues, author_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(Unrealistic, author_trust_combined_score)
+result <- s2_cleaned_data |> test_correlation(number_ai_chatbots_used, author_trust_combined_score)
 
 ```
 
+
+```{r}
+# Check for differences in means of trust across groups in various variables
+formulas <- c(
+              # content_trust_combined_score ~ AIChatbotsFrequency,
+              author_trust_combined_score ~ AIChatbotsFrequency_regrouped,
+              # content_trust_combined_score ~ ScienceContent,
+              author_trust_combined_score ~ ScienceContent_regrouped,
+              author_trust_combined_score ~ TechnicalIssues,
+              author_trust_combined_score ~ Unrealistic,
+              author_trust_combined_score ~ Unrealistic_coded, 
+              author_trust_combined_score ~ AIChatbotsUsed_ChatGPT,
+              author_trust_combined_score ~ AIChatbotsUsed_Gemini,
+              author_trust_combined_score ~ AIChatbotsUsed_Grok,
+              author_trust_combined_score ~ AIChatbotsUsed_Claude,
+              author_trust_combined_score ~ AIChatbotsUsed_Other,
+              author_trust_combined_score ~ AIChatbotsUsed_None,
+              author_trust_combined_score ~ AIChatbotsUsed_Copilot, 
+              author_trust_combined_score ~ number_ai_chatbots_used_f,
+              author_trust_combined_score ~ intention_to_use_binned,
+              author_trust_combined_score ~ fear_of_ai_binned,
+              author_trust_combined_score ~ changed_opinion_of_ai_binned,
+              author_trust_combined_score ~ writing_expertise_binned,
+              author_trust_combined_score ~ science_expertise_binned,
+              author_trust_combined_score ~ likeability_binned,
+              author_trust_combined_score ~ competence_binned,
+              author_trust_combined_score ~ anthropomorphism_binned
+              
+              )
+
+
+for (i_formula in formulas){
+  
+  s2_cleaned_data |> descriptives_from_formula(i_formula)
+  
+  result <- s2_cleaned_data |> run_inferential(i_formula, share_fraction = 1 / 3)
+
+  if (!is.null(result) && result$test == "ANOVA"){
+    result$apa_output
+    if (!is.null(result$pwt_result) && !all(is.na(result$pwt_result))){
+      print("trying summary")
+      summary(result$pwt_result)
+      print("trying Inf print")
+      print(result$pwt_result, width=Inf)
+      # result$pwt_result |> rmarkdown::paged_table() |> print()
+    }
+    
+  } else if (!is.null(result) && result$test == "t-test"){
+    result$model
+  }
+}
+
+```
 
 ###### Hierarchical Regression Analysis
 ```{r}
@@ -1508,6 +1618,144 @@ plot <- correlation_plot(s2_cleaned_data,
 plot
 
 ```
+#### General Post Hoc
+
+```{r}
+s2_cleaned_data |> descriptives_by_group(Condition, Age_1)
+s2_cleaned_data |> descriptives_by_group(Condition, Gender_n)
+s2_cleaned_data |> descriptives_by_group(Condition, Sex_n)
+s2_cleaned_data |> descriptives_by_group(Condition, Education_n)
+s2_cleaned_data |> descriptives_by_group(Condition, changed_opinion_of_ai_score)
+s2_cleaned_data |> descriptives_by_group(Condition, changed_opinion_of_ai_binned_n)
+s2_cleaned_data |> descriptives_by_group(Condition, fear_of_ai_score)
+s2_cleaned_data |> descriptives_by_group(Condition, fear_of_ai_binned_n)
+s2_cleaned_data |> descriptives_by_group(Condition, intention_to_use_score)
+s2_cleaned_data |> descriptives_by_group(Condition, intention_to_use_binned_n)
+s2_cleaned_data |> descriptives_by_group(Condition, writing_expertise)
+s2_cleaned_data |> descriptives_by_group(Condition, writing_expertise_binned_n)
+s2_cleaned_data |> descriptives_by_group(Condition, science_expertise)
+s2_cleaned_data |> descriptives_by_group(Condition, science_expertise_binned_n)
+s2_cleaned_data |> descriptives_by_group(Condition, writing_quality_score)
+s2_cleaned_data |> descriptives_by_group(Condition, writing_quality_binned_n)
+
+s2_cleaned_data |> descriptives_by_group(Condition, AIChatbotsFrequency_n)
+s2_cleaned_data |> descriptives_by_group(Condition, AIChatbotsFrequency_regrouped_n)
+s2_cleaned_data |> descriptives_by_group(Condition, ScienceContent_n)
+s2_cleaned_data |> descriptives_by_group(Condition, ScienceContent_regrouped_n)
+s2_cleaned_data |> descriptives_by_group(Condition, TechnicalIssues_n)
+s2_cleaned_data |> descriptives_by_group(Condition, Unrealistic_n)
+s2_cleaned_data |> descriptives_by_group(Condition, number_ai_chatbots_used)
+
+s2_cleaned_data |> descriptives_by_group(Condition, AIChatbotsUsed_ChatGPT_n)
+s2_cleaned_data |> descriptives_by_group(Condition, AIChatbotsUsed_Gemini_n)
+s2_cleaned_data |> descriptives_by_group(Condition, AIChatbotsUsed_Grok_n)
+s2_cleaned_data |> descriptives_by_group(Condition, AIChatbotsUsed_Claude_n)
+s2_cleaned_data |> descriptives_by_group(Condition, AIChatbotsUsed_Copilot_n)
+s2_cleaned_data |> descriptives_by_group(Condition, AIChatbotsUsed_Other_n)
+s2_cleaned_data |> descriptives_by_group(Condition, AIChatbotsUsed_None_n)
+
+s2_cleaned_data |> descriptives_by_group(Condition, likeability_score)
+s2_cleaned_data |> descriptives_by_group(Condition, competence_score)
+s2_cleaned_data |> descriptives_by_group(Condition, anthropomorphism_score)
+
+```
+
+```{r}
+# Check for differences in means of trust across groups in various variables
+formulas <- c(
+              Age_1 ~ Condition,
+              Gender_n ~ Condition,
+              Sex_n ~ Condition,
+              Education_n ~ Condition,
+              Unrealistic_n ~ Condition,
+              TechnicalIssues_n ~ Condition,
+              AIChatbotsFrequency_n ~ Condition,
+              AIChatbotsFrequency_regrouped_n ~ Condition,
+              ScienceContent_n ~ Condition,
+              ScienceContent_regrouped_n ~ Condition,
+              AIChatbotsUsed_ChatGPT_n ~ Condition,
+              AIChatbotsUsed_Gemini_n ~ Condition,
+              AIChatbotsUsed_Grok_n ~ Condition,
+              AIChatbotsUsed_Claude_n ~ Condition,
+              AIChatbotsUsed_Other_n ~ Condition,
+              AIChatbotsUsed_None_n ~ Condition,
+              AIChatbotsUsed_Copilot_n ~ Condition, 
+              number_ai_chatbots_used ~ Condition,
+              intention_to_use_score ~ Condition,
+              fear_of_ai_score ~ Condition,
+              changed_opinion_of_ai_score ~ Condition,
+              writing_quality_score ~ Condition,
+              writing_expertise ~ Condition,
+              science_expertise ~ Condition,
+              likeability_score ~ Condition,
+              competence_score ~ Condition,
+              anthropomorphism_score ~ Condition
+              
+              )
+
+
+for (i_formula in formulas){
+
+  s2_cleaned_data |> descriptives_from_formula(i_formula)
+  
+  result <- s2_cleaned_data |> run_inferential(i_formula, share_fraction = 1 / 3)
+
+  if (!is.null(result) && result$test == "ANOVA"){
+    result$apa_output
+    if (!is.null(result$pwt_result) && !all(is.na(result$pwt_result))){
+      summary(result$pwt_result)
+      print(result$pwt_result, width=Inf)
+      result$pwt_result |> rmarkdown::paged_table() |> print()
+    }
+    
+  } else if (!is.null(result) && result$test == "t-test"){
+    result$model
+  }
+}
+
+```
+
+#### Interaction Effects
+```{r}
+model <- aov(formula = content_trust_combined_score ~ writing_quality_binned * fear_of_ai_binned, data = s2_cleaned_data)
+summary(model)
+
+print(effectsize::omega_squared(model))
+
+# Mediator model
+med_model <- lm(writing_quality_score ~ fear_of_ai_score, data = s2_cleaned_data)
+
+# Outcome model
+out_model <- lm(content_trust_combined_score ~ writing_quality_score + fear_of_ai_score, data = s2_cleaned_data)
+
+mediation_result <- mediation::mediate(med_model, out_model,
+                            treat = "fear_of_ai_score",
+                            mediator = "writing_quality_score",
+                            boot = TRUE, sims = 5000)
+
+summary(mediation_result)
+plot(mediation_result)
+
+
+model <- aov(formula = content_trust_combined_score ~ writing_quality_binned * AIChatbotsFrequency, data = s2_cleaned_data)
+summary(model)
+print(effectsize::omega_squared(model))
+
+# Mediator model
+med_model <- lm(writing_quality_score ~ AIChatbotsFrequency, data = s2_cleaned_data)
+
+# Outcome model
+out_model <- lm(content_trust_combined_score ~ writing_quality_score + AIChatbotsFrequency, data = s2_cleaned_data)
+
+mediation_result <- mediation::mediate(med_model, out_model,
+                            treat = "AIChatbotsFrequency",
+                            mediator = "writing_quality_score",
+                            boot = TRUE, sims = 5000)
+
+summary(mediation_result)
+plot(mediation_result)
+
+```
 
 #### Path Analysis
 
@@ -1524,58 +1772,58 @@ s2_cleaned_data$AIChatbotsFrequency_ordinal <- as.numeric(factor(s2_cleaned_data
 ```
 
 ```{r}
-s2_model_full <- '
-#
-  anthropomorphism_score ~ Condition
-  likeability_score ~ Condition
-  competence_score ~ Condition
-
-  ai_attitudes =~ AIChatbotsFrequency_ordinal + intention_to_use_score + fear_of_ai_score
-  author_perceptions =~ anthropomorphism_score + likeability_score + competence_score + expertise_score + integrity_score + benevolence_score
-
-  author_perceptions ~ ai_attitudes
-
-  # content_experience =~ ScienceContent_ordinal + science_expertise
-  writing_quality =~ writing_quality_score + content_trust_appelman_score
-
-  # author_trust ~ author_perceptions + ai_attitudes
-  #
-  # content_trust ~ ScienceContent_ordinal + science_expertise + writing_quality
-
-  # author_trust ~ content_trust
-
-  author_trust_behaviour_score ~ author_perceptions + ai_attitudes
-  content_trust_behaviour_score ~ ScienceContent_ordinal + science_expertise + writing_quality + author_perceptions + ai_attitudes
-
-
-
-
-  # Correlations
-  competence_score ~~ anthropomorphism_score
-  likeability_score ~~ anthropomorphism_score
-  competence_score ~~ likeability_score
-
-
-'
-
-s2_model_full_fit <- s2_cleaned_data |> test_med_mod_model(s2_model_full)
+# s2_model_full <- '
+# #
+#   anthropomorphism_score ~ Condition
+#   likeability_score ~ Condition
+#   competence_score ~ Condition
+# 
+#   ai_attitudes =~ AIChatbotsFrequency_ordinal + intention_to_use_score + fear_of_ai_score
+#   author_perceptions =~ anthropomorphism_score + likeability_score + competence_score + expertise_score + integrity_score + benevolence_score
+# 
+#   author_perceptions ~ ai_attitudes
+# 
+#   # content_experience =~ ScienceContent_ordinal + science_expertise
+#   writing_quality =~ writing_quality_score + content_trust_appelman_score
+# 
+#   # author_trust ~ author_perceptions + ai_attitudes
+#   #
+#   # content_trust ~ ScienceContent_ordinal + science_expertise + writing_quality
+# 
+#   # author_trust ~ content_trust
+# 
+#   author_trust_behaviour_score ~ author_perceptions + ai_attitudes
+#   content_trust_behaviour_score ~ ScienceContent_ordinal + science_expertise + writing_quality + author_perceptions + ai_attitudes
+# 
+# 
+# 
+# 
+#   # Correlations
+#   competence_score ~~ anthropomorphism_score
+#   likeability_score ~~ anthropomorphism_score
+#   competence_score ~~ likeability_score
+# 
+# 
+# '
+# 
+# s2_model_full_fit <- s2_cleaned_data |> test_med_mod_model(s2_model_full)
 ```
 
 ```{r}
-lavaan::summary(s2_model_full_fit, fit.measures = TRUE, standardized = TRUE, ci = TRUE)
+# lavaan::summary(s2_model_full_fit, fit.measures = TRUE, standardized = TRUE, ci = TRUE)
 ```
 
 ```{r}
-lavaan::inspect(s2_model_full_fit, "r2")
+# lavaan::inspect(s2_model_full_fit, "r2")
 ```
 
 ```{r}
-export_sem_results_to_word(s2_model_full_fit, s2_study, "full_model")
+# export_sem_results_to_word(s2_model_full_fit, s2_study, "full_model")
 ```
 
 ```{r}
-plot <- plot_model(s2_model_full_fit, s2_study)
-plot
+# plot <- plot_model(s2_model_full_fit, s2_study)
+# plot
 ```
 
 
@@ -1645,113 +1893,113 @@ plot_lavaan_model(s2_trimmed_model_fit, labels, "trimmed", s2_study)
 
 
 ```{r}
-# Center the variables to reduce multicollinearity
-s2_cleaned_data$wrtng_c <- scale(s2_cleaned_data$writing_quality_score, scale = FALSE)
-s2_cleaned_data$fear_c <- scale(s2_cleaned_data$fear_of_ai_score, scale = FALSE)
-# s2_cleaned_data$ai_attitudes_c <- rowMeans(s2_cleaned_data$fear_of_ai_score, as.numeric(s2_cleaned_data$AIChatbotsFrequency), )
-
-# Create interaction term
-s2_cleaned_data$interaction <- s2_cleaned_data$wrtng_c * s2_cleaned_data$fear_c
-
-# Run regression
-model <- lm(content_trust_combined_score ~ wrtng_c + fear_c + interaction, data = s2_cleaned_data)
-summary(model)
-
-
-# Step 1: fear → writing quality
-m1 <- lm(writing_quality_score ~ fear_of_ai_score, data = s2_cleaned_data)
-
-# Step 2: fear + writing quality → content trust
-m2 <- lm(content_trust_combined_score ~ fear_of_ai_score + writing_quality_score, data = s2_cleaned_data)
-
-med_model <- mediation::mediate(m1, m2, treat = "fear_of_ai_score", mediator = "writing_quality_score", boot = TRUE, sims = 5000)
-summary(med_model)
+# # Center the variables to reduce multicollinearity
+# s2_cleaned_data$wrtng_c <- scale(s2_cleaned_data$writing_quality_score, scale = FALSE)
+# s2_cleaned_data$fear_c <- scale(s2_cleaned_data$fear_of_ai_score, scale = FALSE)
+# # s2_cleaned_data$ai_attitudes_c <- rowMeans(s2_cleaned_data$fear_of_ai_score, as.numeric(s2_cleaned_data$AIChatbotsFrequency), )
+# 
+# # Create interaction term
+# s2_cleaned_data$interaction <- s2_cleaned_data$wrtng_c * s2_cleaned_data$fear_c
+# 
+# # Run regression
+# model <- lm(content_trust_combined_score ~ wrtng_c + fear_c + interaction, data = s2_cleaned_data)
+# summary(model)
+# 
+# 
+# # Step 1: fear → writing quality
+# m1 <- lm(writing_quality_score ~ fear_of_ai_score, data = s2_cleaned_data)
+# 
+# # Step 2: fear + writing quality → content trust
+# m2 <- lm(content_trust_combined_score ~ fear_of_ai_score + writing_quality_score, data = s2_cleaned_data)
+# 
+# med_model <- mediation::mediate(m1, m2, treat = "fear_of_ai_score", mediator = "writing_quality_score", boot = TRUE, sims = 5000)
+# summary(med_model)
 
 ```
 ```{r}
-s2_cleaned_data$wrtng_c <- scale(s2_cleaned_data$writing_quality_score, scale = FALSE)
-s2_cleaned_data$aiuse_c <- scale(as.numeric(s2_cleaned_data$AIChatbotsFrequency_regrouped), scale = FALSE)
-
-# Create interaction term
-s2_cleaned_data$wrtng_aiuse_interaction <- s2_cleaned_data$wrtng_c * s2_cleaned_data$aiuse_c
-
-# Run regression
-model <- lm(content_trust_combined_score ~ wrtng_c + aiuse_c + wrtng_aiuse_interaction, data = s2_cleaned_data)
-summary(model)
+# s2_cleaned_data$wrtng_c <- scale(s2_cleaned_data$writing_quality_score, scale = FALSE)
+# s2_cleaned_data$aiuse_c <- scale(as.numeric(s2_cleaned_data$AIChatbotsFrequency_regrouped), scale = FALSE)
+# 
+# # Create interaction term
+# s2_cleaned_data$wrtng_aiuse_interaction <- s2_cleaned_data$wrtng_c * s2_cleaned_data$aiuse_c
+# 
+# # Run regression
+# model <- lm(content_trust_combined_score ~ wrtng_c + aiuse_c + wrtng_aiuse_interaction, data = s2_cleaned_data)
+# summary(model)
 ```
 
 ```{r}
-
-s2_cleaned_data$wrtng_c <- as.numeric(s2_cleaned_data$writing_quality_score)
-s2_cleaned_data$fear_c <- as.numeric(as.numeric(s2_cleaned_data$fear_of_ai_score))
-s2_cleaned_data$wrtng_fear_interaction <- s2_cleaned_data$wrtng_c * s2_cleaned_data$fear_c
-
-model <- lm(content_trust_combined_score ~ wrtng_c + fear_c + wrtng_fear_interaction,
-            data = s2_cleaned_data)
-
-
-low_fear <- mean(s2_cleaned_data$fear_c, na.rm = TRUE) - sd(s2_cleaned_data$fear_c, na.rm = TRUE)
-high_fear <- mean(s2_cleaned_data$fear_c, na.rm = TRUE) + sd(s2_cleaned_data$fear_c, na.rm = TRUE)
-
-plot_data <- expand.grid(
-  wrtng_c = seq(min(s2_cleaned_data$wrtng_c, na.rm = TRUE),
-                max(s2_cleaned_data$wrtng_c, na.rm = TRUE), length.out = 100),
-  fear_c = c(low_fear, high_fear)
-)
-
-plot_data$wrtng_fear_interaction <- plot_data$wrtng_c * plot_data$fear_c
-plot_data$predicted <- predict(model, newdata = plot_data)
-plot_data$fear_group <- factor(plot_data$fear_c, labels = c("Low Fear", "High Fear"))
-
-
-ggplot2::ggplot(plot_data, aes(x = wrtng_c, y = predicted, color = fear_group)) +
-  geom_line(size = 1.2) +
-  labs(
-    x = "Centered Writing Quality",
-    y = "Predicted Content Trust",
-    color = "AI Fear",
-    title = "Interaction between Writing Quality and AI Fear on Content Trust"
-  ) +
-  theme_minimal()
-
+# 
+# s2_cleaned_data$wrtng_c <- as.numeric(s2_cleaned_data$writing_quality_score)
+# s2_cleaned_data$fear_c <- as.numeric(as.numeric(s2_cleaned_data$fear_of_ai_score))
+# s2_cleaned_data$wrtng_fear_interaction <- s2_cleaned_data$wrtng_c * s2_cleaned_data$fear_c
+# 
+# model <- lm(content_trust_combined_score ~ wrtng_c + fear_c + wrtng_fear_interaction,
+#             data = s2_cleaned_data)
+# 
+# 
+# low_fear <- mean(s2_cleaned_data$fear_c, na.rm = TRUE) - sd(s2_cleaned_data$fear_c, na.rm = TRUE)
+# high_fear <- mean(s2_cleaned_data$fear_c, na.rm = TRUE) + sd(s2_cleaned_data$fear_c, na.rm = TRUE)
+# 
+# plot_data <- expand.grid(
+#   wrtng_c = seq(min(s2_cleaned_data$wrtng_c, na.rm = TRUE),
+#                 max(s2_cleaned_data$wrtng_c, na.rm = TRUE), length.out = 100),
+#   fear_c = c(low_fear, high_fear)
+# )
+# 
+# plot_data$wrtng_fear_interaction <- plot_data$wrtng_c * plot_data$fear_c
+# plot_data$predicted <- predict(model, newdata = plot_data)
+# plot_data$fear_group <- factor(plot_data$fear_c, labels = c("Low Fear", "High Fear"))
+# 
+# 
+# ggplot2::ggplot(plot_data, aes(x = wrtng_c, y = predicted, color = fear_group)) +
+#   geom_line(size = 1.2) +
+#   labs(
+#     x = "Centered Writing Quality",
+#     y = "Predicted Content Trust",
+#     color = "AI Fear",
+#     title = "Interaction between Writing Quality and AI Fear on Content Trust"
+#   ) +
+#   theme_minimal()
+# 
 
 
 ```
 
 ```{r}
-
-s2_cleaned_data$wrtng_c <- as.numeric(s2_cleaned_data$writing_quality_score)
-s2_cleaned_data$aiuse_c <- as.numeric(as.numeric(s2_cleaned_data$AIChatbotsFrequency_regrouped))
-s2_cleaned_data$wrtng_aiuse_interaction <- s2_cleaned_data$wrtng_c * s2_cleaned_data$aiuse_c
-
-model <- lm(content_trust_combined_score ~ wrtng_c + aiuse_c + wrtng_aiuse_interaction,
-            data = s2_cleaned_data)
-
-
-low_aiuse <- mean(s2_cleaned_data$aiuse_c, na.rm = TRUE) - sd(s2_cleaned_data$aiuse_c, na.rm = TRUE)
-high_aiuse <- mean(s2_cleaned_data$aiuse_c, na.rm = TRUE) + sd(s2_cleaned_data$aiuse_c, na.rm = TRUE)
-
-plot_data <- expand.grid(
-  wrtng_c = seq(min(s2_cleaned_data$wrtng_c, na.rm = TRUE),
-                max(s2_cleaned_data$wrtng_c, na.rm = TRUE), length.out = 100),
-  aiuse_c = c(low_aiuse, high_aiuse)
-)
-
-plot_data$wrtng_aiuse_interaction <- plot_data$wrtng_c * plot_data$aiuse_c
-plot_data$predicted <- predict(model, newdata = plot_data)
-plot_data$aiuse_group <- factor(plot_data$aiuse_c, labels = c("Low AI Use", "High AI Use"))
-
-
-ggplot2::ggplot(plot_data, aes(x = wrtng_c, y = predicted, color = aiuse_group)) +
-  geom_line(size = 1.2) +
-  labs(
-    x = "Centered Writing Quality",
-    y = "Predicted Content Trust",
-    color = "AI Use Frequency",
-    title = "Interaction between Writing Quality and AI Use on Content Trust"
-  ) +
-  theme_minimal()
-
+# 
+# s2_cleaned_data$wrtng_c <- as.numeric(s2_cleaned_data$writing_quality_score)
+# s2_cleaned_data$aiuse_c <- as.numeric(as.numeric(s2_cleaned_data$AIChatbotsFrequency_regrouped))
+# s2_cleaned_data$wrtng_aiuse_interaction <- s2_cleaned_data$wrtng_c * s2_cleaned_data$aiuse_c
+# 
+# model <- lm(content_trust_combined_score ~ wrtng_c + aiuse_c + wrtng_aiuse_interaction,
+#             data = s2_cleaned_data)
+# 
+# 
+# low_aiuse <- mean(s2_cleaned_data$aiuse_c, na.rm = TRUE) - sd(s2_cleaned_data$aiuse_c, na.rm = TRUE)
+# high_aiuse <- mean(s2_cleaned_data$aiuse_c, na.rm = TRUE) + sd(s2_cleaned_data$aiuse_c, na.rm = TRUE)
+# 
+# plot_data <- expand.grid(
+#   wrtng_c = seq(min(s2_cleaned_data$wrtng_c, na.rm = TRUE),
+#                 max(s2_cleaned_data$wrtng_c, na.rm = TRUE), length.out = 100),
+#   aiuse_c = c(low_aiuse, high_aiuse)
+# )
+# 
+# plot_data$wrtng_aiuse_interaction <- plot_data$wrtng_c * plot_data$aiuse_c
+# plot_data$predicted <- predict(model, newdata = plot_data)
+# plot_data$aiuse_group <- factor(plot_data$aiuse_c, labels = c("Low AI Use", "High AI Use"))
+# 
+# 
+# ggplot2::ggplot(plot_data, aes(x = wrtng_c, y = predicted, color = aiuse_group)) +
+#   geom_line(size = 1.2) +
+#   labs(
+#     x = "Centered Writing Quality",
+#     y = "Predicted Content Trust",
+#     color = "AI Use Frequency",
+#     title = "Interaction between Writing Quality and AI Use on Content Trust"
+#   ) +
+#   theme_minimal()
+# 
 
 
 ```
