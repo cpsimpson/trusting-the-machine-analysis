@@ -16,8 +16,6 @@ format:
 editor: visual
 ---
 
-
-
 ```{r include=FALSE}
 #| label: setup
 
@@ -248,7 +246,6 @@ s1_cleaned_data <- s1_cleaned_data |> compute_scores(s1_study)
 
 s1_cleaned_data <- s1_cleaned_data |> bin_scores(s1_study)
 ```
-
 
 ```{r}
 s1_cleaned_data <- s1_cleaned_data |> cast_variables(s1_study)
@@ -736,7 +733,6 @@ if (!is.null(result) && result$test == "ANOVA"){
 
 ###### Sample Attitudes / Experience
 
-
 ```{r}
 # Check for correlations between trust and variables
 result <- s1_cleaned_data |> test_correlation(changed_opinion_of_ai_score, content_trust_combined_score)
@@ -755,7 +751,6 @@ result <- s1_cleaned_data |> test_correlation(Unrealistic, content_trust_combine
 result <- s1_cleaned_data |> test_correlation(number_ai_chatbots_used, content_trust_combined_score)
 
 ```
-
 
 ```{r}
 # Check for differences in means of trust across groups in various variables
@@ -927,7 +922,6 @@ result <- s1_cleaned_data |> test_correlation(Unrealistic, author_trust_combined
 result <- s1_cleaned_data |> test_correlation(number_ai_chatbots_used, author_trust_combined_score)
 
 ```
-
 
 ```{r}
 # Check for differences in means of trust across groups in various variables
@@ -1119,6 +1113,7 @@ for (i_formula in formulas){
 ```
 
 #### Interaction Effects
+
 ```{r}
 model <- aov(formula = content_trust_combined_score ~ writing_quality_binned * fear_of_ai_binned, data = s1_cleaned_data)
 summary(model)
@@ -1160,6 +1155,7 @@ summary(mediation_result)
 plot(mediation_result)
 
 ```
+
 ```{r}
 # Step 1: Create a summary data frame with means and confidence intervals
 summary_data <- s1_cleaned_data %>%
@@ -1226,8 +1222,6 @@ plot <- ggplot(summary_data, aes(
  plot
 ```
 
-
-
 <!-- #### ANCOVA Tests -->
 
 ```{r}
@@ -1252,8 +1246,6 @@ plot <- ggplot(summary_data, aes(
 # 
 # rstatix::emmeans_test(data = s1_cleaned_data, formula = content_trust_combined_score ~ writing_quality_binned, covariate = c(fear_of_ai_score), p.adjust.method = "fdr")
 ```
-
-
 
 #### Path Analysis
 
@@ -1385,6 +1377,7 @@ export_sem_results_to_word(s1_model_trimmed_fit, s1_study, "trimmed_model")
 plot <- plot_model(s1_model_trimmed_fit, s1_study)
 plot
 ```
+
 ```{r}
 
 labels <- list(Condition_Compressed = "Anthropomorphism Manipulation", 
@@ -1399,7 +1392,6 @@ labels <- list(Condition_Compressed = "Anthropomorphism Manipulation",
 plot_lavaan_model(s1_model_trimmed_fit, labels, "trimmed", s1_study)
 
 ```
-
 
 ```{r}
 lavaan::modindices(s1_model_trimmed_fit, sort = TRUE)
@@ -1505,7 +1497,6 @@ lavaan::modindices(s1_model_trimmed_fit, sort = TRUE)
 
 ```
 
-
 ```{r}
 # # Step 1: fear → writing quality
 # m1 <- lm(writing_quality_score ~ fear_of_ai_score, data = s1_cleaned_data)
@@ -1555,7 +1546,6 @@ lavaan::modindices(s1_model_trimmed_fit, sort = TRUE)
 
 
 ```
-
 
 ```{r}
 # s1_cleaned_data$wrtng_c <- scale(s1_cleaned_data$writing_quality_score, scale = FALSE)
@@ -1607,7 +1597,6 @@ lavaan::modindices(s1_model_trimmed_fit, sort = TRUE)
 
 ```
 
-
 ```{r}
 # # Step 1: fear → writing quality
 # m1 <- lm(writing_quality_score ~ AIChatbotsFrequency_regrouped, data = s1_cleaned_data)
@@ -1622,7 +1611,6 @@ lavaan::modindices(s1_model_trimmed_fit, sort = TRUE)
 ```{r}
 
 ```
-
 
 #### Correlations
 
