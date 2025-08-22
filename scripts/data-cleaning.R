@@ -59,6 +59,14 @@ deduplicate_participants <- function(data) {
 # }
 
 clean_data <- function(data, study) {
+  
+  if (study == "s1") {
+    # Pre-Filter: EndDate filter - ensure not from pilot study run.
+    step0 <- dplyr::filter(data, EndDate >= "2024-12-04")
+    cat("After EndDate filter (>= '2024-12-04'): Excluded", nrow(data) - nrow(step0), "participants\n")
+    data <- step0
+  }
+  
   initial_count <- nrow(data)
   cat("Initial number of participants:", initial_count, "\n")
   
@@ -74,30 +82,25 @@ clean_data <- function(data, study) {
   step3 <- dplyr::filter(step2, Status == 0)
   cat("After Anonymous link filter (Status == 0): Excluded", nrow(step2) - nrow(step3), "participants\n")
   
+  # Filter 6: Recaptcha score filter
+  step4 <- dplyr::filter(step3, Q_RecaptchaScore >= 0.5)
+  cat("After Q_RecaptchaScore filter (>= 0.5): Excluded", nrow(step3) - nrow(step4), "participants\n")
+  
   # Filter 4: Duration filter
-  step4 <- dplyr::filter(step3, `Duration (in seconds)` >= (median(`Duration (in seconds)`, na.rm = TRUE)) / 3)
-  cat("After Duration filter (>= median/3): Excluded", nrow(step3) - nrow(step4), "participants\n")
+  step5 <- dplyr::filter(step4, `Duration (in seconds)` >= (median(`Duration (in seconds)`, na.rm = TRUE)) / 3)
+  cat("After Duration filter (>= median (m = ", median(step3$`Duration (in seconds)`, na.rm = TRUE),") / 3): Excluded", nrow(step4) - nrow(step5), "participants\n")
   
   # Filter 5: TopicCheck (attention check)
-  step5 <- dplyr::filter(step4, TopicCheck == 1)
-  cat("After TopicCheck filter (TopicCheck == 1): Excluded", nrow(step4) - nrow(step5), "participants\n")
-  
-  # Filter 6: Recaptcha score filter
-  step6 <- dplyr::filter(step5, Q_RecaptchaScore >= 0.5)
-  cat("After Q_RecaptchaScore filter (>= 0.5): Excluded", nrow(step5) - nrow(step6), "participants\n")
+  step6 <- dplyr::filter(step5, TopicCheck == 1)
+  cat("After TopicCheck filter (TopicCheck == 1): Excluded", nrow(step5) - nrow(step6), "participants\n")
   
   cleaned_data <- step6
   
   if (study == "s1") {
-    # Filter 7: EndDate filter
-    step7 <- dplyr::filter(cleaned_data, EndDate >= "2024-12-04")
-    cat("After EndDate filter (>= '2024-12-04'): Excluded", nrow(cleaned_data) - nrow(step7), "participants\n")
-    cleaned_data <- step7
-    
-    # # Filter 8: Reread filter
-    # step8 <- dplyr::filter(cleaned_data, Reread != 1)
-    # cat("After Reread filter (Reread != 1): Excluded", nrow(cleaned_data) - nrow(step8), "participants\n")
-    # cleaned_data <- step8
+    # # Filter 7: Reread filter
+    # step7 <- dplyr::filter(cleaned_data, Reread != 1)
+    # cat("After Reread filter (Reread != 1): Excluded", nrow(cleaned_data) - nrow(step7), "participants\n")
+    # cleaned_data <- step7
     
     # Filter 9: AgentTypeCheck and Condition combination
     step9 <- dplyr::filter(cleaned_data, 
@@ -406,43 +409,43 @@ compute_scores <- function(data, study){
   data <- data |>
     mutate(
       content_trust_appelman_score = rowMeans(
-        select(data, all_of(content_trust_score_appelman_cols)), na.rm = TRUE),
+        dplyr::select(data, all_of(content_trust_score_appelman_cols)), na.rm = TRUE),
       content_trust_behaviour_score = rowMeans(
-        select(data, all_of(content_trust_score_behaviour_cols)), na.rm = TRUE),
+        dplyr::select(data, all_of(content_trust_score_behaviour_cols)), na.rm = TRUE),
       content_trust_combined_score = rowMeans(
-        select(data, all_of(content_trust_score_combined_cols)), na.rm = TRUE),
+        dplyr::select(data, all_of(content_trust_score_combined_cols)), na.rm = TRUE),
       author_trust_behaviour_score = rowMeans(
-        select(data, all_of(author_trust_score_behaviour_cols)), na.rm = TRUE),
+        dplyr::select(data, all_of(author_trust_score_behaviour_cols)), na.rm = TRUE),
       author_trust_METI_score = rowMeans(
-        select(data, all_of(author_trust_score_METI_cols)), na.rm = TRUE),
+        dplyr::select(data, all_of(author_trust_score_METI_cols)), na.rm = TRUE),
       author_trust_combined_score = rowMeans(
-        select(data, all_of(author_trust_score_combined_cols)), na.rm = TRUE),
+        dplyr::select(data, all_of(author_trust_score_combined_cols)), na.rm = TRUE),
       anthropomorphism_score = rowMeans(
-        select(data, all_of(anthropomorphism_score_godspeed_cols)), na.rm = TRUE),
+        dplyr::select(data, all_of(anthropomorphism_score_godspeed_cols)), na.rm = TRUE),
       likeability_score = rowMeans(
-        select(data, all_of(likeability_score_godspeed_cols)), na.rm = TRUE),
+        dplyr::select(data, all_of(likeability_score_godspeed_cols)), na.rm = TRUE),
       competence_score = rowMeans(
-        select(data, all_of(competence_score_godspeed_cols)), na.rm = TRUE), 
+        dplyr::select(data, all_of(competence_score_godspeed_cols)), na.rm = TRUE), 
       expertise_score = rowMeans(
-        select(data, all_of(expertise_score_METI_cols)), na.rm = TRUE), 
+        dplyr::select(data, all_of(expertise_score_METI_cols)), na.rm = TRUE), 
       integrity_score = rowMeans(
-        select(data, all_of(integrity_score_METI_cols)), na.rm = TRUE), 
+        dplyr::select(data, all_of(integrity_score_METI_cols)), na.rm = TRUE), 
       benevolence_score = rowMeans(
-        select(data, all_of(benevolence_score_METI_cols)), na.rm = TRUE), 
+        dplyr::select(data, all_of(benevolence_score_METI_cols)), na.rm = TRUE), 
       intention_to_use_score = rowMeans(
-        select(data, all_of(intention_cols)), na.rm = TRUE), 
+        dplyr::select(data, all_of(intention_cols)), na.rm = TRUE), 
       fear_of_ai_score = rowMeans(
-        select(data, all_of(fear_cols)), na.rm = TRUE), 
+        dplyr::select(data, all_of(fear_cols)), na.rm = TRUE), 
       changed_opinion_of_ai_score = rowMeans(
-        select(data, all_of(changed_opinion_cols)), na.rm = TRUE), 
+        dplyr::select(data, all_of(changed_opinion_cols)), na.rm = TRUE), 
       writing_expertise = rowMeans(
-        select(data, all_of(writing_expertise_cols)), na.rm = TRUE), 
+        dplyr::select(data, all_of(writing_expertise_cols)), na.rm = TRUE), 
       science_expertise = rowMeans(
-        select(data, all_of(science_expertise_cols)), na.rm = TRUE),
+        dplyr::select(data, all_of(science_expertise_cols)), na.rm = TRUE),
       writing_quality_score = rowMeans(
-        select(data, all_of(writing_quality_cols)), na.rm = TRUE), 
+        dplyr::select(data, all_of(writing_quality_cols)), na.rm = TRUE), 
       number_ai_chatbots_used = rowSums(
-        select(data, all_of(chatbots_used_cols)), na.rm = TRUE)
+        dplyr::select(data, all_of(chatbots_used_cols)), na.rm = TRUE)
     )
   
   return(data)

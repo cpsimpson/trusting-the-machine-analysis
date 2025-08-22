@@ -12,7 +12,7 @@ summarize_columns <- function(data, ...){
 summarize_exploded_columns <- function(data, col_prefix, ...){
   extended_prefix = paste0(col_prefix, "_")
   result <- data |> 
-    select(starts_with(extended_prefix), Condition) |>
+    dplyr::select(starts_with(extended_prefix), Condition) |>
     pivot_longer(names_to = col_prefix, cols = starts_with(extended_prefix), 
                  names_prefix = extended_prefix) |>
     group_by(...) |>

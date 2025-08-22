@@ -2242,6 +2242,215 @@ cocor::cocor(~ `content_trust_combined_score` + `author_trust_combined_score` | 
 
 ```
 
+##### Partial correlations
+
+What is the relationship between anthropomorphism and author trust, when controlling for content trust?
+
+```{r}
+
+s2_cleaned_data |> partial_correlation_test("anthropomorphism_score", "author_trust_combined_score", "content_trust_combined_score")
+```
+
+What is the breakdown by Condition?
+
+```{r}
+s2_cleaned_data |> filter(Condition == "Low") |> partial_correlation_test("anthropomorphism_score", "author_trust_combined_score", "content_trust_combined_score")
+
+s2_cleaned_data |> filter(Condition == "High") |> partial_correlation_test("anthropomorphism_score", "author_trust_combined_score", "content_trust_combined_score")
+```
+
+What is the relationship between anthropomorphism and content trust, when controlling for author trust?
+
+```{r}
+
+s2_cleaned_data |> partial_correlation_test("anthropomorphism_score", "content_trust_combined_score", "author_trust_combined_score")
+
+```
+
+What is the breakdown by Condition?
+
+```{r}
+s2_cleaned_data |> filter(Condition == "Low") |> partial_correlation_test("anthropomorphism_score", "content_trust_combined_score", "author_trust_combined_score")
+
+s2_cleaned_data |> filter(Condition == "High") |> partial_correlation_test("anthropomorphism_score", "content_trust_combined_score", "author_trust_combined_score")
+```
+
+Path (mediation) diagram
+
+```{r}
+library(lavaan)
+library(semPlot)
+
+x <- "anthropomorphism_score"
+y_author <- "author_trust_combined_score"
+y_content <- "content_trust_combined_score"
+
+model_txt <- sprintf('
+  %1$s ~ a*%2$s
+  %3$s ~ b*%1$s + cprime*%2$s
+
+  # (optional) indirect and total effects
+  ind := a*b
+  total := cprime + (a*b)
+', y_author, x, y_content)
+
+fit <- lavaan::sem(model_txt, data = s2_cleaned_data, meanstructure = TRUE, std.lv = TRUE)
+summary(fit, standardized = TRUE, fit.measures = TRUE)
+
+# Plot standardized paths
+semPlot::semPaths(
+  fit,
+  what = "std", whatLabels = "std", layout = "tree",
+  nCharNodes = 0, sizeMan = 7, edge.label.cex = 1.1,
+  residuals = FALSE, intercepts = FALSE, mar = c(6,6,6,6)
+)
+```
+
+Partial‑correlation residual scatterplots (two panels)
+
+```{r}
+library(patchwork)
+
+x <- "anthropomorphism_score"
+y_author <- "author_trust_combined_score"
+y_content <- "content_trust_combined_score"
+
+df <- s2_cleaned_data %>%
+  dplyr::select(all_of(c(x, y_author, y_content))) %>%
+  drop_na()
+
+# A: residuals for (x | content) vs (author | content)
+res_x_c <- resid(lm(df[[x]] ~ df[[y_content]]))
+res_author_c <- resid(lm(df[[y_author]] ~ df[[y_content]]))
+pA <- tibble(rx = res_x_c, ry = res_author_c) %>%
+  ggplot(aes(rx, ry)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    title = "Anthropomorphism ↔ Author (controlling Content)",
+    x = sprintf("Residual %s | %s", x, y_content),
+    y = sprintf("Residual %s | %s", y_author, y_content)
+  ) +
+  theme_minimal(base_size = 12)
+
+# B: residuals for (x | author) vs (content | author)
+res_x_a <- resid(lm(df[[x]] ~ df[[y_author]]))
+res_content_a <- resid(lm(df[[y_content]] ~ df[[y_author]]))
+pB <- tibble(rx = res_x_a, ry = res_content_a) %>%
+  ggplot(aes(rx, ry)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(
+    title = "Anthropomorphism ↔ Content (controlling Author)",
+    x = sprintf("Residual %s | %s", x, y_author),
+    y = sprintf("Residual %s | %s", y_content, y_author)
+  ) +
+  theme_minimal(base_size = 12)
+
+pA + pB
+```
+
+Correlation network (bivariate vs partial)
+
+```{r}
+
+# ---- Correlation network graphs with numeric edge labels ----
+library(qgraph)
+library(corpcor)
+library(dplyr)
+
+x <- "anthropomorphism_score"
+y_author <- "author_trust_combined_score"
+y_content <- "content_trust_combined_score"
+
+vars <- c(x, y_author, y_content)
+M <- s2_cleaned_data %>% dplyr::select(all_of(vars)) %>% drop_na() %>% as.matrix()
+
+# Compute correlation and partial correlation matrices
+cor_mat  <- cor(M)
+pcor_mat <- corpcor::cor2pcor(cor_mat)
+
+# Helper: numeric labels only for lower triangle
+edge_label_matrix <- function(mat, digits = 2) {
+  L <- round(mat, digits)
+  diag(L) <- NA
+  L[upper.tri(L, diag = FALSE)] <- NA  # use NA instead of ""
+  return(L)
+}
+
+lab_cor  <- edge_label_matrix(cor_mat,  digits = 2)
+lab_pcor <- edge_label_matrix(pcor_mat, digits = 2)
+
+# Plot side by side
+par(mfrow = c(1,2))
+# Bivariate
+qgraph(
+  cor_mat,
+  layout = "spring",
+  labels = c("Anthro","Author","Content"),
+  title = "Bivariate correlations",
+  edge.labels = TRUE,             # <-- let qgraph print weights
+  edge.label.cex = 1.2,
+  edge.label.position = 0.5,
+  edge.label.bg = "white"
+)
+
+# Partial
+qgraph(
+  pcor_mat,
+  layout = "spring",
+  labels = c("Anthro","Author","Content"),
+  title = "Partial correlations (control other)",
+  edge.labels = TRUE,
+  edge.label.cex = 1.2,
+  edge.label.position = 0.5,
+  edge.label.bg = "white"
+)
+par(mfrow = c(1,1))
+```
+
+Bar plot: raw vs partial correlations (with stars)
+
+```{r}
+
+plot_corr_vs_partial_bars(
+  s2_cleaned_data,
+  x = "anthropomorphism_score",
+  y = "author_trust_combined_score",
+  z = "content_trust_combined_score",
+  x_label = "anthro",
+  y_label = "author",
+  z_label = "content"
+)
+
+```
+
+```{r}
+
+plot_corr_vs_partial_bars(
+  s2_cleaned_data |> filter(Condition == "Low"),
+  x = "anthropomorphism_score",
+  y = "author_trust_combined_score",
+  z = "content_trust_combined_score",
+  x_label = "anthro",
+  y_label = "author",
+  z_label = "content"
+)
+
+```
+
+```{r}
+plot_corr_vs_partial_bars(
+  s2_cleaned_data |> filter(Condition == "High"),
+  x = "anthropomorphism_score",
+  y = "author_trust_combined_score",
+  z = "content_trust_combined_score",
+  x_label = "anthro",
+  y_label = "author",
+  z_label = "content"
+)
+```
+
 # References
 
 ```{r}

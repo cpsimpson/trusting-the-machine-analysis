@@ -29,7 +29,7 @@ get_sem_summary_table <- function(fit, save_doc = FALSE, outfile = "") {
       ),
       p_value = round(pvalue, 3)
     ) %>%
-    select(
+    dplyr::select(
       From = lhs,
       Operator = op,
       To = rhs,

@@ -21,27 +21,6 @@ editor: visual
 
 library(knitr)
 library(kableExtra)
-# library(rstatix)
-library(tidyverse)
-# library(forcats)
-# # library(qualtRics)
-# library(haven)
-# library(jtools)
-# library(forcats)
-# library(FactoMineR)
-# library(psych)
-# library(interactions)
-# library(corrplot::corrplot)
-# library(rcartocolor)
-# library(ggpubr)
-# library(ggtext)
-# library(ggsignif)
-# library(apaTables)
-# 
-# library(FSA)
-# 
-# library(performance)
-# library(see)
 
 
 source("./scripts/data-loading.R", local = TRUE)
@@ -56,23 +35,13 @@ source("./scripts/analysis-moderation-mediation.R", local = TRUE)
 source("./scripts/plotting.R", local = TRUE)
 source("./scripts/common.R", local = TRUE)
 
+library(tidyverse)
+
 directory_setup()
 theme_set(my_theme)
 
 s1_study <- "s1"
 
-```
-
-```{r}
-# knit_print.data.frame = function(x, ...) {
-#   res = rmarkdown::paged_table(x)
-#   rmarkdown:::knit_print.data.frame(res)
-# }
-# 
-# registerS3method(
-#   "knit_print", "data.frame", knit_print.data.frame,
-#   envir = asNamespace("knitr")
-# )
 ```
 
 # Trusting the machine: Epistemic trust and anthropomorphism in generative artificial intelligence
@@ -191,7 +160,7 @@ s1_cleaned_data |> check_skewness(s1_study)
 
 # Shapiro-Wilk normality test 
 s1_cleaned_data |>
-  select(-Progress, -ConsentForm, -`Duration (in seconds)`, -Status, -Finished, -TopicCheck, -GodspeedMETI_28, -GodspeedMETI_29, -AIChatbotsUsed_NA, -Reread, -LanguagesFluent_NA) |>
+  dplyr::select(-Progress, -ConsentForm, -`Duration (in seconds)`, -Status, -Finished, -TopicCheck, -GodspeedMETI_28, -GodspeedMETI_29, -AIChatbotsUsed_NA, -Reread, -LanguagesFluent_NA) |>
   check_normality(s1_study)
 
 ```
@@ -1668,11 +1637,110 @@ cocor::cocor(~ `content_trust_combined_score` + `author_trust_combined_score` | 
 
 ```
 
+##### Partial correlations
+
+
+```{r}
+
+```
+
+What is the relationship between anthropomorphism and author trust, when controlling for content trust?
+
+
+```{r}
+
+s1_cleaned_data |> partial_correlation_test("anthropomorphism_score", "author_trust_combined_score", "content_trust_combined_score")
+```
+
+What is the breakdown by Condition?
+
+```{r}
+s1_cleaned_data |> filter(Condition == "Low") |> partial_correlation_test("anthropomorphism_score", "author_trust_combined_score", "content_trust_combined_score")
+
+s1_cleaned_data |> filter(Condition == "Medium") |> partial_correlation_test("anthropomorphism_score", "author_trust_combined_score", "content_trust_combined_score")
+
+s1_cleaned_data |> filter(Condition == "High") |> partial_correlation_test("anthropomorphism_score", "author_trust_combined_score", "content_trust_combined_score")
+```
+
+
+What is the relationship between anthropomorphism and content trust, when controlling for author trust?
+
+```{r}
+
+s1_cleaned_data |> partial_correlation_test("anthropomorphism_score", "content_trust_combined_score", "author_trust_combined_score")
+
+```
+
+What is the breakdown by Condition?
+
+```{r}
+s1_cleaned_data |> filter(Condition == "Low") |> partial_correlation_test("anthropomorphism_score", "content_trust_combined_score", "author_trust_combined_score")
+
+s1_cleaned_data |> filter(Condition == "Medium") |> partial_correlation_test("anthropomorphism_score", "content_trust_combined_score", "author_trust_combined_score")
+
+s1_cleaned_data |> filter(Condition == "High") |> partial_correlation_test("anthropomorphism_score", "content_trust_combined_score", "author_trust_combined_score")
+```
+
+
+
+Bar plot: raw vs partial correlations (with stars)
+
+```{r}
+
+plot_corr_vs_partial_bars(
+  s1_cleaned_data,
+  x = "anthropomorphism_score",
+  y = "author_trust_combined_score",
+  z = "content_trust_combined_score",
+  x_label = "anthro",
+  y_label = "author",
+  z_label = "content"
+)
+
+```
+
+```{r}
+plot_corr_vs_partial_bars(
+  s1_cleaned_data |> filter(Condition == "Low"),
+  x = "anthropomorphism_score",
+  y = "author_trust_combined_score",
+  z = "content_trust_combined_score",
+  x_label = "anthro",
+  y_label = "author",
+  z_label = "content"
+)
+```
+
+```{r}
+plot_corr_vs_partial_bars(
+  s1_cleaned_data |> filter(Condition == "Medium"),
+  x = "anthropomorphism_score",
+  y = "author_trust_combined_score",
+  z = "content_trust_combined_score",
+  x_label = "anthro",
+  y_label = "author",
+  z_label = "content"
+)
+```
+
+```{r}
+plot_corr_vs_partial_bars(
+  s1_cleaned_data |> filter(Condition == "High"),
+  x = "anthropomorphism_score",
+  y = "author_trust_combined_score",
+  z = "content_trust_combined_score",
+  x_label = "anthro",
+  y_label = "author",
+  z_label = "content"
+)
+```
+
+
 # References
 
 ```{r}
 my_packages = c("rstatix", "stats", "effectsize", "psych", "interactions",
-                 "corrplot::corrplot", "performance", "FSA", "see")
+                 "corrplot", "performance", "FSA", "see")
 
 write_bib(my_packages, file= "outputs/s1/packages.bib")
 ```
