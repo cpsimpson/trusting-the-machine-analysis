@@ -168,7 +168,8 @@ plot_correlation_network <- function(data, vars, type = c("bivariate","partial")
 }
 
 # ---------- Bar plot: raw vs partial ----------
-plot_corr_vs_partial_bars <- function(data, x, y, z,
+plot_corr_vs_partial_bars <- function(data, study, name, 
+                                      x, y, z,
                                       x_label, y_label, z_label,
                                       save_path = NULL,
                                       size_key = "corr_vs_partial_bars") {
@@ -177,20 +178,17 @@ plot_corr_vs_partial_bars <- function(data, x, y, z,
 
   cor_xy  <- stats::cor.test(df[[x]], df[[y]])
   cor_xz  <- stats::cor.test(df[[x]], df[[z]])
-  cor_tt  <- stats::cor.test(df[[y]], df[[z]])
   pcor_xy <- ppcor::pcor.test(x = df[[x]], y = df[[y]], z = df[[z]])
   pcor_xz <- ppcor::pcor.test(x = df[[x]], y = df[[z]], z = df[[y]])
-  pcor_tt <- ppcor::pcor.test(x = df[[y]], y = df[[x]], z = df[[z]])
 
   plot_df <- tibble::tibble(
     pair = c(paste(x_label, y_label, sep = "–"), paste(x_label, y_label, sep = "–"), paste(x_label, z_label, sep = "–"), 
-             paste(x_label, z_label, sep = "–"), paste(y_label, z_label, sep = "–"), paste(y_label, z_label, sep = "–")),
-    type = factor(c("Bivariate", "Partial (control other)", "Bivariate", "Partial (control other)", "Bivariate", "Partial (control other)"),
+             paste(x_label, z_label, sep = "–")),
+    type = factor(c("Bivariate", "Partial (control other)", "Bivariate", "Partial (control other)"),
                   levels = c("Bivariate", "Partial (control other)")),
     r = c(unname(cor_xy$estimate), unname(pcor_xy$estimate),
-          unname(cor_xz$estimate), unname(pcor_xz$estimate),
-          unname(cor_tt$estimate), unname(pcor_tt$estimate)),
-    p = c(cor_xy$p.value, pcor_xy$p.value, cor_xz$p.value, pcor_xz$p.value, cor_tt$p.value, pcor_tt$p.value)
+          unname(cor_xz$estimate), unname(pcor_xz$estimate)),
+    p = c(cor_xy$p.value, pcor_xy$p.value, cor_xz$p.value, pcor_xz$p.value)
   ) %>% dplyr::mutate(label = sprintf("%.2f%s", r, p_stars(p)))
 
   g <- ggplot2::ggplot(plot_df, ggplot2::aes(x = pair, y = r, fill = type)) +
@@ -208,6 +206,10 @@ plot_corr_vs_partial_bars <- function(data, x, y, z,
     ggplot2::coord_cartesian(ylim = c(-0.4, 0.8)) +
     .theme_ai()
 
+  
+  filename <- paste0("covar_", name, ".png")
+  save_path <- paste(sep = "/", "plots", study, filename)
+  
   if (!is.null(save_path)) .save_figure(g, save_path, width = fs$width, height = fs$height, dpi = fs$dpi)
   g
 }

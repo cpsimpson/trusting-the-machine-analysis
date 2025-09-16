@@ -798,12 +798,12 @@ s1_cleaned_data |> linear_model(content_trust_combined_score ~ anthropomorphism_
 
 s1_cleaned_data |> test_correlation("anthropomorphism_score", "content_trust_combined_score")
 
-plot <- correlation_plot(s1_cleaned_data, 
+plot_correlation_content_anthro <- correlation_plot(s1_cleaned_data, 
             s1_study,
             "anthropomorphism_score",
             "content_trust_combined_score")
 
-plot
+plot_correlation_content_anthro
 ```
 
 #### Author Trust
@@ -972,12 +972,12 @@ s1_cleaned_data |> linear_model(author_trust_combined_score ~ anthropomorphism_s
 
 s1_cleaned_data |> test_correlation("anthropomorphism_score", "author_trust_combined_score")
 
-plot <- correlation_plot(s1_cleaned_data, 
+plot_correlation_author_anthro <- correlation_plot(s1_cleaned_data, 
             s1_study,
             "anthropomorphism_score",
             "author_trust_combined_score")
 
-plot
+plot_correlation_author_anthro
 
 
 ```
@@ -1689,6 +1689,8 @@ Bar plot: raw vs partial correlations (with stars)
 
 plot_corr_vs_partial_bars(
   s1_cleaned_data,
+  study = s1_study, 
+  name = "anthro_content_author",
   x = "anthropomorphism_score",
   y = "author_trust_combined_score",
   z = "content_trust_combined_score",
@@ -1702,6 +1704,8 @@ plot_corr_vs_partial_bars(
 ```{r}
 plot_corr_vs_partial_bars(
   s1_cleaned_data |> filter(Condition == "Low"),
+  study = s1_study, 
+  name = "low_anthro_content_author",
   x = "anthropomorphism_score",
   y = "author_trust_combined_score",
   z = "content_trust_combined_score",
@@ -1714,6 +1718,8 @@ plot_corr_vs_partial_bars(
 ```{r}
 plot_corr_vs_partial_bars(
   s1_cleaned_data |> filter(Condition == "Medium"),
+  study = s1_study, 
+  name = "medium_anthro_content_author",
   x = "anthropomorphism_score",
   y = "author_trust_combined_score",
   z = "content_trust_combined_score",
@@ -1726,6 +1732,8 @@ plot_corr_vs_partial_bars(
 ```{r}
 plot_corr_vs_partial_bars(
   s1_cleaned_data |> filter(Condition == "High"),
+  study = s1_study, 
+  name = "high_anthro_content_author",
   x = "anthropomorphism_score",
   y = "author_trust_combined_score",
   z = "content_trust_combined_score",
@@ -1735,6 +1743,35 @@ plot_corr_vs_partial_bars(
 )
 ```
 
+```{r}
+plot_corr_vs_partial_bars(
+  s1_cleaned_data |> filter(Condition == "High"),
+  study = s1_study, 
+  name = "quality_content_author",
+  x = "writing_quality_score",
+  y = "author_trust_combined_score",
+  z = "content_trust_combined_score",
+  x_label = "quality",
+  y_label = "author",
+  z_label = "content"
+)
+
+```
+
+```{r}
+
+combined_plot <- ggpubr::ggarrange(plot_correlation_author_anthro$lm, plot_correlation_content_anthro$lm, 
+          labels = c("A", "B"),
+  common.legend = TRUE, legend = "bottom")
+
+  filename <- paste0("e1_correlation_lm_author_content_anthro.png")
+  save_path <- paste(sep = "/", "plots", "s1", filename)
+  
+    ggsave(save_path,
+         plot = combined_plot,
+         create.dir = TRUE)
+
+```
 
 # References
 

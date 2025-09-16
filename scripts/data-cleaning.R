@@ -129,6 +129,10 @@ clean_data <- function(data, study) {
     step8 <- dplyr::filter(cleaned_data, GodspeedMETI_29 == 67)
     cat("After GodspeedMETI_29 filter (== 67): Excluded", nrow(cleaned_data) - nrow(step8), "participants\n")
     cleaned_data <- step8
+    
+    step9 <- dplyr::filter(cleaned_data, Unrealistic_coded != "Didn't follow instructions")
+    cat("After Unrealistic filter (== Didn't follow instructions): Excluded", nrow(cleaned_data) - nrow(step9), "participants\n")
+    cleaned_data <- step9
   }
   
   cat("Final number of participants:", nrow(cleaned_data), "\n")
