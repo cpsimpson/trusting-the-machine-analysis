@@ -1081,503 +1081,96 @@ for (i_formula in formulas){
 
 ```
 
-#### Interaction Effects
+#### Mediation Analysis
 
-```{r}
-model <- aov(formula = content_trust_combined_score ~ writing_quality_binned * fear_of_ai_binned, data = s1_cleaned_data)
-summary(model)
-
-print(effectsize::omega_squared(model))
-
-# Mediator model
-med_model <- lm(writing_quality_score ~ fear_of_ai_score, data = s1_cleaned_data)
-
-# Outcome model
-out_model <- lm(content_trust_combined_score ~ writing_quality_score + fear_of_ai_score, data = s1_cleaned_data)
-
-mediation_result <- mediation::mediate(med_model, out_model,
-                            treat = "fear_of_ai_score",
-                            mediator = "writing_quality_score",
-                            boot = TRUE, sims = 5000)
-
-summary(mediation_result)
-plot(mediation_result)
-
-
-model <- aov(formula = content_trust_combined_score ~ writing_quality_binned * AIChatbotsFrequency, data = s1_cleaned_data)
-summary(model)
-print(effectsize::omega_squared(model))
-
-
-# Mediator model
-med_model <- lm(writing_quality_score ~ AIChatbotsFrequency, data = s1_cleaned_data)
-
-# Outcome model
-out_model <- lm(content_trust_combined_score ~ writing_quality_score + AIChatbotsFrequency, data = s1_cleaned_data)
-
-mediation_result <- mediation::mediate(med_model, out_model,
-                            treat = "AIChatbotsFrequency",
-                            mediator = "writing_quality_score",
-                            boot = TRUE, sims = 5000)
-
-summary(mediation_result)
-plot(mediation_result)
-
-```
-
-```{r}
-# Step 1: Create a summary data frame with means and confidence intervals
-summary_data <- s1_cleaned_data %>%
-  group_by(writing_quality_binned, AIChatbotsFrequency_regrouped) %>%
-  summarise(
-    mean_ct = mean(content_trust_combined_score, na.rm = TRUE),
-    se_ct = sd(content_trust_combined_score, na.rm = TRUE) / sqrt(n()),
-    .groups = 'drop'
-  ) %>%
-  mutate(
-  lower = mean_ct - se_ct,
-  upper = mean_ct + se_ct
-)
-
-# Step 2: Plot using ggplot2
-plot <- ggplot(summary_data, aes(
-  x = writing_quality_binned,
-  y = mean_ct,
-  group = AIChatbotsFrequency_regrouped,
-  color = AIChatbotsFrequency_regrouped, 
-  shape = AIChatbotsFrequency_regrouped
-)) +
-  geom_line(
-    data = summary_data,
-    aes(
-      x = writing_quality_binned,
-      y = mean_ct,
-      group = AIChatbotsFrequency_regrouped
-    ),
-    position = position_dodge(width = 0.1),
-    size = 1
-  ) +
-  geom_point(
-    data = summary_data,
-    aes(y = mean_ct),
-    position = position_dodge(width = 0.1),
-    size = 3
-  ) +
-  geom_errorbar(
-    data = summary_data,
-    aes(ymin = lower, ymax = upper),
-    position = position_dodge(width = 0.1),
-    width = 0.2
-  ) +
-  # geom_line(size = 1) +
-  # geom_point(size = 3) +
-  # geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.1) +
-  labs(
-    x = "Perceived Writing Quality (Binned)",
-    y = "Mean Content Trust",
-    color = "Frequency of AI Use (Binned)",
-    shape = "Frequency of AI Use (Binned)",
-    title = "Interaction of Writing Quality and Fear of AI on Content Trust"
-  ) +
-  theme_minimal(base_size = 14) +
-  theme(legend.position = "top") + 
-    scale_color_manual(values = pal_4) +
-  my_theme
-
- ggsave(paste(sep = "/", "plots", s1_study, "interaction_ai_use_writing_quality.png"),
-         plot = plot,
-         create.dir = TRUE)
- 
- plot
-```
-
-<!-- #### ANCOVA Tests -->
-
-```{r}
-# s1_cleaned_data %>% 
-#   group_by(Condition) %>%  
-#   rstatix::get_summary_stats(writing_quality_score, type="common")
-# 
-# s1_cleaned_data %>% 
-#   group_by(Condition) %>%  
-#   rstatix::get_summary_stats(fear_of_ai_score, type="common")
-# 
-# s1_cleaned_data %>% 
-#   group_by(Condition) %>%  
-#   rstatix::get_summary_stats(content_trust_combined_score, type="common")
-# 
-# 
-# rstatix::anova_test(data = s1_cleaned_data, formula = content_trust_combined_score ~ writing_quality_binned + fear_of_ai_score, type = 3, detailed = TRUE) # type 3 SS should be used in ANCOVA
-# 
-# 
-# adj_means <- rstatix::emmeans_test(data = s1_cleaned_data, formula = content_trust_combined_score ~ writing_quality_binned, covariate = c(fear_of_ai_score))
-# rstatix::get_emmeans(adj_means)
-# 
-# rstatix::emmeans_test(data = s1_cleaned_data, formula = content_trust_combined_score ~ writing_quality_binned, covariate = c(fear_of_ai_score), p.adjust.method = "fdr")
-```
-
-#### Path Analysis
+Anthro -\> Author -\> Content
 
 ```{r}
 
-s1_cleaned_data$Condition_Compressed <- ifelse(s1_cleaned_data$Condition == "High", 1, 0)
+# Define mediation model
+s1_anthro_author_content_model <- '
+  # direct effect
+  content_trust_combined_score ~ c_prime*anthropomorphism_score + b*author_trust_combined_score
 
-s1_cleaned_data$Condition_Medium <- ifelse(s1_cleaned_data$Condition == "Medium", 1, 0)
-s1_cleaned_data$Condition_High <- ifelse(s1_cleaned_data$Condition == "High", 1, 0)
+  # mediator
+  author_trust_combined_score ~ a*anthropomorphism_score
 
-s1_cleaned_data$ScienceContent_ordinal <- as.numeric(factor(s1_cleaned_data$ScienceContent_regrouped,
-                                              levels = c("rarely", "occasionally", "frequently")))
+  # indirect effect
+  indirect := a*b
 
-s1_cleaned_data$AIChatbotsFrequency_ordinal <- as.numeric(factor(s1_cleaned_data$AIChatbotsFrequency_regrouped,
-                                              levels = c("rarely", "occasionally", "frequently")))
-
-s1_cleaned_data$intention_to_use_score_n <- as.numeric(s1_cleaned_data$intention_to_use_score)
-
-s1_gen_ai_con_only_data <- s1_cleaned_data |> filter(Condition != "High") 
-s1_gen_ai_con_only_data$Condition <- factor(s1_gen_ai_con_only_data$Condition, levels = c("Low", "Medium"))
-
-```
-
-```{r}
-# s1_model_full <- '
-#   
-#   anthropomorphism_score ~ Condition_Compressed
-#   likeability_score ~ Condition_Compressed
-#   competence_score ~ Condition_Compressed
-#   
-#   ai_attitudes =~ AIChatbotsFrequency_ordinal + intention_to_use_score_n + fear_of_ai_score
-#   author_perceptions =~ anthropomorphism_score + likeability_score + competence_score + expertise_score + integrity_score + benevolence_score
-#   
-#   author_perceptions ~ ai_attitudes
-#   
-#   # content_experience =~ ScienceContent_ordinal + science_expertise
-#   writing_quality =~ writing_quality_score + content_trust_appelman_score
-#   
-#   # author_trust ~ author_perceptions + ai_attitudes
-#   # 
-#   # content_trust ~ ScienceContent_ordinal + science_expertise + writing_quality
-#   
-#   # author_trust ~ content_trust
-#   
-#   author_trust_behaviour_score ~ author_perceptions + ai_attitudes
-#   content_trust_behaviour_score ~ ScienceContent_ordinal + science_expertise + writing_quality + author_perceptions + ai_attitudes
-#   
-# 
-# 
-# 
-#   # Correlations
-#   competence_score ~~ anthropomorphism_score 
-#   likeability_score ~~ anthropomorphism_score
-#   competence_score ~~ likeability_score
-#   
-# 
-# '
-
-# s1_model_full_fit <- s1_cleaned_data |> test_med_mod_model(s1_model_full)
-```
-
-```{r}
-# lavaan::summary(s1_model_full_fit, fit.measures = TRUE, standardized = TRUE, ci = TRUE)
-```
-
-```{r}
-# lavaan::inspect(s1_model_full_fit, "r2")
-```
-
-```{r}
-# export_sem_results_to_word(s1_model_full_fit, s1_study, "full_model")
-```
-
-```{r}
-# plot <- plot_model(s1_model_full_fit, s1_study)
-# plot
-```
-
-```{r}
-s1_model_trimmed <- '
-  
-  anthropomorphism_score ~ a1*Condition_Compressed
-  likeability_score ~ b1*Condition_Compressed
-  competence_score ~ c1*Condition_Compressed
-  
-  writing_quality_score ~ content_trust_combined_score
-  content_trust_combined_score ~ writing_quality_score
-  author_trust_combined_score ~ likeability_score + competence_score + anthropomorphism_score
-  content_trust_combined_score ~ e1*author_trust_combined_score 
-
-    # Optional: bidirectional path (uncomment if theoretically justified)
-  author_trust_combined_score ~ f1*content_trust_combined_score
-
-  # Optional: or use covariance if you don’t want to assume direction
-  # author_trust_combined_score ~~ content_trust_combined_score
-  
-  # Correlations
-  ScienceContent_ordinal ~~ content_trust_combined_score
-  
-  competence_score ~~ anthropomorphism_score 
-  likeability_score ~~ anthropomorphism_score
-  competence_score ~~ likeability_score
-  
-  # writing_quality_score ~~ content_trust_combined_score
-  
-  # Indirect effects
-  ind1 := b1 * e1           # Condition → Anthro → Author Trust  → Content Trust
-  ind2 := a1 * e1           # Condition → Likeability → Author Trust → Content Trust
-  ind3 := c1 * e1           # Condition → Competence → Author Trust → Content Trust
-
+  # total effect
+  total := c_prime + (a*b)
 '
 
-s1_model_trimmed_fit <- s1_cleaned_data |> test_med_mod_model(s1_model_trimmed)
+# Fit the model
+s1_anthro_author_content_model_fit <- sem(s1_anthro_author_content_model, data = s1_cleaned_data, se = "bootstrap", bootstrap = 5000)
+
+# Summary with standardized estimates
+summary(s1_anthro_author_content_model_fit, standardized = TRUE, ci = TRUE)
+
 ```
 
 ```{r}
-lavaan::summary(s1_model_trimmed_fit, fit.measures = TRUE, standardized = TRUE, ci = TRUE)
-```
-
-```{r}
-lavaan::inspect(s1_model_trimmed_fit, "r2")
-```
-
-```{r}
-export_sem_results_to_word(s1_model_trimmed_fit, s1_study, "trimmed_model")
-```
-
-```{r}
-plot <- plot_model(s1_model_trimmed_fit, s1_study)
-plot
-```
-
-```{r}
-
-labels <- list(Condition_Compressed = "Anthropomorphism Manipulation", 
-               competence_score = "Perceived Intelligence", 
-               likeability_score = "Perceived Likeability", 
+labels <- list(
                anthropomorphism_score = "Perceived Anthropomorphism", 
                author_trust_combined_score = "Author Trust", 
-               content_trust_combined_score = "Content Trust",
-               ScienceContent_ordinal = "Frequency of Science Content Consumption",
-               writing_quality_score = "Writing Quality")
+               content_trust_combined_score = "Content Trust"
+               )
 
-plot_lavaan_model(s1_model_trimmed_fit, labels, "trimmed", s1_study)
+s1_sem_anthro_author_content_plot <- plot_lavaan_model(s1_anthro_author_content_model_fit, labels, "anthro_author_content", s1_study)
+
+```
+
+Reverse model: Anthro -\> Content -\> Author
+
+```{r}
+
+# Define mediation model
+s1_anthro_content_author_model <- '
+  # direct effect
+  author_trust_combined_score ~ c_prime*anthropomorphism_score + b*content_trust_combined_score
+
+  # mediator
+  content_trust_combined_score ~ a*anthropomorphism_score
+
+  # indirect effect
+  indirect := a*b
+
+  # total effect
+  total := c_prime + (a*b)
+'
+
+# Fit the model
+s1_anthro_content_author_model_fit <- sem(s1_anthro_content_author_model, data = s1_cleaned_data, se = "bootstrap", bootstrap = 5000)
+
+# Summary with standardized estimates
+summary(s1_anthro_content_author_model_fit, standardized = TRUE, ci = TRUE)
 
 ```
 
 ```{r}
-lavaan::modindices(s1_model_trimmed_fit, sort = TRUE)
-```
+labels <- list(
+               anthropomorphism_score = "Perceived Anthropomorphism", 
+               author_trust_combined_score = "Author Trust", 
+               content_trust_combined_score = "Content Trust"
+               )
 
-```{r}
-# # Center the variables to reduce multicollinearity
-# s1_cleaned_data$wrtng_c <- scale(s1_cleaned_data$writing_quality_score, scale = FALSE)
-# s1_cleaned_data$fear_c <- scale(s1_cleaned_data$fear_of_ai_score, scale = FALSE)
-# 
-# # s1_cleaned_data$ai_attitudes_c <- rowMeans(s1_cleaned_data$fear_of_ai_score, as.numeric(s1_cleaned_data$AIChatbotsFrequency), )
-# 
-# # Create interaction term
-# s1_cleaned_data$interaction <- s1_cleaned_data$wrtng_c * s1_cleaned_data$fear_c
-# 
-# # Run regression
-# model <- lm(content_trust_combined_score ~ wrtng_c + fear_c + interaction, data = s1_cleaned_data)
-# # summary(model)
-# 
-# # summary(multcomp::glht(model, linfct = multcomp::mcp(group = "Tukey")))
-# 
-# # model <- lm(content_trust_combined_score ~ writing_quality_score * fear_of_ai_score * AIChatbotsFrequency_regrouped * writing_expertise * science_expertise, data = s1_cleaned_data)
-# #summary(model)
-
-```
-
-```{r}
-# library(dplyr)
-# 
-# 
-# # Calculate high/low splits
-# low_fear <- mean(s1_cleaned_data$fear_of_ai_score, na.rm = TRUE) - sd(s1_cleaned_data$fear_of_ai_score, na.rm = TRUE)
-# high_fear <- mean(s1_cleaned_data$fear_of_ai_score, na.rm = TRUE) + sd(s1_cleaned_data$fear_of_ai_score, na.rm = TRUE)
-# 
-# low_writing <- mean(s1_cleaned_data$writing_expertise, na.rm = TRUE) - sd(s1_cleaned_data$writing_expertise, na.rm = TRUE)
-# high_writing <- mean(s1_cleaned_data$writing_expertise, na.rm = TRUE) + sd(s1_cleaned_data$writing_expertise, na.rm = TRUE)
-# 
-# low_science <- mean(s1_cleaned_data$science_expertise, na.rm = TRUE) - sd(s1_cleaned_data$science_expertise, na.rm = TRUE)
-# high_science <- mean(s1_cleaned_data$science_expertise, na.rm = TRUE) + sd(s1_cleaned_data$science_expertise, na.rm = TRUE)
-# 
-# # Make prediction grid
-# plot_data <- expand.grid(
-#   writing_quality_score = seq(min(s1_cleaned_data$writing_quality_score, na.rm = TRUE),
-#                               max(s1_cleaned_data$writing_quality_score, na.rm = TRUE),
-#                               length.out = 100),
-#   fear_of_ai_score = c(low_fear, high_fear),
-#   AIChatbotsFrequency_regrouped = levels(s1_cleaned_data$AIChatbotsFrequency_regrouped),
-#   writing_expertise = c(low_writing, high_writing),
-#   science_expertise = c(low_science, high_science)
-# )
-# 
-# # Predict values from model
-# plot_data$predicted <- predict(model, newdata = plot_data)
-# 
-# # Label fear
-# plot_data$fear_group <- factor(
-#   plot_data$fear_of_ai_score,
-#   levels = c(low_fear, high_fear),
-#   labels = c("Low Fear", "High Fear")
-# )
-# 
-# # Label writing expertise
-# plot_data$writing_expertise_group <- factor(
-#   plot_data$writing_expertise,
-#   levels = c(low_writing, high_writing),
-#   labels = c("Low Writing Expertise", "High Writing Expertise")
-# )
-# 
-# # Label science expertise
-# plot_data$science_expertise_group <- factor(
-#   plot_data$science_expertise,
-#   levels = c(low_science, high_science),
-#   labels = c("Low Science Expertise", "High Science Expertise")
-# )
-# 
-# # Label AI use
-# plot_data$AI_use_group <- factor(
-#   plot_data$AIChatbotsFrequency_regrouped,
-#   levels = c("frequently", "occasionally", "rarely"),
-#   labels = c("Frequent AI Use", "Occasional AI Use", "Rare AI Use")
-# )
-# 
-# # Final plot
-# ggplot(plot_data, aes(x = writing_quality_score, y = predicted, color = fear_group)) +
-#   geom_line(size = 1.2) +
-#   facet_grid(science_expertise_group ~ writing_expertise_group + AI_use_group) +
-#   labs(
-#     x = "Writing Quality",
-#     y = "Predicted Content Trust",
-#     color = "Fear of AI",
-#     title = "Interaction: Writing × Fear × AI Use × Expertise"
-#   ) +
-#   theme_minimal(base_size = 12) +
-#   theme(
-#     strip.text.x = element_text(size = 10),
-#     strip.text.y = element_text(size = 10),
-#     legend.position = "bottom"
-#   ) +
-#   my_theme
-# 
-# 
-# ggsave("plots/s1/writing_facet_plot.png", width = 16, height = 10, dpi = 300)
-
-```
-
-```{r}
-# # Step 1: fear → writing quality
-# m1 <- lm(writing_quality_score ~ fear_of_ai_score, data = s1_cleaned_data)
-# 
-# # Step 2: fear + writing quality → content trust
-# m2 <- lm(content_trust_combined_score ~ fear_of_ai_score + writing_quality_score, data = s1_cleaned_data)
-# 
-# med_model <- mediation::mediate(m1, m2, treat = "fear_of_ai_score", mediator = "writing_quality_score", boot = TRUE, sims = 5000)
-# summary(med_model)
+s1_sem_anthro_content_author_plot <- plot_lavaan_model(s1_anthro_content_author_model_fit, labels, "anthro_content_author", s1_study)
 
 ```
 
 ```{r}
 
-# s1_cleaned_data$wrtng_c <- as.numeric(scale(s1_cleaned_data$writing_quality_score, scale = FALSE))
-# s1_cleaned_data$fear_c <- as.numeric(scale(s1_cleaned_data$fear_of_ai_score, scale = FALSE))
-# s1_cleaned_data$wrtng_fear_interaction <- s1_cleaned_data$wrtng_c * s1_cleaned_data$fear_c
-# 
-# model <- lm(content_trust_combined_score ~ wrtng_c + fear_c + wrtng_fear_interaction,
-#             data = s1_cleaned_data)
-# 
-# 
-# low_fear <- mean(s1_cleaned_data$fear_c, na.rm = TRUE) - sd(s1_cleaned_data$fear_c, na.rm = TRUE)
-# high_fear <- mean(s1_cleaned_data$fear_c, na.rm = TRUE) + sd(s1_cleaned_data$fear_c, na.rm = TRUE)
-# 
-# plot_data <- expand.grid(
-#   wrtng_c = seq(min(s1_cleaned_data$wrtng_c, na.rm = TRUE),
-#                 max(s1_cleaned_data$wrtng_c, na.rm = TRUE), length.out = 100),
-#   fear_c = c(low_fear, high_fear)
-# )
-# 
-# plot_data$wrtng_fear_interaction <- plot_data$wrtng_c * plot_data$fear_c
-# plot_data$predicted <- predict(model, newdata = plot_data)
-# plot_data$fear_group <- factor(plot_data$fear_c, labels = c("Low Fear", "High Fear"))
-# 
-# 
-# ggplot2::ggplot(plot_data, aes(x = wrtng_c, y = predicted, color = fear_group)) +
-#   geom_line(size = 1.2) +
-#   labs(
-#     x = "Centered Writing Quality",
-#     y = "Predicted Content Trust",
-#     color = "AI Fear",
-#     title = "Interaction between Writing Quality and AI Fear on Content Trust"
-#   ) +
-#   theme_minimal()
+combined_plot <- ggpubr::ggarrange(s1_sem_anthro_author_content_plot, s1_sem_anthro_content_author_plot, 
+          labels = c("A", "B"),
+  common.legend = TRUE, legend = "bottom")
 
-
-
-```
-
-```{r}
-# s1_cleaned_data$wrtng_c <- scale(s1_cleaned_data$writing_quality_score, scale = FALSE)
-# s1_cleaned_data$aiuse_c <- scale(as.numeric(s1_cleaned_data$AIChatbotsFrequency_regrouped), scale = FALSE)
-# 
-# # Create interaction term
-# s1_cleaned_data$wrtng_aiuse_interaction <- s1_cleaned_data$wrtng_c * s1_cleaned_data$aiuse_c
-# 
-# # Run regression
-# model <- lm(content_trust_combined_score ~ wrtng_c + aiuse_c + wrtng_aiuse_interaction, data = s1_cleaned_data)
-# summary(model)
-```
-
-```{r}
-
-# s1_cleaned_data$wrtng_c <- as.numeric(s1_cleaned_data$writing_quality_score)
-# s1_cleaned_data$aiuse_c <- as.numeric(as.numeric(s1_cleaned_data$AIChatbotsFrequency_regrouped))
-# s1_cleaned_data$wrtng_aiuse_interaction <- s1_cleaned_data$wrtng_c * s1_cleaned_data$aiuse_c
-# 
-# model <- lm(content_trust_combined_score ~ wrtng_c + aiuse_c + wrtng_aiuse_interaction,
-#             data = s1_cleaned_data)
-# 
-# 
-# low_aiuse <- mean(s1_cleaned_data$aiuse_c, na.rm = TRUE) - sd(s1_cleaned_data$aiuse_c, na.rm = TRUE)
-# high_aiuse <- mean(s1_cleaned_data$aiuse_c, na.rm = TRUE) + sd(s1_cleaned_data$aiuse_c, na.rm = TRUE)
-# 
-# plot_data <- expand.grid(
-#   wrtng_c = seq(min(s1_cleaned_data$wrtng_c, na.rm = TRUE),
-#                 max(s1_cleaned_data$wrtng_c, na.rm = TRUE), length.out = 100),
-#   aiuse_c = c(low_aiuse, high_aiuse)
-# )
-# 
-# plot_data$wrtng_aiuse_interaction <- plot_data$wrtng_c * plot_data$aiuse_c
-# plot_data$predicted <- predict(model, newdata = plot_data)
-# plot_data$aiuse_group <- factor(plot_data$aiuse_c, labels = c("Low AI Use", "High AI Use"))
-# 
-# 
-# ggplot2::ggplot(plot_data, aes(x = wrtng_c, y = predicted, color = aiuse_group)) +
-#   geom_line(size = 1.2) +
-#   labs(
-#     x = "Centered Writing Quality",
-#     y = "Predicted Content Trust",
-#     color = "AI Use Frequency",
-#     title = "Interaction between Writing Quality and AI Use on Content Trust"
-#   ) +
-#   theme_minimal()
-# 
-
-
-```
-
-```{r}
-# # Step 1: fear → writing quality
-# m1 <- lm(writing_quality_score ~ AIChatbotsFrequency_regrouped, data = s1_cleaned_data)
-# 
-# # Step 2: fear + writing quality → content trust
-# m2 <- lm(content_trust_combined_score ~ AIChatbotsFrequency_regrouped + writing_quality_score, data = s1_cleaned_data)
-# 
-# med_model <- mediation::mediate(m1, m2, treat = "AIChatbotsFrequency_regrouped", mediator = "writing_quality_score", boot = TRUE, sims = 5000)
-# summary(med_model)
-```
-
-```{r}
+  filename <- paste0("e1_sem.png")
+  save_path <- paste(sep = "/", "plots", "s1", filename)
+  
+    ggsave(save_path,
+         plot = combined_plot,
+         create.dir = TRUE)
 
 ```
 
@@ -1639,49 +1232,32 @@ cocor::cocor(~ `content_trust_combined_score` + `author_trust_combined_score` | 
 
 ##### Partial correlations
 
-
-```{r}
-
-```
+###### Anthropomorphism - Trust
 
 What is the relationship between anthropomorphism and author trust, when controlling for content trust?
 
-
 ```{r}
 
-s1_cleaned_data |> partial_correlation_test("anthropomorphism_score", "author_trust_combined_score", "content_trust_combined_score")
+s1_pct_anthro_author_content <- s1_cleaned_data |> partial_correlation_test("anthropomorphism_score", "author_trust_combined_score", "content_trust_combined_score")
+
 ```
-
-What is the breakdown by Condition?
-
-```{r}
-s1_cleaned_data |> filter(Condition == "Low") |> partial_correlation_test("anthropomorphism_score", "author_trust_combined_score", "content_trust_combined_score")
-
-s1_cleaned_data |> filter(Condition == "Medium") |> partial_correlation_test("anthropomorphism_score", "author_trust_combined_score", "content_trust_combined_score")
-
-s1_cleaned_data |> filter(Condition == "High") |> partial_correlation_test("anthropomorphism_score", "author_trust_combined_score", "content_trust_combined_score")
-```
-
 
 What is the relationship between anthropomorphism and content trust, when controlling for author trust?
 
 ```{r}
 
-s1_cleaned_data |> partial_correlation_test("anthropomorphism_score", "content_trust_combined_score", "author_trust_combined_score")
+s1_pct_anthro_content_author <- s1_cleaned_data |> partial_correlation_test("anthropomorphism_score", "content_trust_combined_score", "author_trust_combined_score")
 
 ```
 
-What is the breakdown by Condition?
+What is the relationship between author trust and content trust, when controlling for anthropomorphism?
 
 ```{r}
-s1_cleaned_data |> filter(Condition == "Low") |> partial_correlation_test("anthropomorphism_score", "content_trust_combined_score", "author_trust_combined_score")
 
-s1_cleaned_data |> filter(Condition == "Medium") |> partial_correlation_test("anthropomorphism_score", "content_trust_combined_score", "author_trust_combined_score")
+s1_pct_content_author_anthro <- s1_cleaned_data |> partial_correlation_test("content_trust_combined_score", "author_trust_combined_score", "anthropomorphism_score")
 
-s1_cleaned_data |> filter(Condition == "High") |> partial_correlation_test("anthropomorphism_score", "content_trust_combined_score", "author_trust_combined_score")
+dr <- delta_r_boot(s1_cleaned_data, "content_trust_combined_score", "author_trust_combined_score", "anthropomorphism_score")
 ```
-
-
 
 Bar plot: raw vs partial correlations (with stars)
 
@@ -1694,64 +1270,59 @@ plot_corr_vs_partial_bars(
   x = "anthropomorphism_score",
   y = "author_trust_combined_score",
   z = "content_trust_combined_score",
-  x_label = "anthro",
-  y_label = "author",
-  z_label = "content"
+  x_label = "Anthro",
+  y_label = "Author",
+  z_label = "Content"
 )
+
 
 ```
 
-```{r}
-plot_corr_vs_partial_bars(
-  s1_cleaned_data |> filter(Condition == "Low"),
-  study = s1_study, 
-  name = "low_anthro_content_author",
-  x = "anthropomorphism_score",
-  y = "author_trust_combined_score",
-  z = "content_trust_combined_score",
-  x_label = "anthro",
-  y_label = "author",
-  z_label = "content"
-)
-```
+###### Writing Quality - Trust
 
 ```{r}
 plot_corr_vs_partial_bars(
-  s1_cleaned_data |> filter(Condition == "Medium"),
-  study = s1_study, 
-  name = "medium_anthro_content_author",
-  x = "anthropomorphism_score",
-  y = "author_trust_combined_score",
-  z = "content_trust_combined_score",
-  x_label = "anthro",
-  y_label = "author",
-  z_label = "content"
-)
-```
-
-```{r}
-plot_corr_vs_partial_bars(
-  s1_cleaned_data |> filter(Condition == "High"),
-  study = s1_study, 
-  name = "high_anthro_content_author",
-  x = "anthropomorphism_score",
-  y = "author_trust_combined_score",
-  z = "content_trust_combined_score",
-  x_label = "anthro",
-  y_label = "author",
-  z_label = "content"
-)
-```
-
-```{r}
-plot_corr_vs_partial_bars(
-  s1_cleaned_data |> filter(Condition == "High"),
+  s1_cleaned_data,
   study = s1_study, 
   name = "quality_content_author",
   x = "writing_quality_score",
   y = "author_trust_combined_score",
   z = "content_trust_combined_score",
   x_label = "quality",
+  y_label = "author",
+  z_label = "content"
+)
+
+```
+
+###### Lkeability - Trust
+
+```{r}
+plot_corr_vs_partial_bars(
+  s1_cleaned_data,
+  study = s1_study, 
+  name = "likeability_content_author",
+  x = "likeability_score",
+  y = "author_trust_combined_score",
+  z = "content_trust_combined_score",
+  x_label = "likeability",
+  y_label = "author",
+  z_label = "content"
+)
+
+```
+
+###### Competence - Trust
+
+```{r}
+plot_corr_vs_partial_bars(
+  s1_cleaned_data,
+  study = s1_study, 
+  name = "competence_content_author",
+  x = "competence_score",
+  y = "author_trust_combined_score",
+  z = "content_trust_combined_score",
+  x_label = "competence",
   y_label = "author",
   z_label = "content"
 )
@@ -1777,7 +1348,8 @@ combined_plot <- ggpubr::ggarrange(plot_correlation_author_anthro$lm, plot_corre
 
 ```{r}
 my_packages = c("rstatix", "stats", "effectsize", "psych", "interactions",
-                 "corrplot", "performance", "FSA", "see")
+                 "corrplot", "performance", "FSA", "see", "cocor")
 
 write_bib(my_packages, file= "outputs/s1/packages.bib")
 ```
+
