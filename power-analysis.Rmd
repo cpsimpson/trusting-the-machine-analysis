@@ -10,7 +10,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(pwr)
-library(Superpower)
 
 citation()
 version$version.string
@@ -18,8 +17,6 @@ version$version.string
 citation("pwr")
 packageVersion("pwr")
 
-citation("Superpower")
-packageVersion("Superpower")
 ```
 
 
@@ -38,13 +35,13 @@ pwr.anova.test(k=3,f=.1,sig.level=.05,power=.8)
 Medium Effect
 
 ```{r}
-pwr.anova.test(k=3,f=.3,sig.level=.05,power=.8)
+pwr.anova.test(k=3,f=.25,sig.level=.05,power=.8)
 ```
 
 Large Effect
 
 ```{r}
-pwr.anova.test(k=3,f=.5,sig.level=.05,power=.8)
+pwr.anova.test(k=3,f=.4,sig.level=.05,power=.8)
 ```
 
 Set Number participants
@@ -68,13 +65,13 @@ pwr.anova.test(k=2,f=.1,sig.level=.05,power=.8)
 Medium Effect
 
 ```{r}
-pwr.anova.test(k=2,f=.3,sig.level=.05,power=.8)
+pwr.anova.test(k=2,f=.25,sig.level=.05,power=.8)
 ```
 
 Large Effect
 
 ```{r}
-pwr.anova.test(k=2,f=.5,sig.level=.05,power=.8)
+pwr.anova.test(k=2,f=.4,sig.level=.05,power=.8)
 ```
 
 Set Number participants
