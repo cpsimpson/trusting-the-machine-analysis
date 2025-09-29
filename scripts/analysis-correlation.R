@@ -17,6 +17,7 @@ test_correlation <- function(data, x_name, y_name){
   cor_result <- cor.test(
     as.numeric(x), as.numeric(y), method = "pearson")
 
+  print(cor_result)
   apa::cor_apa(cor_result, r_ci = TRUE)
 
 }
@@ -29,21 +30,172 @@ linear_model <- function(data, formula){
   return(fit)
 }
 
+delta_r_boot <- function(data, x, y, z, R = 5000, seed = 123) {
+  set.seed(seed)
+  xv <- data[[x]]; yv <- data[[y]]; zv <- data[[z]]
+  keep <- complete.cases(xv, yv, zv)
+  xv <- xv[keep]; yv <- yv[keep]; zv <- zv[keep]
+  n <- length(xv)
+  
+  # point estimates
+  r_xy   <- cor(xv, yv)
+  r_xy_z <- ppcor::pcor.test(xv, yv, zv)$estimate
+  delta  <- as.numeric(r_xy - r_xy_z)
+  
+  # bootstrap
+  deltas <- replicate(R, {
+    idx <- sample.int(n, n, replace = TRUE)
+    r_b   <- suppressWarnings(cor(xv[idx], yv[idx]))
+    rp_b  <- suppressWarnings(ppcor::pcor.test(xv[idx], yv[idx], zv[idx])$estimate)
+    as.numeric(r_b - rp_b)
+  })
+  
+  ci <- quantile(deltas, c(.025, .975), na.rm = TRUE)
+  # two-sided p from bootstrap (proportion crossing 0)
+  p_boot <- 2 * min(mean(deltas >= 0, na.rm = TRUE), mean(deltas <= 0, na.rm = TRUE))
+  
+  list(
+    n = n,
+    r_xy = r_xy,
+    r_xy_z = r_xy_z,
+    delta_r = delta,
+    ci95 = unname(ci),
+    p_boot = p_boot,
+    boot = deltas
+  )
+}
+
+bootstrap_correlation_comparison <- function(
+    data, x, y, z,
+    method = "pearson",     # "pearson" or "spearman"
+    R = 5000,               # bootstrap resamples
+    seed = 123,
+    labels = NULL,          # e.g., c(x="Anthro", y="Author trust", z="Content trust")
+    verbose = TRUE
+) {
+  stopifnot(method %in% c("pearson", "spearman"))
+  xv <- data[[x]]; yv <- data[[y]]; zv <- data[[z]]
+  keep <- stats::complete.cases(xv, yv, zv)
+  xv <- xv[keep]; yv <- yv[keep]; zv <- zv[keep]
+  n <- length(xv)
+  if (n < 10) stop("Not enough complete cases for a stable estimate.")
+  
+  # --- point estimates ---
+  r_xy   <- suppressWarnings(stats::cor(xv, yv, method = method))
+  rp_out <- ppcor::pcor.test(xv, yv, zv, method = method)
+  r_xy_z <- as.numeric(rp_out$estimate)
+  delta  <- as.numeric(r_xy - r_xy_z)
+  
+  # --- bootstrap Δr ---
+  set.seed(seed)
+  deltas <- replicate(R, {
+    idx <- sample.int(n, n, replace = TRUE)
+    rx  <- suppressWarnings(stats::cor(xv[idx], yv[idx], method = method))
+    rpx <- tryCatch(
+      as.numeric(ppcor::pcor.test(xv[idx], yv[idx], zv[idx], method = method)$estimate),
+      error = function(e) NA_real_
+    )
+    rx - rpx
+  })
+  deltas <- deltas[is.finite(deltas)]
+  ci <- stats::quantile(deltas, c(.025, .975), names = FALSE, type = 6)
+  
+  # two-sided bootstrap p: proportion of resampled Δr on the opposite side of 0
+  p_boot <- {
+    p_hi <- mean(deltas >= 0)
+    p_lo <- mean(deltas <= 0)
+    2 * min(p_hi, p_lo)
+  }
+  
+  # helper: APA p
+  fmt_p <- function(p) ifelse(p < .001, "p < .001", sprintf("p = %.3f", p))
+  fmt_r <- function(r) sprintf("%.2f", r)
+  
+  # df for r tests
+  df_zero    <- n - 2
+  df_partial <- n - 3
+  # p for zero-order (t test)
+  p_zero <- {
+    tval <- r_xy * sqrt(df_zero) / sqrt(1 - r_xy^2)
+    2 * stats::pt(-abs(tval), df = df_zero)
+  }
+  # p for partial (from ppcor)
+  p_partial <- as.numeric(rp_out$p.value)
+  
+  # optional header
+  if (!is.null(labels) && all(c("x","y","z") %in% names(labels)) && verbose) {
+    cat(sprintf("\n— %s ↔ %s (controlling %s) —\n",
+                labels[["x"]], labels[["y"]], labels[["z"]]))
+  }
+  
+  if (verbose) {
+    cat("\n--- Zero-order vs. Partial correlation (bootstrap Δr) ---\n")
+    cat(sprintf("Zero-order: r(%d) = %s, %s\n",
+                df_zero, fmt_r(r_xy), fmt_p(p_zero)))
+    cat(sprintf("Partial (controlling %s): r(%d) = %s, %s\n",
+                ifelse(is.null(labels), z, labels[["z"]]),
+                df_partial, fmt_r(r_xy_z), fmt_p(p_partial)))
+    cat(sprintf("Difference: Δr = %.2f, 95%% CI [%.2f, %.2f], %s (R = %d)\n",
+                delta, ci[1], ci[2], fmt_p(p_boot), R))
+    cat(sprintf("N = %d, method = %s\n", n, method))
+  }
+  
+  invisible(list(
+    n = n,
+    method = method,
+    r = list(zero_order = r_xy, partial = r_xy_z),
+    df = list(zero = df_zero, partial = df_partial),
+    p = list(zero = p_zero, partial = p_partial, bootstrap_delta = p_boot),
+    delta_r = delta,
+    delta_ci95 = ci,
+    boot = deltas
+  ))
+}
+
+
 partial_correlation_test <- function(data, x_name, y_name, z_name){
-
-  x <- data |> pull({{x_name}})
-  y <- data |> pull({{y_name}})
-  z <- data |> pull({{z_name}})
-
+  
+  x <- data |> dplyr::pull({{x_name}})
+  y <- data |> dplyr::pull({{y_name}})
+  z <- data |> dplyr::pull({{z_name}})
+  
+  # --- Partial correlation ---
   pcor_result <- ppcor::pcor.test(
     x = x,
     y = y,
     z = z,
-    method = "pearson" # can also use "spearman" if data not normal
+    method = "pearson"
   )
-
+  
+  # --- Zero-order correlations ---
+  r_xy <- cor(x, y, use = "pairwise.complete.obs")
+  r_xz <- cor(x, z, use = "pairwise.complete.obs")
+  r_yz <- cor(y, z, use = "pairwise.complete.obs")
+  n <- sum(complete.cases(x, y, z))
+  
+  print(paste("r_xy = ", r_xy, "r_xz = ", r_xz, "r_yz = ", r_yz))
+  # --- Test: difference between r(X,Y) and partial r(X,Y|Z) ---
+  cocor_result <- cocor::cocor.dep.groups.overlap(
+    r.jk = r_xy,  # r(X,Y)
+    r.jh = r_xz,  # r(X,Z)
+    r.kh = r_yz,  # r(Y,Z)
+    n = n,
+    alternative = "two.sided",
+    test = "all"  # gives Steiger, Williams, Hotelling, etc.
+  )
+  
+  # --- Output ---
+  cat("\nPartial correlation (ppcor):\n")
   print(pcor_result)
-
+  
+  cat("\nZero-order vs partial correlation test (cocor):\n")
+  print(cocor_result)
+  
+  # return invisibly so it can be captured if needed
+  invisible(list(
+    partial = pcor_result,
+    cocor = cocor_result
+  ))
 }
 
 # ===============================================================
@@ -80,92 +232,7 @@ partial_corr_df <- function(data, x, y, z, method = c("pearson","spearman")) {
   )
 }
 
-# ---------- Residual scatterplots (two panels) ----------
-plot_partial_residuals <- function(data, x, y, z,
-                                   method = "pearson",
-                                   save_path = NULL,
-                                   size_key = "partials_residuals") {
-  suppressPackageStartupMessages(library(patchwork))
-  fs <- .fig_size(size_key); if (is.null(fs$dpi)) fs$dpi <- 300
 
-  df <- data %>% dplyr::select(all_of(c(x, y, z))) %>% tidyr::drop_na()
-
-  # A: r(x,y|z)
-  res_x_z <- resid(lm(df[[x]] ~ df[[z]]))
-  res_y_z <- resid(lm(df[[y]] ~ df[[z]]))
-  rA <- stats::cor(res_x_z, res_y_z, use = "complete.obs",
-                   method = ifelse(method=="spearman","spearman","pearson"))
-  pA <- stats::cor.test(res_x_z, res_y_z, method = ifelse(method=="spearman","spearman","pearson"))$p.value
-
-  pA_plot <- tibble::tibble(rx = res_x_z, ry = res_y_z) %>%
-    ggplot2::ggplot(ggplot2::aes(rx, ry)) +
-    ggplot2::geom_point(alpha = 0.55) +
-    ggplot2::geom_smooth(method = "lm", se = FALSE, linewidth = 0.7) +
-    ggplot2::labs(
-      title = sprintf("%s \u2194 %s (controlling %s)", x, y, z),
-      subtitle = sprintf("partial r = %.2f%s", rA, p_stars(pA)),
-      x = sprintf("Residual %s | %s", x, z),
-      y = sprintf("Residual %s | %s", y, z)
-    ) +
-    .theme_ai()
-
-  # B: r(x,z|y)
-  res_x_y <- resid(lm(df[[x]] ~ df[[y]]))
-  res_z_y <- resid(lm(df[[z]] ~ df[[y]]))
-  rB <- stats::cor(res_x_y, res_z_y, use = "complete.obs",
-                   method = ifelse(method=="spearman","spearman","pearson"))
-  pB <- stats::cor.test(res_x_y, res_z_y, method = ifelse(method=="spearman","spearman","pearson"))$p.value
-
-  pB_plot <- tibble::tibble(rx = res_x_y, ry = res_z_y) %>%
-    ggplot2::ggplot(ggplot2::aes(rx, ry)) +
-    ggplot2::geom_point(alpha = 0.55) +
-    ggplot2::geom_smooth(method = "lm", se = FALSE, linewidth = 0.7) +
-    ggplot2::labs(
-      title = sprintf("%s \u2194 %s (controlling %s)", x, z, y),
-      subtitle = sprintf("partial r = %.2f%s", rB, p_stars(pB)),
-      x = sprintf("Residual %s | %s", x, y),
-      y = sprintf("Residual %s | %s", z, y)
-    ) +
-    .theme_ai()
-
-  out <- pA_plot + pB_plot
-  if (!is.null(save_path)) .save_figure(out, save_path, width = fs$width, height = fs$height, dpi = fs$dpi)
-  out
-}
-
-# ---------- Correlation / Partial-correlation network ----------
-plot_correlation_network <- function(data, vars, type = c("bivariate","partial"),
-                                     labels = NULL,
-                                     save_path = NULL,
-                                     size_key = "network") {
-  if (!requireNamespace("qgraph", quietly = TRUE)) stop("Package 'qgraph' required.")
-  if (!requireNamespace("corpcor", quietly = TRUE)) stop("Package 'corpcor' required.")
-  fs <- .fig_size(size_key); if (is.null(fs$width)) fs$width <- 11; if (is.null(fs$height)) fs$height <- 9; if (is.null(fs$dpi)) fs$dpi <- 300
-
-  type <- match.arg(type)
-  if (is.null(labels)) labels <- vars
-
-  M <- data %>% dplyr::select(all_of(vars)) %>% tidyr::drop_na() %>% as.matrix()
-  cor_mat <- stats::cor(M)
-  W <- if (type == "bivariate") cor_mat else corpcor::cor2pcor(cor_mat)
-
-  par(mfrow = c(1,1))
-  q <- qgraph::qgraph(
-    W,
-    layout = "spring",
-    labels = labels,
-    title = ifelse(type=="bivariate","Bivariate correlations","Partial correlations (control others)"),
-    edge.labels = TRUE,
-    edge.label.cex = 1.2,
-    edge.label.position = 0.5,
-    edge.label.bg = "white",
-    label.scale = FALSE
-  )
-  if (!is.null(save_path)) {
-    grDevices::dev.copy(png, filename = save_path, width = fs$width*96, height = fs$height*96) ; invisible(grDevices::dev.off())
-  }
-  invisible(q)
-}
 
 # ---------- Bar plot: raw vs partial ----------
 plot_corr_vs_partial_bars <- function(data, study, name, 
@@ -178,17 +245,30 @@ plot_corr_vs_partial_bars <- function(data, study, name,
 
   cor_xy  <- stats::cor.test(df[[x]], df[[y]])
   cor_xz  <- stats::cor.test(df[[x]], df[[z]])
+  cor_yz  <- stats::cor.test(df[[y]], df[[z]])
   pcor_xy <- ppcor::pcor.test(x = df[[x]], y = df[[y]], z = df[[z]])
   pcor_xz <- ppcor::pcor.test(x = df[[x]], y = df[[z]], z = df[[y]])
+  pcor_yz <- ppcor::pcor.test(x = df[[y]], y = df[[z]], z = df[[x]])
 
   plot_df <- tibble::tibble(
-    pair = c(paste(x_label, y_label, sep = "–"), paste(x_label, y_label, sep = "–"), paste(x_label, z_label, sep = "–"), 
-             paste(x_label, z_label, sep = "–")),
-    type = factor(c("Bivariate", "Partial (control other)", "Bivariate", "Partial (control other)"),
-                  levels = c("Bivariate", "Partial (control other)")),
+    pair = c(paste(x_label, y_label, sep = " – "), paste(x_label, y_label, sep = " – "), 
+             paste(x_label, z_label, sep = " – "), paste(x_label, z_label, sep = " – "),
+             paste(y_label, z_label, sep = " – "), paste(y_label, z_label, sep = " – ")),
+    type = factor(c("Zero-order", paste0("Partial (adjust for ", z_label, ")"), 
+                    "Zero-order", paste0("Partial (adjust for ", y_label, ")"), 
+                    "Zero-order", paste0("Partial (adjust for ", x_label, ")")),
+                  levels = c("Zero-order", 
+                             paste0("Partial (adjust for ", z_label, ")"), 
+                             paste0("Partial (adjust for ", y_label, ")"), 
+                             paste0("Partial (adjust for ", x_label, ")") 
+                             )
+                  ),
     r = c(unname(cor_xy$estimate), unname(pcor_xy$estimate),
-          unname(cor_xz$estimate), unname(pcor_xz$estimate)),
-    p = c(cor_xy$p.value, pcor_xy$p.value, cor_xz$p.value, pcor_xz$p.value)
+          unname(cor_xz$estimate), unname(pcor_xz$estimate), 
+          unname(cor_yz$estimate), unname(pcor_yz$estimate)),
+    p = c(cor_xy$p.value, pcor_xy$p.value, 
+          cor_xz$p.value, pcor_xz$p.value, 
+          cor_yz$p.value, pcor_yz$p.value)
   ) %>% dplyr::mutate(label = sprintf("%.2f%s", r, p_stars(p)))
 
   g <- ggplot2::ggplot(plot_df, ggplot2::aes(x = pair, y = r, fill = type)) +
@@ -197,14 +277,17 @@ plot_corr_vs_partial_bars <- function(data, study, name,
               position = ggplot2::position_dodge(width = 0.7),
               vjust = ifelse(plot_df$r >= 0, -0.4, 1.2), size = 4) +
     ggplot2::geom_hline(yintercept = 0, linewidth = 0.4) +
-    ggplot2::scale_fill_manual(values = .palette_ai(2)) +
+    ggplot2::scale_fill_manual(values = pal) +
     ggplot2::labs(
-      title = "Bivariate vs Partial Correlations",
-      x = NULL, y = "Correlation (r)", fill = NULL,
-      caption = "Stars: * < .05, ** < .01, *** < .001"
+      title = paste("Bivariate vs Partial Correlations for", x_label, ",", y_label, ",", z_label),
+      x = NULL, y = "Correlation (r)", fill = NULL
     ) +
     ggplot2::coord_cartesian(ylim = c(-0.4, 0.8)) +
-    .theme_ai()
+    ggplot2::theme(
+      legend.position = "right",
+      axis.text.x = ggplot2::element_text(angle = 0, hjust = 0.5)  # no rotation needed
+      #axis.text.x = ggplot2::element_text(angle = 45, hjust = 1) # <-- rotation
+    )
 
   
   filename <- paste0("covar_", name, ".png")
@@ -214,105 +297,7 @@ plot_corr_vs_partial_bars <- function(data, study, name,
   g
 }
 
-# ---------- Variance partition (single outcome) ----------
-variance_partition <- function(data, y, x, z) {
-  df <- data %>% dplyr::select(all_of(c(y, x, z))) %>% tidyr::drop_na()
-  f_full    <- lm(df[[y]] ~ df[[x]] + df[[z]])
-  f_minus_x <- lm(df[[y]] ~ df[[z]])
-  f_minus_z <- lm(df[[y]] ~ df[[x]])
 
-  R2_full <- summary(f_full)$r.squared
-  R2_mx   <- summary(f_minus_x)$r.squared
-  R2_mz   <- summary(f_minus_z)$r.squared
-
-  sr2_x  <- R2_full - R2_mx
-  sr2_z  <- R2_full - R2_mz
-  shared <- max(R2_full - sr2_x - sr2_z, 0)
-
-  list(R2_full = R2_full, sr2_x = sr2_x, sr2_z = sr2_z, shared = shared)
-}
-
-plot_variance_partition <- function(data, y, x, z,
-                                    set_x = x, set_z = z,
-                                    title = NULL,
-                                    save_path = NULL,
-                                    size_key = "venn_single") {
-  if (!requireNamespace("eulerr", quietly = TRUE)) stop("Package 'eulerr' required.")
-  fs <- .fig_size(size_key); if (is.null(fs$dpi)) fs$dpi <- 300; if (is.null(fs$width)) fs$width <- 7; if (is.null(fs$height)) fs$height <- 5.5
-
-  parts <- variance_partition(data, y, x, z)
-  areas <- c(parts$sr2_x + parts$shared, parts$sr2_z + parts$shared, parts$shared)
-  names(areas) <- c(set_x, set_z, paste(set_x, set_z, sep = "&"))
-
-  fit <- tryCatch(eulerr::euler(areas, shape = "ellipse"),
-                  error = function(e) eulerr::euler(areas))
-
-  g <- plot(
-    fit,
-    quantities = list(type = "percent", fmt = function(p) sprintf("%.1f%%", p)),
-    fills = list(fill = .palette_ai(2), alpha = 0.85),
-    edges = list(col = "grey20"),
-    labels = list(col = "black", cex = 1.15),
-    main = sprintf("%s\nTotal R² = %.2f",
-                   ifelse(is.null(title), sprintf("Variance in %s explained by %s and %s", y, x, z), title),
-                   parts$R2_full)
-  )
-  if (!is.null(save_path)) ggplot2::ggsave(save_path, g, width = fs$width, height = fs$height, dpi = fs$dpi)
-  g
-}
-
-# ---------- Three-circle diagram with partial r labels ----------
-plot_partial_three_venn <- function(data, a, b, c,
-                                    save_path = NULL,
-                                    circle_alpha = 0.55,
-                                    circle_r = 1.75,
-                                    size_key = "venn_three_partials") {
-  if (!requireNamespace("ggforce", quietly = TRUE)) stop("Package 'ggforce' required.")
-  fs <- .fig_size(size_key); if (is.null(fs$dpi)) fs$dpi <- 300; if (is.null(fs$width)) fs$width <- 7.5; if (is.null(fs$height)) fs$height <- 6.5
-
-  dat <- data %>% dplyr::select(all_of(c(a, b, c))) %>% tidyr::drop_na()
-
-  p_ab_c <- ppcor::pcor.test(x = dat[[a]], y = dat[[b]], z = dat[[c]])$estimate
-  p_ac_b <- ppcor::pcor.test(x = dat[[a]], y = dat[[c]], z = dat[[b]])$estimate
-  p_bc_a <- ppcor::pcor.test(x = dat[[b]], y = dat[[c]], z = dat[[a]])$estimate
-
-  centers <- tibble::tibble(
-    name = c(a, b, c),
-    x = c(-1.8, 1.8, 0.0),
-    y = c(0.0, 0.0, 2.2),
-    fill = .palette_ai(3)
-  )
-
-  overlap_pts <- tibble::tibble(
-    pair = c(paste(a,b,sep="–"), paste(a,c,sep="–"), paste(b,c,sep="–")),
-    x = c(mean(c(-1.8, 1.8)),
-          mean(c(-1.8, 0.0)) - 0.10,
-          mean(c(1.8, 0.0)) + 0.10),
-    y = c(mean(c(0.0, 0.0)) - 0.15,
-          mean(c(0.0, 2.2)) + 0.05,
-          mean(c(0.0, 2.2)) + 0.05),
-    partial = sprintf("partial r = %s",
-                      c(sprintf("%.2f", p_ab_c), sprintf("%.2f", p_ac_b), sprintf("%.2f", p_bc_a)))
-  )
-
-  g <- ggplot2::ggplot() +
-    ggforce::geom_circle(data = centers,
-                         ggplot2::aes(x0 = x, y0 = y, r = circle_r, fill = fill),
-                         color = "grey20", alpha = circle_alpha, linewidth = 0.6, show.legend = FALSE) +
-    ggplot2::geom_text(data = centers,
-              ggplot2::aes(x = x, y = y + circle_r + 0.25, label = name),
-              size = 5.2, fontface = "bold") +
-    ggplot2::geom_label(data = overlap_pts,
-               ggplot2::aes(x = x, y = y, label = partial),
-               size = 4.2, label.padding = grid::unit(0.15, "lines"),
-               label.size = 0, fill = "white") +
-    ggplot2::coord_equal(xlim = c(-3.8, 3.8), ylim = c(-1.2, 4.2), expand = FALSE) +
-    ggplot2::labs(title = "Partial correlations in overlaps (areas not to scale)") +
-    .theme_ai()
-
-  if (!is.null(save_path)) .save_figure(g, save_path, width = fs$width, height = fs$height, dpi = fs$dpi)
-  g
-}
 
 # ---------- Convenience wrapper ----------
 generate_partial_correlation_figures <- function(data, x, y1, y2, out_dir = NULL) {
