@@ -3,6 +3,7 @@ title: "Analysis"
 author: "Caroline Simpson"
 format: 
   html:
+    embed-resources: true
     theme: cerulean
     df-print: kable
     code-fold: false
@@ -21,24 +22,6 @@ editor: visual
 library(knitr)
 library(kableExtra)
 
-# library(rstatix)
-# library(tidyverse)
-# library(forcats)
-# 
-# library(haven)
-# library(jtools)
-# library(forcats)
-# library(FactoMineR)
-# library(psych)
-# library(interactions)
-# library(corrplot)
-# library(rcartocolor)
-# library(ggpubr)
-# library(apaTables)
-# library(FSA)
-# 
-# library(performance)
-# library(see)
 
 
 source("./scripts/data-loading.R", local = TRUE)
@@ -50,9 +33,11 @@ source("./scripts/analysis-inferential.R", local = TRUE)
 source("./scripts/analysis-correlation.R", local = TRUE)
 source("./scripts/analysis-regression.R", local = TRUE)
 source("./scripts/analysis-moderation-mediation.R", local = TRUE)
-source("./scripts/analysis-chat-logs.R", local = TRUE)
+# source("./scripts/analysis-chat-logs.R", local = TRUE)
 source("./scripts/plotting.R", local = TRUE)
 source("./scripts/common.R", local = TRUE)
+
+require(lavaan)
 
 directory_setup()
 theme_set(my_theme)
@@ -468,9 +453,7 @@ s2_cleaned_data |>
 
 #### Age
 
-Age range: `r round(min(s2_cleaned_data$Age_1, na.rm = TRUE), 2)` to `r round(max(s2_cleaned_data$Age_1, na.rm = TRUE), 2)`
-Mean age: `r round(mean(s2_cleaned_data$Age_1, na.rm = TRUE), 2)`
-Standard deviation: `r round(sd(s2_cleaned_data$Age_1, na.rm = TRUE), 2)`
+Age range: `r round(min(s2_cleaned_data$Age_1, na.rm = TRUE), 2)` to `r round(max(s2_cleaned_data$Age_1, na.rm = TRUE), 2)` Mean age: `r round(mean(s2_cleaned_data$Age_1, na.rm = TRUE), 2)` Standard deviation: `r round(sd(s2_cleaned_data$Age_1, na.rm = TRUE), 2)`
 
 ```{r}
 s2_cleaned_data |> 
@@ -868,13 +851,13 @@ for (i_formula in formulas){
 ###### Hierarchical Regression
 
 ```{r}
-result <- run_post_hoc_regression_analysis(
-  data = s2_cleaned_data,
-  dv = "content_trust_combined_score",
-  study = s2_study
-)
-
-print(result)
+# result <- run_post_hoc_regression_analysis(
+#   data = s2_cleaned_data,
+#   dv = "content_trust_combined_score",
+#   study = s2_study
+# )
+# 
+# print(result)
 # result <- build_regression_table_apa(
 #   data = s2_cleaned_data,
 #   dv = "content_trust_combined_score",
@@ -1753,13 +1736,13 @@ for (i_formula in formulas){
 
 ```{r}
 
-result <- run_post_hoc_regression_analysis(
-  data = s2_cleaned_data,
-  dv = "author_trust_combined_score",
-  study = s2_study
-)
-
-print(result)
+# result <- run_post_hoc_regression_analysis(
+#   data = s2_cleaned_data,
+#   dv = "author_trust_combined_score",
+#   study = s2_study
+# )
+# 
+# print(result)
 # result <- build_regression_table_apa(
 #   data = s2_cleaned_data,
 #   dv = "author_trust_combined_score",
@@ -1807,6 +1790,37 @@ plot_correlation_author_anthro <- correlation_plot(s2_cleaned_data,
             "author_trust_combined_score")
 
 plot_correlation_author_anthro
+```
+
+#### Interaction of Condition and Trust Type
+
+```{r}
+require(tidyr)
+require(dplyr)
+library(lme4)
+library(lmerTest)
+library(emmeans)
+
+# trust_score, trust_type, condition, author_trust_combined_score
+s2_cleaned_data_long <- s2_cleaned_data |>
+  dplyr::select(c(ResponseId, Condition, author_trust_combined_score, content_trust_combined_score)) |>
+   tidyr::pivot_longer(
+    cols = c("author_trust_combined_score", "content_trust_combined_score"),
+    # split the name into the number and the rest of the variable name
+    names_to = "trust_type",
+    names_pattern = "^(.*)_.*$",
+    values_to = "trust_score"
+  )
+
+s2_trust_model <- lmer(trust_score ~ Condition * trust_type + (1 | ResponseId), data = s2_cleaned_data_long)
+
+summary(s2_trust_model)
+
+s2_emm_trust_by_cond <- emmeans::emmeans(s2_trust_model, ~ trust_type | Condition)
+s2_emm_trust_by_cond
+
+contrast(s2_emm_trust_by_cond, method = "pairwise")
+
 ```
 
 #### General Post Hoc
@@ -1908,7 +1922,7 @@ for (i_formula in formulas){
 
 #### Mediation Analysis
 
-Anthro -> Author -> Content
+Anthro -\> Author -\> Content
 
 ```{r}
 
@@ -1928,7 +1942,7 @@ s2_anthro_author_content_model <- '
 '
 
 # Fit the model
-s2_anthro_author_content_model_fit <- sem(s2_anthro_author_content_model, data = s2_cleaned_data, se = "bootstrap", bootstrap = 5000)
+s2_anthro_author_content_model_fit <- lavaan::sem(s2_anthro_author_content_model, data = s2_cleaned_data, se = "bootstrap", bootstrap = 5000)
 
 # Summary with standardized estimates
 summary(s2_anthro_author_content_model_fit, standardized = TRUE, ci = TRUE)
@@ -1937,7 +1951,7 @@ summary(s2_anthro_author_content_model_fit, standardized = TRUE, ci = TRUE)
 
 ```{r}
 labels <- list(
-               anthropomorphism_score = "Perceived Anthropomorphism", 
+               anthropomorphism_score = "Anthropomorphism", 
                author_trust_combined_score = "Author Trust", 
                content_trust_combined_score = "Content Trust"
                )
@@ -1946,8 +1960,8 @@ plot_lavaan_model(s2_anthro_author_content_model_fit, labels, "anthro_author_con
 
 ```
 
+Reverse model: Anthro -\> Content -\> Author
 
-Reverse model: Anthro -> Content -> Author
 ```{r}
 
 # Define mediation model
@@ -1966,7 +1980,7 @@ s2_anthro_content_author_model <- '
 '
 
 # Fit the model
-s2_anthro_content_author_model_fit <- sem(s2_anthro_content_author_model, data = s2_cleaned_data, se = "bootstrap", bootstrap = 5000)
+s2_anthro_content_author_model_fit <- lavaan::sem(s2_anthro_content_author_model, data = s2_cleaned_data, se = "bootstrap", bootstrap = 5000)
 
 # Summary with standardized estimates
 summary(s2_anthro_content_author_model_fit, standardized = TRUE, ci = TRUE)
@@ -1975,7 +1989,7 @@ summary(s2_anthro_content_author_model_fit, standardized = TRUE, ci = TRUE)
 
 ```{r}
 labels <- list(
-               anthropomorphism_score = "Perceived Anthropomorphism", 
+               anthropomorphism_score = "Anthropomorphism", 
                author_trust_combined_score = "Author Trust", 
                content_trust_combined_score = "Content Trust"
                )
@@ -1983,7 +1997,6 @@ labels <- list(
 plot_lavaan_model(s2_anthro_content_author_model_fit, labels, "anthro_content_author", s2_study)
 
 ```
-
 
 #### Correlations
 
@@ -2020,6 +2033,7 @@ cocor::cocor(~ `content_trust_combined_score` + `author_trust_combined_score` | 
 ##### Partial correlations
 
 ###### Anthropomorphism - Trust
+
 What is the relationship between anthropomorphism and author trust, when controlling for content trust?
 
 ```{r}
@@ -2064,24 +2078,14 @@ plot_corr_vs_partial_bars(
 
 ```
 
-
 ```{r}
 
-combined_plot <- ggpubr::ggarrange(plot_correlation_author_anthro$lm, plot_correlation_content_anthro$lm, 
-          labels = c("A", "B"),
-  common.legend = TRUE, legend = "bottom")
 
-  filename <- paste0("e2_correlation_lm_author_content_anthro.png")
-  save_path <- paste(sep = "/", "plots", "s2", filename)
-  
-    ggsave(save_path,
-         plot = combined_plot,
-         create.dir = TRUE)
 
 ```
 
-
 ###### Writing Quality - Trust
+
 ```{r}
 plot_corr_vs_partial_bars(
   s2_cleaned_data,
@@ -2098,6 +2102,7 @@ plot_corr_vs_partial_bars(
 ```
 
 ###### AI Frequency - Trust
+
 ```{r}
 plot_corr_vs_partial_bars(
   s2_cleaned_data,
@@ -2112,7 +2117,9 @@ plot_corr_vs_partial_bars(
 )
 
 ```
+
 ###### AI Fear - Trust
+
 ```{r}
 plot_corr_vs_partial_bars(
   s2_cleaned_data,
@@ -2129,6 +2136,7 @@ plot_corr_vs_partial_bars(
 ```
 
 ###### Intention to Use - Trust
+
 ```{r}
 plot_corr_vs_partial_bars(
   s2_cleaned_data,
@@ -2145,6 +2153,7 @@ plot_corr_vs_partial_bars(
 ```
 
 ###### Number Used - Trust
+
 ```{r}
 plot_corr_vs_partial_bars(
   s2_cleaned_data,
@@ -2160,8 +2169,8 @@ plot_corr_vs_partial_bars(
 
 ```
 
-
 ###### Lkeability - Trust
+
 ```{r}
 plot_corr_vs_partial_bars(
   s2_cleaned_data,
@@ -2176,7 +2185,6 @@ plot_corr_vs_partial_bars(
 )
 
 ```
-
 
 ###### Competence - Trust
 
@@ -2195,8 +2203,8 @@ plot_corr_vs_partial_bars(
 
 ```
 
+###### Author - Content Trust
 
-###### Author - Content Trust 
 ```{r}
 plot_corr_vs_partial_bars(
   s2_cleaned_data,
@@ -2211,9 +2219,6 @@ plot_corr_vs_partial_bars(
 )
 
 ```
-
-
-
 
 # References
 

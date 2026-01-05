@@ -1,4 +1,4 @@
-library(chatlogr)
+# library(chatlogr)
 
 process_chatlogs <- function(data){
   

@@ -3,6 +3,7 @@ title: "Analysis"
 author: "Caroline Simpson"
 format: 
   html:
+    embed-resources: true
     theme: cerulean
     df-print: kable
     # df-print: paged
@@ -34,6 +35,8 @@ source("./scripts/analysis-regression.R", local = TRUE)
 source("./scripts/analysis-moderation-mediation.R", local = TRUE)
 source("./scripts/plotting.R", local = TRUE)
 source("./scripts/common.R", local = TRUE)
+
+require(lavaan)
 
 library(tidyverse)
 
@@ -776,13 +779,13 @@ for (i_formula in formulas){
 
 ```{r}
 
-result <- run_post_hoc_regression_analysis(
-  data = s1_cleaned_data,
-  dv = "content_trust_combined_score",
-  study = s1_study
-)
-
-print(result)
+# result <- run_post_hoc_regression_analysis(
+#   data = s1_cleaned_data,
+#   dv = "content_trust_combined_score",
+#   study = s1_study
+# )
+# 
+# print(result)
 
 
 ```
@@ -949,13 +952,13 @@ for (i_formula in formulas){
 
 ```{r}
 
-result <- run_post_hoc_regression_analysis(
-  data = s1_cleaned_data,
-  dv = "author_trust_combined_score",
-  study = s1_study
-)
-
-print(result)
+# result <- run_post_hoc_regression_analysis(
+#   data = s1_cleaned_data,
+#   dv = "author_trust_combined_score",
+#   study = s1_study
+# )
+# 
+# print(result)
 
 
 ```
@@ -981,6 +984,39 @@ plot_correlation_author_anthro
 
 
 ```
+#### Interaction of Condition and Trust Type
+
+
+```{r}
+require(tidyr)
+require(dplyr)
+library(lme4)
+library(lmerTest)
+library(emmeans)
+
+# trust_score, trust_type, condition, author_trust_combined_score
+s1_cleaned_data_long <- s1_cleaned_data |>
+  dplyr::select(c(ResponseId, Condition, author_trust_combined_score, content_trust_combined_score)) |>
+   tidyr::pivot_longer(
+    cols = c("author_trust_combined_score", "content_trust_combined_score"),
+    # split the name into the number and the rest of the variable name
+    names_to = "trust_type",
+    names_pattern = "^(.*)_.*$",
+    values_to = "trust_score"
+  )
+
+s1_trust_model <- lmer(trust_score ~ Condition * trust_type + (1 | ResponseId), data = s1_cleaned_data_long)
+
+summary(s1_trust_model)
+
+s1_emm_trust_by_cond <- emmeans::emmeans(s1_trust_model, ~ trust_type | Condition)
+s1_emm_trust_by_cond
+
+contrast(s1_emm_trust_by_cond, method = "pairwise")
+
+```
+
+
 
 #### General Post Hoc
 
@@ -1103,7 +1139,7 @@ s1_anthro_author_content_model <- '
 '
 
 # Fit the model
-s1_anthro_author_content_model_fit <- sem(s1_anthro_author_content_model, data = s1_cleaned_data, se = "bootstrap", bootstrap = 5000)
+s1_anthro_author_content_model_fit <- lavaan::sem(s1_anthro_author_content_model, data = s1_cleaned_data, se = "bootstrap", bootstrap = 5000)
 
 # Summary with standardized estimates
 summary(s1_anthro_author_content_model_fit, standardized = TRUE, ci = TRUE)
@@ -1112,12 +1148,14 @@ summary(s1_anthro_author_content_model_fit, standardized = TRUE, ci = TRUE)
 
 ```{r}
 labels <- list(
-               anthropomorphism_score = "Perceived Anthropomorphism", 
+               anthropomorphism_score = "Anthropomorphism", 
                author_trust_combined_score = "Author Trust", 
                content_trust_combined_score = "Content Trust"
                )
 
 s1_sem_anthro_author_content_plot <- plot_lavaan_model(s1_anthro_author_content_model_fit, labels, "anthro_author_content", s1_study)
+
+s1_sem_anthro_author_content_plot
 
 ```
 
@@ -1141,7 +1179,7 @@ s1_anthro_content_author_model <- '
 '
 
 # Fit the model
-s1_anthro_content_author_model_fit <- sem(s1_anthro_content_author_model, data = s1_cleaned_data, se = "bootstrap", bootstrap = 5000)
+s1_anthro_content_author_model_fit <- lavaan::sem(s1_anthro_content_author_model, data = s1_cleaned_data, se = "bootstrap", bootstrap = 5000)
 
 # Summary with standardized estimates
 summary(s1_anthro_content_author_model_fit, standardized = TRUE, ci = TRUE)
@@ -1150,12 +1188,14 @@ summary(s1_anthro_content_author_model_fit, standardized = TRUE, ci = TRUE)
 
 ```{r}
 labels <- list(
-               anthropomorphism_score = "Perceived Anthropomorphism", 
+               anthropomorphism_score = "Anthropomorphism", 
                author_trust_combined_score = "Author Trust", 
                content_trust_combined_score = "Content Trust"
                )
 
 s1_sem_anthro_content_author_plot <- plot_lavaan_model(s1_anthro_content_author_model_fit, labels, "anthro_content_author", s1_study)
+
+s1_sem_anthro_content_author_plot
 
 ```
 
@@ -1338,7 +1378,7 @@ combined_plot <- ggpubr::ggarrange(plot_correlation_author_anthro$lm, plot_corre
   filename <- paste0("e1_correlation_lm_author_content_anthro.png")
   save_path <- paste(sep = "/", "plots", "s1", filename)
   
-    ggsave(save_path,
+  ggsave(save_path,
          plot = combined_plot,
          create.dir = TRUE)
 
@@ -1352,4 +1392,3 @@ my_packages = c("rstatix", "stats", "effectsize", "psych", "interactions",
 
 write_bib(my_packages, file= "outputs/s1/packages.bib")
 ```
-

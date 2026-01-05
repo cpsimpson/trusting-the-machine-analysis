@@ -24,6 +24,8 @@ my_theme <- ggplot2::theme_minimal() +
     axis.line = ggplot2::element_line(colour = "grey70"),
     axis.ticks = ggplot2::element_line(colour = "grey70"),
     legend.position = "top",
+    axis.text = element_text(size = 14), 
+    axis.title = element_text(size = 16),
     plot.title = ggplot2::element_blank() #ggtext::element_markdown(hjust=.5, vjust=.5),  # center the title
   )
 
@@ -41,7 +43,7 @@ get_label <- function(column_name) {
   switch(
     column_name,
     "Condition" = "Anthropomorphism Condition",
-    "anthropomorphism_score" = "Perceived Anthropomorphism",
+    "anthropomorphism_score" = "Anthropomorphism Rating",
     "likeability_score" = "Perceived Likeability",
     "competence_score" = "Perceived Competence",
     "content_trust_combined_score" = "Content Trust",
@@ -96,7 +98,9 @@ violin_plot <- function(data,
     scale_fill_manual(values = fill_pal) +
     scale_color_manual(values = pal) +
     geom_boxplot(width = 0.1) +
-    ggplot2::theme(legend.position = legend_position) +
+    ggplot2::theme(legend.position = legend_position, 
+                   axis.text = element_text(size = 14), 
+                   axis.title = element_text(size = 16)) +
     ggpubr::stat_compare_means(
       comparisons = comparisons,
       method = "t.test",

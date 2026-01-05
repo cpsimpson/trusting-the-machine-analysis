@@ -245,30 +245,34 @@ plot_corr_vs_partial_bars <- function(data, study, name,
 
   cor_xy  <- stats::cor.test(df[[x]], df[[y]])
   cor_xz  <- stats::cor.test(df[[x]], df[[z]])
-  cor_yz  <- stats::cor.test(df[[y]], df[[z]])
+  # cor_yz  <- stats::cor.test(df[[y]], df[[z]])
   pcor_xy <- ppcor::pcor.test(x = df[[x]], y = df[[y]], z = df[[z]])
   pcor_xz <- ppcor::pcor.test(x = df[[x]], y = df[[z]], z = df[[y]])
-  pcor_yz <- ppcor::pcor.test(x = df[[y]], y = df[[z]], z = df[[x]])
+  # pcor_yz <- ppcor::pcor.test(x = df[[y]], y = df[[z]], z = df[[x]])
 
   plot_df <- tibble::tibble(
     pair = c(paste(x_label, y_label, sep = " – "), paste(x_label, y_label, sep = " – "), 
-             paste(x_label, z_label, sep = " – "), paste(x_label, z_label, sep = " – "),
-             paste(y_label, z_label, sep = " – "), paste(y_label, z_label, sep = " – ")),
+             paste(x_label, z_label, sep = " – "), paste(x_label, z_label, sep = " – ") #,
+             # paste(y_label, z_label, sep = " – "), paste(y_label, z_label, sep = " – ")
+             ),
     type = factor(c("Zero-order", paste0("Partial (adjust for ", z_label, ")"), 
-                    "Zero-order", paste0("Partial (adjust for ", y_label, ")"), 
-                    "Zero-order", paste0("Partial (adjust for ", x_label, ")")),
+                    "Zero-order", paste0("Partial (adjust for ", y_label, ")") #, 
+                    # "Zero-order", paste0("Partial (adjust for ", x_label, ")")
+                    ),
                   levels = c("Zero-order", 
                              paste0("Partial (adjust for ", z_label, ")"), 
-                             paste0("Partial (adjust for ", y_label, ")"), 
-                             paste0("Partial (adjust for ", x_label, ")") 
+                             paste0("Partial (adjust for ", y_label, ")") #, 
+                             # paste0("Partial (adjust for ", x_label, ")") 
                              )
                   ),
     r = c(unname(cor_xy$estimate), unname(pcor_xy$estimate),
-          unname(cor_xz$estimate), unname(pcor_xz$estimate), 
-          unname(cor_yz$estimate), unname(pcor_yz$estimate)),
+          unname(cor_xz$estimate), unname(pcor_xz$estimate) #, 
+          # unname(cor_yz$estimate), unname(pcor_yz$estimate)
+          ),
     p = c(cor_xy$p.value, pcor_xy$p.value, 
-          cor_xz$p.value, pcor_xz$p.value, 
-          cor_yz$p.value, pcor_yz$p.value)
+          cor_xz$p.value, pcor_xz$p.value #, 
+          # cor_yz$p.value, pcor_yz$p.value
+          )
   ) %>% dplyr::mutate(label = sprintf("%.2f%s", r, p_stars(p)))
 
   g <- ggplot2::ggplot(plot_df, ggplot2::aes(x = pair, y = r, fill = type)) +
@@ -278,15 +282,17 @@ plot_corr_vs_partial_bars <- function(data, study, name,
               vjust = ifelse(plot_df$r >= 0, -0.4, 1.2), size = 4) +
     ggplot2::geom_hline(yintercept = 0, linewidth = 0.4) +
     ggplot2::scale_fill_manual(values = pal) +
+    scale_color_manual(values = pal) +
     ggplot2::labs(
       title = paste("Bivariate vs Partial Correlations for", x_label, ",", y_label, ",", z_label),
       x = NULL, y = "Correlation (r)", fill = NULL
     ) +
     ggplot2::coord_cartesian(ylim = c(-0.4, 0.8)) +
     ggplot2::theme(
+      axis.text = element_text(size = 14), 
+      axis.title = element_text(size = 16), 
       legend.position = "right",
-      axis.text.x = ggplot2::element_text(angle = 0, hjust = 0.5)  # no rotation needed
-      #axis.text.x = ggplot2::element_text(angle = 45, hjust = 1) # <-- rotation
+      axis.text.x = ggplot2::element_text(angle = 0, hjust = 0.5) 
     )
 
   
