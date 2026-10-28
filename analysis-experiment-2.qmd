@@ -35,6 +35,7 @@ source("./scripts/analysis-regression.R", local = TRUE)
 source("./scripts/analysis-moderation-mediation.R", local = TRUE)
 # source("./scripts/analysis-chat-logs.R", local = TRUE)
 source("./scripts/plotting.R", local = TRUE)
+source("./scripts/analysis-robustness.R", local = TRUE)
 source("./scripts/common.R", local = TRUE)
 
 require(lavaan)
@@ -1821,6 +1822,24 @@ s2_emm_trust_by_cond
 
 contrast(s2_emm_trust_by_cond, method = "pairwise")
 
+```
+
+#### Covariate-Adjusted Robustness Models
+
+Condition effects on author trust, content trust, and their difference (author minus content, equivalent to the condition-by-trust-type interaction above), with and without adjustment for pre-existing participant characteristics (age, sex, post-secondary education, and grouped frequency of GenAI use and of reading science content). HC3 robust standard errors. Run for the combined composites and for the validated scales only (METI, message credibility).
+
+```{r}
+#| label: s2-robustness-models
+
+s2_robustness <- run_robustness_models(s2_cleaned_data)
+
+s2_robustness$estimates |>
+  dplyr::mutate(dplyr::across(where(is.numeric), ~ round(.x, 3))) |>
+  knitr::kable()
+
+s2_robustness$joint |>
+  dplyr::mutate(dplyr::across(where(is.numeric), ~ round(.x, 3))) |>
+  knitr::kable()
 ```
 
 #### General Post Hoc

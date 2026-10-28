@@ -34,6 +34,7 @@ source("./scripts/analysis-correlation.R", local = TRUE)
 source("./scripts/analysis-regression.R", local = TRUE)
 source("./scripts/analysis-moderation-mediation.R", local = TRUE)
 source("./scripts/plotting.R", local = TRUE)
+source("./scripts/analysis-robustness.R", local = TRUE)
 source("./scripts/common.R", local = TRUE)
 
 require(lavaan)
@@ -1016,7 +1017,23 @@ contrast(s1_emm_trust_by_cond, method = "pairwise")
 
 ```
 
+#### Covariate-Adjusted Robustness Models
 
+Condition effects on author trust, content trust, and their difference (author minus content, equivalent to the condition-by-trust-type interaction above), with and without adjustment for pre-existing participant characteristics (age, sex, post-secondary education, and grouped frequency of GenAI use and of reading science content). HC3 robust standard errors. Run for the combined composites and for the validated scales only (METI, message credibility).
+
+```{r}
+#| label: s1-robustness-models
+
+s1_robustness <- run_robustness_models(s1_cleaned_data)
+
+s1_robustness$estimates |>
+  dplyr::mutate(dplyr::across(where(is.numeric), ~ round(.x, 3))) |>
+  knitr::kable()
+
+s1_robustness$joint |>
+  dplyr::mutate(dplyr::across(where(is.numeric), ~ round(.x, 3))) |>
+  knitr::kable()
+```
 
 #### General Post Hoc
 
@@ -1388,7 +1405,7 @@ combined_plot <- ggpubr::ggarrange(plot_correlation_author_anthro$lm, plot_corre
 
 ```{r}
 my_packages = c("rstatix", "stats", "effectsize", "psych", "interactions",
-                 "corrplot", "performance", "FSA", "see", "cocor")
+                 "corrplot", "performance", "cocor")
 
 write_bib(my_packages, file= "outputs/s1/packages.bib")
 ```
