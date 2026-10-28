@@ -42,10 +42,10 @@ get_anthropomorphism_comparisons <- function(study) {
 get_label <- function(column_name) {
   switch(
     column_name,
-    "Condition" = "Anthropomorphism Condition",
+    "Condition" = "Anthropomorphic Cue Condition",
     "anthropomorphism_score" = "Anthropomorphism Rating",
-    "likeability_score" = "Perceived Likeability",
-    "competence_score" = "Perceived Competence",
+    "likeability_score" = "Likeability Rating",
+    "competence_score" = "Competence Rating",
     "content_trust_combined_score" = "Content Trust",
     "author_trust_combined_score" = "Author Trust",
     "Age_1" = "Participant Age",
@@ -108,7 +108,7 @@ violin_plot <- function(data,
       paired = FALSE
     )
   
-  filename <- paste0("violin_", y_col_name, "_", x_col_name, ".png")
+  filename <- paste0("violin_", y_col_name, "_", x_col_name, ".svg")
   
   ggsave(paste(sep = "/", "plots", study, filename),
          plot = plot,
@@ -153,7 +153,7 @@ violin_plot <- function(data,
 # }
 
 
-correlation_plot <- function(data, study, x_col_name, y_col_name, save = TRUE) {
+correlation_plot <- function(data, study, x_col_name, y_col_name, subset = "", save = TRUE) {
   legend_position = "none"
   x = data |> pull({{ x_col_name }})
   y = data |> pull({{ y_col_name }})
@@ -163,6 +163,8 @@ correlation_plot <- function(data, study, x_col_name, y_col_name, save = TRUE) {
   
   plot_lm <- data |>
     ggplot(aes(x = x, y = y)) +
+    ylim(0,10) +
+    xlim(0,100) +
     labs(x = x_label, y = y_label)  +
     geom_point(col = "#196389", size = 0.5) +
     stat_smooth(
@@ -174,7 +176,7 @@ correlation_plot <- function(data, study, x_col_name, y_col_name, save = TRUE) {
       fill = "#7F254350"
     )
   
-  filename <- paste0("correlation_", "lm_", y_col_name, "_", x_col_name, ".png")
+  filename <- paste0("correlation_", subset, "lm_", y_col_name, "_", x_col_name, ".svg")
   
   ggsave(paste(sep = "/", "plots", study, filename),
          plot = plot_lm,
@@ -193,7 +195,7 @@ correlation_plot <- function(data, study, x_col_name, y_col_name, save = TRUE) {
       fill = "#26784350"
     )
   
-  filename <- paste0("correlation_", "loess_", y_col_name, "_", x_col_name, ".png")
+  filename <- paste0("correlation_", subset, "loess_", y_col_name, "_", x_col_name, ".png")
   
   ggsave(paste(sep = "/", "plots", study, filename),
          plot = plot_loess,
@@ -231,7 +233,7 @@ categorical_interaction_plot_3 <- function(data,
                      pred_name,
                      "_",
                      mod_name,
-                     ".png")
+                     ".svg")
   
   ggsave(paste(sep = "/", "plots", study, filename),
          plot = plot,
@@ -270,7 +272,7 @@ interaction_plot_3 <- function(data,
                      pred_name,
                      "_",
                      mod_name,
-                     ".png")
+                     ".svg")
   
   ggsave(paste(sep = "/", "plots", study, filename),
          plot = plot,
@@ -316,7 +318,7 @@ interaction_plot_4 <- function(data,
                      mod_name,
                      "_",
                      mod2_name,
-                     ".png")
+                     ".svg")
   
   ggsave(paste(sep = "/", "plots", study, filename),
          plot = plot,
@@ -581,7 +583,7 @@ plot_lavaan_model <- function(fit, labels, name, study, subset = NULL) {
     edge_options = list(color = "grey")
   )
   
-  filename <- paste0("sem_", name, ".png")
+  filename <- paste0("sem_", name, ".svg")
   path <- paste(sep = "/", "plots", study, filename)
   
   lavaanPlot::save_png(plot, path, width = 1024, height = 1024)

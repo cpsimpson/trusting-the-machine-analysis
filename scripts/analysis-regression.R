@@ -662,7 +662,7 @@ run_post_hoc_regression_analysis <- function(data, dv, study, share_fraction = 1
   }
   
   # 📈 Save a line plot of R² progression across blocks
-  plot_path <- file.path("plots", study, paste0("hierarchical_r2_plot_", dv, ".png"))
+  plot_path <- file.path("plots", study, paste0("hierarchical_r2_plot_", dv, ".svg"))
   dir.create(dirname(plot_path),
              showWarnings = FALSE,
              recursive = TRUE)

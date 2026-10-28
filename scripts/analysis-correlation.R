@@ -296,7 +296,7 @@ plot_corr_vs_partial_bars <- function(data, study, name,
     )
 
   
-  filename <- paste0("covar_", name, ".png")
+  filename <- paste0("covar_", name, ".svg")
   save_path <- paste(sep = "/", "plots", study, filename)
   
   if (!is.null(save_path)) .save_figure(g, save_path, width = fs$width, height = fs$height, dpi = fs$dpi)
