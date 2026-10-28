@@ -4,5 +4,9 @@
 .Ruserdata
 
 .DS_Store
+.idea
 
 data/raw
+**prescreen_data**
+**fieldmapping**
+**test_data**
