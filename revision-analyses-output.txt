@@ -1,0 +1,638 @@
+================ EXPERIMENT 1 ================
+
+--- Missing item responses before imputation ---
+$n_participants
+[1] 270
+
+$n_items
+[1] 41
+
+$missing_responses
+[1] 3
+
+$participants_with_missing
+[1] 3
+
+$missing_by_item
+GodspeedMETI_25      Appelman_1      Appelman_5 
+              1               1               1 
+
+
+--- Composite SDs (z-scored item means) ---
+          author          content      author_meti      content_app 
+           0.835            0.797            0.858            0.888 
+anthropomorphism 
+           0.936 
+
+--- Welch t and Cohen's d [95% CI] ---
+              dv        contrast      t      df     p      d  d_low d_high n1
+          anthro    High vs. Low 11.866 149.094 0.000  1.795  1.447  2.143 91
+          anthro  Medium vs. Low -0.290 176.931 0.772 -0.043 -0.336  0.250 92
+          anthro High vs. Medium 12.138 155.647 0.000  1.790  1.448  2.133 91
+          author    High vs. Low  5.265 171.645 0.000  0.792  0.486  1.097 91
+          author  Medium vs. Low -0.403 176.845 0.687 -0.060 -0.353  0.233 92
+          author High vs. Medium  5.519 174.866 0.000  0.815  0.514  1.117 91
+         content    High vs. Low  1.651 175.447 0.101  0.248 -0.047  0.543 91
+         content  Medium vs. Low  0.063 176.923 0.950  0.009 -0.284  0.303 92
+         content High vs. Medium  1.580 180.775 0.116  0.234 -0.057  0.524 91
+     author_meti    High vs. Low  5.349 171.788 0.000  0.804  0.499  1.110 91
+     author_meti  Medium vs. Low -0.472 176.924 0.638 -0.070 -0.364  0.223 92
+     author_meti High vs. Medium  5.700 175.558 0.000  0.842  0.540  1.144 91
+     content_app    High vs. Low  1.700 173.832 0.091  0.255 -0.040  0.550 91
+     content_app  Medium vs. Low  0.286 176.830 0.775  0.043 -0.250  0.336 92
+     content_app High vs. Medium  1.404 179.829 0.162  0.207 -0.083  0.498 91
+     likeability    High vs. Low  5.469 175.977 0.000  0.819  0.513  1.125 91
+     likeability  Medium vs. Low  0.573 173.151 0.567  0.085 -0.208  0.378 92
+     likeability High vs. Medium  4.395 176.442 0.000  0.649  0.352  0.947 91
+      competence    High vs. Low  4.487 164.405 0.000  0.676  0.374  0.978 91
+      competence  Medium vs. Low -0.725 176.950 0.469 -0.108 -0.402  0.185 92
+      competence High vs. Medium  5.164 167.909 0.000  0.762  0.462  1.062 91
+ writing_quality    High vs. Low  1.509 169.948 0.133  0.227 -0.068  0.522 91
+ writing_quality  Medium vs. Low  0.370 176.048 0.712  0.055 -0.238  0.348 92
+ writing_quality High vs. Medium  1.148 178.594 0.252  0.170 -0.121  0.460 91
+ n2
+ 87
+ 87
+ 92
+ 87
+ 87
+ 92
+ 87
+ 87
+ 92
+ 87
+ 87
+ 92
+ 87
+ 87
+ 92
+ 87
+ 87
+ 92
+ 87
+ 87
+ 92
+ 87
+ 87
+ 92
+
+--- Mixed model interaction, combined composites ---
+                                 Estimate Std. Error  df t value Pr(>|t|)
+ConditionHigh:trust_typeauthor     0.3959     0.0749 267   5.288 2.58e-07
+ConditionMedium:trust_typeauthor  -0.0572     0.0747 267  -0.766 4.44e-01
+
+--- Mixed model interaction, validated scales ---
+                                 Estimate Std. Error  df t value Pr(>|t|)
+ConditionHigh:trust_typeauthor     0.3944     0.0913 267    4.32 2.23e-05
+ConditionMedium:trust_typeauthor  -0.0982     0.0911 267   -1.08 2.82e-01
+
+--- Author-minus-content regression, combined ---
+                Estimate Std. Error t value Pr(>|t|)
+(Intercept)      -0.1139     0.0535  -2.128 3.42e-02
+ConditionHigh     0.3959     0.0749   5.288 2.58e-07
+ConditionMedium  -0.0572     0.0747  -0.766 4.44e-01
+
+--- Author-minus-content regression, validated ---
+                Estimate Std. Error t value Pr(>|t|)
+(Intercept)      -0.0995     0.0653   -1.52 1.29e-01
+ConditionHigh     0.3944     0.0913    4.32 2.23e-05
+ConditionMedium  -0.0982     0.0911   -1.08 2.82e-01
+
+--- METI subscales, Cohen's d ---
+          dv       contrast      t      df     p      d  d_low d_high n1 n2
+   expertise   High vs. Low  5.401 156.217 0.000  0.816  0.510  1.121 91 87
+   expertise Medium vs. Low -0.601 176.423 0.549 -0.090 -0.383  0.203 92 87
+   integrity   High vs. Low  4.481 175.944 0.000  0.671  0.369  0.973 91 87
+   integrity Medium vs. Low -0.410 176.078 0.682 -0.061 -0.354  0.232 92 87
+ benevolence   High vs. Low  5.200 175.975 0.000  0.779  0.474  1.084 91 87
+ benevolence Medium vs. Low -0.248 175.957 0.805 -0.037 -0.330  0.256 92 87
+
+--- METI subscales, B (HC3) ---
+          dv       contrast      B    SE ci_low ci_high      t     p   n
+   expertise   High vs. Low  0.647 0.120  0.410   0.884  5.370 0.000 270
+   expertise Medium vs. Low -0.082 0.137 -0.352   0.188 -0.597 0.551 270
+   integrity   High vs. Low  0.547 0.123  0.305   0.788  4.455 0.000 270
+   integrity Medium vs. Low -0.053 0.129 -0.307   0.201 -0.408 0.684 270
+ benevolence   High vs. Low  0.639 0.124  0.396   0.882  5.171 0.000 270
+ benevolence Medium vs. Low -0.032 0.130 -0.288   0.224 -0.246 0.806 270
+
+--- Table 2 (human vs. low) ---
+         specification   n    outcome     contrast     B ci_low ci_high     p
+               Primary 270     author High vs. Low 0.590  0.368   0.812 0.000
+               Primary 270    content High vs. Low 0.194 -0.039   0.427 0.102
+               Primary 270 difference High vs. Low 0.396  0.242   0.550 0.000
+ Validated scales only 270     author High vs. Low 0.616  0.388   0.844 0.000
+ Validated scales only 270    content High vs. Low 0.222 -0.036   0.480 0.092
+ Validated scales only 270 difference High vs. Low 0.394  0.215   0.574 0.000
+        Complete cases 268     author High vs. Low 0.588  0.364   0.812 0.000
+        Complete cases 268    content High vs. Low 0.219 -0.013   0.450 0.065
+        Complete cases 268 difference High vs. Low 0.370  0.219   0.520 0.000
+   Excluding rereaders 259     author High vs. Low 0.556  0.328   0.784 0.000
+   Excluding rereaders 259    content High vs. Low 0.173 -0.066   0.411 0.155
+   Excluding rereaders 259 difference High vs. Low 0.383  0.225   0.542 0.000
+    Covariate-adjusted 270     author High vs. Low 0.655  0.426   0.885 0.000
+    Covariate-adjusted 270    content High vs. Low 0.298  0.077   0.519 0.008
+    Covariate-adjusted 270 difference High vs. Low 0.358  0.202   0.513 0.000
+
+--- Table 2 check: high vs. low never differed (Medium vs. Low) ---
+         specification   n    outcome       contrast      B ci_low ci_high
+               Primary 270     author Medium vs. Low -0.050 -0.293   0.194
+               Primary 270    content Medium vs. Low  0.008 -0.230   0.245
+               Primary 270 difference Medium vs. Low -0.057 -0.196   0.082
+ Validated scales only 270     author Medium vs. Low -0.059 -0.308   0.190
+ Validated scales only 270    content Medium vs. Low  0.039 -0.230   0.308
+ Validated scales only 270 difference Medium vs. Low -0.098 -0.279   0.083
+        Complete cases 268     author Medium vs. Low -0.050 -0.293   0.194
+        Complete cases 268    content Medium vs. Low  0.008 -0.230   0.245
+        Complete cases 268 difference Medium vs. Low -0.057 -0.196   0.082
+   Excluding rereaders 259     author Medium vs. Low -0.104 -0.352   0.145
+   Excluding rereaders 259    content Medium vs. Low -0.024 -0.266   0.217
+   Excluding rereaders 259 difference Medium vs. Low -0.079 -0.222   0.064
+    Covariate-adjusted 270     author Medium vs. Low -0.038 -0.276   0.200
+    Covariate-adjusted 270    content Medium vs. Low  0.015 -0.210   0.240
+    Covariate-adjusted 270 difference Medium vs. Low -0.053 -0.195   0.089
+     p
+ 0.689
+ 0.950
+ 0.419
+ 0.640
+ 0.776
+ 0.286
+ 0.689
+ 0.950
+ 0.419
+ 0.412
+ 0.843
+ 0.276
+ 0.754
+ 0.896
+ 0.465
+
+--- Content trust, adjusted for science-media frequency only ---
+      dv       contrast     B    SE ci_low ci_high     t     p   n
+ content   High vs. Low 0.291 0.115  0.064   0.517 2.524 0.012 270
+ content Medium vs. Low 0.039 0.116 -0.190   0.268 0.336 0.737 270
+
+--- Content trust, adjusted for all covariates except science-media frequency ---
+      dv       contrast      B    SE ci_low ci_high      t     p   n
+ content   High vs. Low  0.212 0.114 -0.012   0.437  1.860 0.064 270
+ content Medium vs. Low -0.016 0.117 -0.246   0.214 -0.136 0.892 270
+
+--- Joint test of condition, covariate-adjusted author trust ---
+     dv      F df1 df2 p
+ author 21.837   2 260 0
+
+--- Composite-standardized, combined ---
+$author
+     dv       contrast       B    SE ci_low ci_high      t        p   n
+1 A_std   High vs. Low  0.7061 0.135  0.441   0.972  5.235 3.34e-07 270
+2 A_std Medium vs. Low -0.0594 0.148 -0.351   0.232 -0.401 6.89e-01 270
+
+$content
+     dv       contrast       B    SE  ci_low ci_high     t     p   n
+1 C_std   High vs. Low 0.24345 0.148 -0.0485   0.535 1.642 0.102 270
+2 C_std Medium vs. Low 0.00953 0.151 -0.2884   0.307 0.063 0.950 270
+
+$difference
+                    dv       contrast      B     SE ci_low ci_high      t
+1 author_minus_content   High vs. Low  0.463 0.0968  0.272   0.653  4.780
+2 author_minus_content Medium vs. Low -0.069 0.0867 -0.240   0.102 -0.796
+         p   n
+1 2.90e-06 270
+2 4.27e-01 270
+
+
+--- Composite-standardized, combined, adjusted ---
+$author
+     dv       contrast       B    SE ci_low ci_high      t        p   n
+1 A_std   High vs. Low  0.7846 0.140  0.509   1.060  5.615 5.03e-08 270
+2 A_std Medium vs. Low -0.0453 0.145 -0.330   0.239 -0.314 7.54e-01 270
+
+$content
+     dv       contrast      B    SE  ci_low ci_high     t       p   n
+1 C_std   High vs. Low 0.3738 0.141  0.0964   0.651 2.653 0.00846 270
+2 C_std Medium vs. Low 0.0187 0.143 -0.2636   0.301 0.131 0.89619 270
+
+$difference
+                    dv       contrast       B     SE ci_low ci_high      t
+1 author_minus_content   High vs. Low  0.4108 0.0965  0.221   0.601  4.257
+2 author_minus_content Medium vs. Low -0.0641 0.0881 -0.238   0.109 -0.727
+         p   n
+1 2.89e-05 270
+2 4.68e-01 270
+
+
+--- Composite-standardized, validated ---
+$author
+     dv       contrast       B    SE ci_low ci_high      t        p   n
+1 A_std   High vs. Low  0.7179 0.135  0.452   0.984  5.319 2.21e-07 270
+2 A_std Medium vs. Low -0.0691 0.147 -0.359   0.221 -0.469 6.40e-01 270
+
+$content
+     dv       contrast      B    SE  ci_low ci_high     t      p   n
+1 C_std   High vs. Low 0.2496 0.148 -0.0411   0.540 1.691 0.0921 270
+2 C_std Medium vs. Low 0.0438 0.154 -0.2590   0.347 0.285 0.7760 270
+
+$difference
+                    dv       contrast      B    SE ci_low ci_high     t
+1 author_minus_content   High vs. Low  0.468 0.104  0.264  0.6726  4.51
+2 author_minus_content Medium vs. Low -0.113 0.105 -0.319  0.0936 -1.08
+         p   n
+1 9.58e-06 270
+2 2.83e-01 270
+
+
+--- TOST, content trust ---
+          dv       contrast bound_d     d ci90_low ci90_high p_tost
+     content   High vs. Low     0.2 0.248    0.000     0.496  0.624
+     content   High vs. Low     0.3 0.248    0.000     0.496  0.364
+     content   High vs. Low     0.4 0.248    0.000     0.496  0.156
+     content   High vs. Low     0.5 0.248    0.000     0.496  0.047
+     content Medium vs. Low     0.2 0.009   -0.238     0.256  0.102
+     content Medium vs. Low     0.3 0.009   -0.238     0.256  0.027
+     content Medium vs. Low     0.4 0.009   -0.238     0.256  0.005
+     content Medium vs. Low     0.5 0.009   -0.238     0.256  0.001
+ content_app   High vs. Low     0.2 0.255    0.007     0.504  0.644
+ content_app   High vs. Low     0.3 0.255    0.007     0.504  0.383
+ content_app   High vs. Low     0.4 0.255    0.007     0.504  0.168
+ content_app   High vs. Low     0.5 0.255    0.007     0.504  0.053
+ content_app Medium vs. Low     0.2 0.043   -0.204     0.290  0.147
+ content_app Medium vs. Low     0.3 0.043   -0.204     0.290  0.043
+ content_app Medium vs. Low     0.4 0.043   -0.204     0.290  0.009
+ content_app Medium vs. Low     0.5 0.043   -0.204     0.290  0.001
+
+--- Correlations ---
+$pooled
+            pair     r  df        p ci_low ci_high
+1  anthro_author 0.703 268 1.78e-41  0.637   0.758
+2 anthro_content 0.487 268 1.81e-17  0.390   0.573
+3 author_content 0.784 268 1.69e-57  0.734   0.826
+
+$within
+            pair     r  df        p ci_low ci_high
+1  anthro_author 0.662 266 3.58e-35  0.589   0.724
+2 anthro_content 0.537 266 2.18e-21  0.445   0.617
+3 author_content 0.800 266 4.95e-61  0.753   0.840
+
+$williams_pooled
+    r12   r13   r23    t  df        p
+1 0.703 0.487 0.784 7.59 267 5.45e-13
+
+$williams_within
+    r12   r13 r23    t  df        p
+1 0.662 0.537 0.8 4.29 265 2.46e-05
+
+
+--- Balance across conditions (Kruskal-Wallis p) ---
+ characteristic     p
+            age 0.499
+         female 0.222
+ post_secondary 0.283
+         ai_use 0.753
+  science_media 0.025
+
+--- Secondary correlations (Spearman) ---
+ characteristic measure    rho     p
+            age  anthro  0.072 0.241
+            age  author  0.045 0.457
+            age content  0.043 0.477
+         female  anthro -0.021 0.736
+         female  author  0.071 0.243
+         female content  0.010 0.867
+          woman  anthro  0.017 0.779
+          woman  author  0.110 0.071
+          woman content  0.056 0.363
+         ai_use  anthro  0.057 0.349
+         ai_use  author  0.110 0.071
+         ai_use content  0.115 0.060
+  science_media  anthro  0.021 0.731
+  science_media  author  0.063 0.302
+  science_media content  0.161 0.008
+
+--- Exclusion flow by condition ---
+                step Low Medium High
+               start 105    105  105
+          incomplete   8      7    7
+          no consent   0      0    0
+        preview link   0      0    0
+     reCAPTCHA < 0.5   0      0    0
+            too fast   0      0    2
+ comprehension check   2      0    1
+    agent type check   0      1    1
+    attention checks   8      5    3
+               final  87     92   91
+
+================ EXPERIMENT 2 ================
+
+--- Missing item responses before imputation ---
+$n_participants
+[1] 144
+
+$n_items
+[1] 42
+
+$missing_responses
+[1] 83
+
+$participants_with_missing
+[1] 15
+
+$missing_by_item
+ GodspeedMETI_1  GodspeedMETI_2  GodspeedMETI_3  GodspeedMETI_4  GodspeedMETI_5 
+              3               2               5               1               5 
+ GodspeedMETI_6  GodspeedMETI_7  GodspeedMETI_8  GodspeedMETI_9 GodspeedMETI_10 
+              1               6               2               5               2 
+GodspeedMETI_11 GodspeedMETI_13 GodspeedMETI_14 GodspeedMETI_15 GodspeedMETI_17 
+              3               4               2               3               3 
+GodspeedMETI_18 GodspeedMETI_19 GodspeedMETI_20 GodspeedMETI_21 GodspeedMETI_22 
+              1               4               4               5               5 
+GodspeedMETI_23 GodspeedMETI_24 GodspeedMETI_25 GodspeedMETI_26      Appelman_1 
+              3               3               2               5               2 
+     Appelman_2      Appelman_5 
+              1               1 
+
+
+--- Composite SDs (z-scored item means) ---
+          author          content      author_meti      content_app 
+           0.581            0.635            0.635            0.803 
+anthropomorphism 
+           0.863 
+
+--- Exclusion flow by condition ---
+                   step Low High
+                  start 101  101
+             incomplete   9    7
+             no consent   0    0
+           preview link   0    0
+        reCAPTCHA < 0.5   0    0
+               too fast   0    1
+    comprehension check   5    6
+       attention checks  15   14
+ did not read blog post   0    1
+                  final  72   72
+
+--- Balance across conditions (Kruskal-Wallis p) ---
+ characteristic     p
+            age 0.890
+         female 0.220
+ post_secondary 0.591
+         ai_use 0.096
+  science_media 0.219
+
+--- Power ---
+$n_per_group
+[1] 72
+
+$detectable_d
+[1] 0.47
+
+$interaction_d
+[1] 0.198
+
+$interaction_power
+[1] 0.218
+
+$n_for_80_power
+[1] 403
+
+
+--- Student vs. Welch vs. ANOVA ---
+      dv student_t student_df student_p welch_t welch_df welch_p anova_F
+  anthro    -3.672        142     0.000  -3.672  133.663   0.000  13.483
+  author    -2.426        142     0.017  -2.426  139.888   0.017   5.885
+ content    -1.140        142     0.256  -1.140  141.801   0.256   1.299
+ anova_p
+   0.000
+   0.017
+   0.256
+
+--- Preregistered exclusions only: n per condition ---
+
+ Low High 
+  75   75 
+
+--- Preregistered exclusions only: Welch t and d ---
+          dv     contrast      t      df     p      d  d_low d_high n1 n2
+      anthro High vs. Low  3.290 140.050 0.001  0.537  0.211  0.863 75 75
+      author High vs. Low  2.186 144.843 0.030  0.357  0.034  0.680 75 75
+     content High vs. Low  0.787 146.920 0.432  0.129 -0.192  0.449 75 75
+ author_meti High vs. Low  2.293 141.754 0.023  0.375  0.052  0.697 75 75
+ content_app High vs. Low -0.187 146.472 0.852 -0.031 -0.351  0.289 75 75
+
+--- Preregistered exclusions only: author-minus-content (HC3) ---
+                   dv     contrast     B    SE ci_low ci_high     t     p   n
+ author_minus_content High vs. Low 0.118 0.091 -0.062   0.298 1.299 0.196 150
+
+--- Welch t and Cohen's d [95% CI] ---
+              dv     contrast     t      df     p     d  d_low d_high n1 n2
+          anthro High vs. Low 3.672 133.663 0.000 0.612  0.278  0.946 72 72
+          author High vs. Low 2.426 139.888 0.017 0.404  0.074  0.734 72 72
+         content High vs. Low 1.140 141.801 0.256 0.190 -0.137  0.517 72 72
+     author_meti High vs. Low 2.538 136.957 0.012 0.423  0.093  0.753 72 72
+     content_app High vs. Low 0.272 141.703 0.786 0.045 -0.281  0.372 72 72
+     likeability High vs. Low 4.862 134.537 0.000 0.810  0.470  1.150 72 72
+      competence High vs. Low 1.511 140.663 0.133 0.252 -0.076  0.580 72 72
+ writing_quality High vs. Low 1.357 138.906 0.177 0.226 -0.102  0.554 72 72
+
+--- Mixed model interaction, combined composites ---
+                               Estimate Std. Error  df t value Pr(>|t|)
+ConditionHigh:trust_typeauthor     0.11      0.093 142    1.19    0.237
+
+--- Author-minus-content regression, combined ---
+              Estimate Std. Error t value Pr(>|t|)
+(Intercept)    -0.0552     0.0658  -0.839    0.403
+ConditionHigh   0.1104     0.0930   1.186    0.237
+
+--- Author-minus-content regression, validated ---
+              Estimate Std. Error t value Pr(>|t|)
+(Intercept)     -0.113     0.0933   -1.22   0.2258
+ConditionHigh    0.227     0.1319    1.72   0.0876
+
+--- METI subscales, Cohen's d ---
+          dv     contrast     t      df     p     d  d_low d_high n1 n2
+   expertise High vs. Low 2.169 140.576 0.032 0.362  0.032  0.691 72 72
+   integrity High vs. Low 2.573 141.586 0.011 0.429  0.098  0.759 72 72
+ benevolence High vs. Low 1.812 138.835 0.072 0.302 -0.027  0.630 72 72
+
+--- METI subscales, B (HC3) ---
+          dv     contrast     B    SE ci_low ci_high     t     p   n
+   expertise High vs. Low 0.257 0.120  0.021   0.494 2.154 0.033 144
+   integrity High vs. Low 0.312 0.122  0.071   0.554 2.555 0.012 144
+ benevolence High vs. Low 0.224 0.125 -0.022   0.470 1.799 0.074 144
+
+--- TOST, content trust ---
+          dv     contrast bound_d     d ci90_low ci90_high p_tost
+     content High vs. Low     0.2 0.190   -0.086     0.466  0.476
+     content High vs. Low     0.3 0.190   -0.086     0.466  0.255
+     content High vs. Low     0.4 0.190   -0.086     0.466  0.105
+     content High vs. Low     0.5 0.190   -0.086     0.466  0.032
+ content_app High vs. Low     0.2 0.045   -0.231     0.321  0.178
+ content_app High vs. Low     0.3 0.045   -0.231     0.321  0.064
+ content_app High vs. Low     0.4 0.045   -0.231     0.321  0.018
+ content_app High vs. Low     0.5 0.045   -0.231     0.321  0.004
+
+--- Table 4 (high vs. low) ---
+                  specification   n    outcome     contrast     B ci_low
+                        Primary 144     author High vs. Low 0.231  0.041
+                        Primary 144    content High vs. Low 0.120 -0.090
+                        Primary 144 difference High vs. Low 0.110 -0.075
+          Validated scales only 144     author High vs. Low 0.264  0.057
+          Validated scales only 144    content High vs. Low 0.037 -0.231
+          Validated scales only 144 difference High vs. Low 0.227 -0.036
+                 Complete cases 129     author High vs. Low 0.266  0.068
+                 Complete cases 129    content High vs. Low 0.167 -0.062
+                 Complete cases 129 difference High vs. Low 0.099 -0.102
+ Retaining excluded participant 145     author High vs. Low 0.229  0.040
+ Retaining excluded participant 145    content High vs. Low 0.120 -0.090
+ Retaining excluded participant 145 difference High vs. Low 0.109 -0.075
+             Covariate-adjusted 144     author High vs. Low 0.205 -0.014
+             Covariate-adjusted 144    content High vs. Low 0.041 -0.189
+             Covariate-adjusted 144 difference High vs. Low 0.164 -0.039
+ ci_high     p
+   0.420 0.017
+   0.331 0.260
+   0.296 0.241
+   0.470 0.013
+   0.304 0.787
+   0.490 0.090
+   0.465 0.009
+   0.397 0.152
+   0.300 0.331
+   0.417 0.018
+   0.329 0.261
+   0.294 0.245
+   0.424 0.067
+   0.271 0.725
+   0.367 0.112
+
+--- Composite-standardized, combined ---
+$author
+     dv     contrast     B    SE ci_low ci_high    t      p   n
+1 A_std High vs. Low 0.398 0.165 0.0713   0.724 2.41 0.0173 144
+
+$content
+     dv     contrast    B    SE ci_low ci_high    t    p   n
+1 C_std High vs. Low 0.19 0.168 -0.142   0.521 1.13 0.26 144
+
+$difference
+                    dv     contrast     B    SE  ci_low ci_high    t     p   n
+1 author_minus_content High vs. Low 0.208 0.153 -0.0952   0.511 1.36 0.177 144
+
+
+--- Composite-standardized, combined, adjusted ---
+$author
+     dv     contrast     B    SE  ci_low ci_high    t      p   n
+1 A_std High vs. Low 0.353 0.191 -0.0247   0.731 1.85 0.0667 144
+
+$content
+     dv     contrast      B    SE ci_low ci_high     t     p   n
+1 C_std High vs. Low 0.0645 0.183 -0.298   0.427 0.352 0.725 144
+
+$difference
+                    dv     contrast     B    SE  ci_low ci_high    t    p   n
+1 author_minus_content High vs. Low 0.289 0.169 -0.0457   0.623 1.71 0.09 144
+
+
+--- Composite-standardized, validated ---
+$author
+     dv     contrast     B    SE ci_low ci_high    t      p   n
+1 A_std High vs. Low 0.415 0.165 0.0895   0.741 2.52 0.0128 144
+
+$content
+     dv     contrast      B    SE ci_low ci_high    t     p   n
+1 C_std High vs. Low 0.0455 0.168 -0.287   0.378 0.27 0.787 144
+
+$difference
+                    dv     contrast    B    SE ci_low ci_high    t      p   n
+1 author_minus_content High vs. Low 0.37 0.181 0.0115   0.728 2.04 0.0432 144
+
+
+--- Conversation turns ---
+$participant_messages
+[1] 518
+
+$chatbot_responses
+[1] 499
+
+$median_messages
+ Low High 
+   3    3 
+
+$mean_messages
+ Low High 
+3.81 3.39 
+
+$welch_p_messages
+[1] 0.395
+
+$messages_without_reply
+[1] 19
+
+$participants_with_unanswered
+[1] 10
+
+
+--- Chatbot responses (clustered SEs) ---
+               measure mean_low mean_high      B      t  df p
+                 words   38.000    50.284 12.284  7.572 143 0
+          exclamations    0.000     0.556  0.556 13.032 143 0
+         emotion_words    0.011     0.698  0.687 10.103 143 0
+  first_person_per_100    1.399     2.812  1.414  3.854 143 0
+ second_person_per_100    0.025     0.805  0.780  4.916 143 0
+
+--- Conversation flags (Fisher's exact) ---
+                         flag n_true   n p_fisher
+ participant_asked_about_post     95 144    0.725
+  chatbot_mentioned_velocerin    110 144    0.557
+   participant_asked_identity      9 144    1.000
+       chatbot_fallback_reply     25 144    1.000
+
+--- Conversation flags by condition ---
+# A tibble: 2 x 6
+  Condition participant_asked_ab~1 chatbot_mentioned_ve~2 participant_asked_id~3
+  <fct>                      <dbl>                  <dbl>                  <dbl>
+1 Low                           46                     53                      4
+2 High                          49                     57                      5
+# i abbreviated names: 1: participant_asked_about_post,
+#   2: chatbot_mentioned_velocerin, 3: participant_asked_identity
+# i 2 more variables: chatbot_fallback_reply <dbl>, n <dbl>
+
+--- Correlations ---
+$pooled
+            pair     r  df        p ci_low ci_high
+1  anthro_author 0.439 142 3.64e-08  0.297   0.562
+2 anthro_content 0.431 142 7.19e-08  0.287   0.555
+3 author_content 0.580 142 2.47e-14  0.460   0.679
+
+$within
+            pair     r  df        p ci_low ci_high
+1  anthro_author 0.406 141 4.78e-07  0.259   0.535
+2 anthro_content 0.423 141 1.40e-07  0.278   0.549
+3 author_content 0.575 141 5.56e-14  0.454   0.676
+
+$williams_pooled
+    r12   r13  r23     t  df     p
+1 0.439 0.431 0.58 0.128 141 0.898
+
+$williams_within
+    r12   r13   r23      t  df     p
+1 0.406 0.423 0.575 -0.243 140 0.809
+
+
+--- Secondary correlations (Spearman) ---
+ characteristic measure    rho     p
+            age  anthro -0.051 0.543
+            age  author -0.142 0.089
+            age content -0.048 0.567
+         female  anthro -0.079 0.347
+         female  author -0.006 0.945
+         female content -0.100 0.233
+          woman  anthro -0.044 0.597
+          woman  author  0.068 0.421
+          woman content -0.059 0.479
+         ai_use  anthro  0.038 0.647
+         ai_use  author  0.183 0.028
+         ai_use content  0.153 0.067
+  science_media  anthro  0.238 0.004
+  science_media  author  0.231 0.005
+  science_media content  0.317 0.000

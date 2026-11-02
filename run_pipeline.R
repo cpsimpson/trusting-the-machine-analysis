@@ -31,4 +31,9 @@ rmarkdown::render(
   output_dir = out_dir
 )
 
+# 4. Revision analyses (CHB Reports) ----
+sink(file.path(out_dir, "revision-analyses-output.txt"))
+source("revision-analyses.R")
+sink()
+
 cat("Pipeline finished successfully.\n")
