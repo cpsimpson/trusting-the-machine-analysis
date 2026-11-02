@@ -87,25 +87,25 @@ s2_raw_data <- exclude_non_consenting_participants(s2_raw_data)
 
 Reviewed and coded Survey purpose check (what they think this study is about, not the attention check)
 
--   Manually coded the response values with the following key:
+- Manually coded the response values with the following key:
 
-    -   0 = no answer provided
+  - 0 = no answer provided
 
-    -   1 = identified the survey was about AI content, perception of AI, human versus AI distinction
+  - 1 = identified the survey was about AI content, perception of AI, human versus AI distinction
 
-    -   2 = nonsensical text
+  - 2 = nonsensical text
 
-    -   3 = values that describe a purpose (not about AI)
+  - 3 = values that describe a purpose (not about AI)
 
-    -   4 = random word
+  - 4 = random word
 
-    -   5 = unsure
+  - 5 = unsure
 
-    -   6 = "the study was interesting" or "good" and variations of this
+  - 6 = "the study was interesting" or "good" and variations of this
 
-    -   7 = None
+  - 7 = None
 
-    -   8 = paying attention
+  - 8 = paying attention
 
 ```{r}
 #| label: participant-survey-topic-check
@@ -116,43 +116,43 @@ s2_raw_data |>
 
 Reviewed and coded Unrealistic parts of survey.
 
--   Unrealistic field is a separate field with the values of:
+- Unrealistic field is a separate field with the values of:
 
-    -   1 = No
+  - 1 = No
 
-    -   2 = Yes
+  - 2 = Yes
 
--   Unrealistic_coded -\> Manually coded the response values from Unrealistic_2_TEXT field with the following key:
+- Unrealistic_coded -\> Manually coded the response values from Unrealistic_2_TEXT field with the following key:
 
-    -   0 = no answer provided
+  - 0 = no answer provided
 
-    -   1 = didn't believe content written by the AI
+  - 1 = didn't believe content written by the AI
 
-    -   2 = don't believe that traits make sense to apply to AI
+  - 2 = don't believe that traits make sense to apply to AI
 
-    -   3 = it all seemed realistic
+  - 3 = it all seemed realistic
 
-    -   4 = description of AI was not believable
+  - 4 = description of AI was not believable
 
-    -   5 = random text
+  - 5 = random text
 
-    -   6 = unsure why they were asked questions about AI (in High condition)
+  - 6 = unsure why they were asked questions about AI (in High condition)
 
-    -   7 = Identified didn't follow instructions
+  - 7 = Identified didn't follow instructions
 
-    -   8 = Confusion with sliders
+  - 8 = Confusion with sliders
 
-    -   9 = The chat (Chatbot was too fast, Chatbot wouldn't talk about other topics, Question why they would talk to an author)
+  - 9 = The chat (Chatbot was too fast, Chatbot wouldn't talk about other topics, Question why they would talk to an author)
 
-    -   10 = Didn't understand the blog post
+  - 10 = Didn't understand the blog post
 
-    -   11 = other (subconscious bias introduced)
+  - 11 = other (subconscious bias introduced)
 
-    -   12 = predisposed to distrust information in experiments
+  - 12 = predisposed to distrust information in experiments
 
-    -   13 =
+  - 13 =
 
-    -   14 = Quality or content of the article (no citations, etc)
+  - 14 = Quality or content of the article (no citations, etc)
 
 ```{r}
 
@@ -236,8 +236,8 @@ s2_recoded_data <- s2_imputed_data |> recode_data(s2_study)
 
 ```{r}
 
-
-s2_cleaned_data <- s2_recoded_data |> standardize_data()
+s2_cleaned_data <- s2_recoded_data |> standardize_data(method = "z-score")
+s2_cleaned_data <- s2_cleaned_data |> standardize_data(method = "min-max")
 
 
 ```
@@ -254,6 +254,7 @@ s2_cleaned_data <- s2_cleaned_data |> regroup_data()
 #### Define Score Components
 
 ```{r}
+
 s2_cleaned_data <- s2_cleaned_data |> compute_scores(s2_study)
 
 s2_cleaned_data <- s2_cleaned_data |> bin_scores(s2_study)
@@ -261,6 +262,19 @@ s2_cleaned_data <- s2_cleaned_data |> bin_scores(s2_study)
 
 ```{r}
 s2_cleaned_data <- s2_cleaned_data |> cast_variables(s2_study)
+
+
+s2_cleaned_data |> 
+  dplyr::select(Condition, content_trust_combined_score, z_content_trust_combined_score, mm_content_trust_combined_score, author_trust_combined_score, z_author_trust_combined_score, mm_author_trust_combined_score, anthropomorphism_score, z_anthropomorphism_score, mm_anthropomorphism_score) |>
+write.csv(file = "s2_data.csv", row.names = TRUE)
+
+
+s2_high_data <- s2_cleaned_data |> 
+  filter(Condition == "High") 
+
+s2_low_data <- s2_cleaned_data |> 
+  filter(Condition == "Low") 
+
 ```
 
 ### Scale Inter-item Reliability Analysis
@@ -630,6 +644,27 @@ plot <- correlation_plot(s2_cleaned_data,
             "likeability_score")
 
 plot
+
+
+s2_high_data |> test_correlation("anthropomorphism_score", "likeability_score")
+
+plot <- correlation_plot(s2_high_data,
+            s2_study,
+            "anthropomorphism_score",
+            "likeability_score", 
+            "high")
+
+plot
+
+s2_low_data |> test_correlation("anthropomorphism_score", "likeability_score")
+
+plot <- correlation_plot(s2_low_data,
+            s2_study,
+            "anthropomorphism_score",
+            "likeability_score", 
+            "low")
+
+plot
 ```
 
 ##### Descriptive Statistics
@@ -903,6 +938,27 @@ plot_correlation_content_anthro <- correlation_plot(s2_cleaned_data,
             s2_study,
             "anthropomorphism_score",
             "content_trust_combined_score")
+
+plot_correlation_content_anthro
+
+
+s2_high_data |> test_correlation("anthropomorphism_score", "content_trust_combined_score")
+
+plot_correlation_content_anthro <- correlation_plot(s2_high_data,
+            s2_study,
+            "anthropomorphism_score",
+            "content_trust_combined_score", 
+            "high")
+
+plot_correlation_content_anthro
+
+s2_low_data |> test_correlation("anthropomorphism_score", "content_trust_combined_score")
+
+plot_correlation_content_anthro <- correlation_plot(s2_low_data,
+            s2_study,
+            "anthropomorphism_score",
+            "content_trust_combined_score", 
+            "low")
 
 plot_correlation_content_anthro
 ```
@@ -1793,6 +1849,36 @@ plot_correlation_author_anthro <- correlation_plot(s2_cleaned_data,
 plot_correlation_author_anthro
 ```
 
+```{r}
+
+s2_high_data |>
+  test_correlation("anthropomorphism_score", "author_trust_combined_score")
+
+plot_correlation_author_anthro <- correlation_plot(s2_high_data, 
+            s2_study,
+            "anthropomorphism_score",
+            "author_trust_combined_score", 
+            "high"
+            )
+
+plot_correlation_author_anthro
+```
+
+```{r}
+
+s2_low_data |>
+  test_correlation("anthropomorphism_score", "author_trust_combined_score")
+
+plot_correlation_author_anthro <- correlation_plot(s2_low_data, 
+            s2_study,
+            "anthropomorphism_score",
+            "author_trust_combined_score", 
+            "low")
+
+plot_correlation_author_anthro
+
+```
+
 #### Interaction of Condition and Trust Type
 
 ```{r}
@@ -2095,6 +2181,29 @@ plot_corr_vs_partial_bars(
   z_label = "Content"
 )
 
+plot_corr_vs_partial_bars(
+  s2_cleaned_data,
+  study = s2_study, 
+  name = "mm_anthro_content_author",
+  x = "mm_anthropomorphism_score",
+  y = "mm_author_trust_combined_score",
+  z = "mm_content_trust_combined_score",
+  x_label = "Anthro",
+  y_label = "Author",
+  z_label = "Content"
+)
+
+plot_corr_vs_partial_bars(
+  s2_cleaned_data,
+  study = s2_study, 
+  name = "z_anthro_content_author",
+  x = "z_anthropomorphism_score",
+  y = "z_author_trust_combined_score",
+  z = "z_content_trust_combined_score",
+  x_label = "Anthro",
+  y_label = "Author",
+  z_label = "Content"
+)
 ```
 
 ```{r}
