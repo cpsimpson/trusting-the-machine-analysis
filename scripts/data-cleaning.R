@@ -231,19 +231,36 @@ recode_data <- function(data, study) {
 
 # data standardization ----------------------------------------------------
 
-standardize_data <- function(data) {
-  standardized_data <- data %>%
-    mutate(across(
-      c(
-        starts_with("TrustBehaviour"),
-        starts_with("GodspeedMETI"),
-        starts_with("Appelman"),
-        starts_with("Experience")
-      ),
-      ~ (. - mean(., na.rm = TRUE)) / sd(., na.rm = TRUE),
-      .names = "z.{.col}"
-    ))
-  return(standardized_data)
+standardize_data <- function(data, method) {
+  print(method)
+  if (method == "z-score"){
+    standardized_data <- data %>%
+      mutate(across(
+        c(
+          starts_with("TrustBehaviour"),
+          starts_with("GodspeedMETI"),
+          starts_with("Appelman"),
+          starts_with("Experience")
+        ),
+        ~ (. - mean(., na.rm = TRUE)) / sd(., na.rm = TRUE),
+        .names = "z.{.col}"
+      ))
+    return(standardized_data)
+  } else if (method == "min-max"){
+    standardized_data <- data %>%
+      mutate(across(
+        c(
+          starts_with("TrustBehaviour"),
+          starts_with("GodspeedMETI"),
+          starts_with("Appelman"),
+          starts_with("Experience")
+        ),
+        ~ (. - min(., na.rm = TRUE)) / (max(., na.rm = TRUE) - min(., na.rm = TRUE)),
+        .names = "mm.{.col}"
+      ))
+    return(standardized_data)
+  }
+  
 }
 
 # data regrouping ---------------------------------------------------------
@@ -300,13 +317,35 @@ regroup_data <- function(data) {
 
 
 # Compute Scores -----------------------------------------------------------
+standardization_prefix <- "z."
+
+set_standardization_method <- function(method){
+  
+  
+  if (method == "z-score"){
+    standardization_prefix <<- "z."
+  } else if (method == "min-max"){
+    standardization_prefix <<- "mm."
+  } else {
+    standardization_prefix <<- ""
+  }
+  
+}
+
+add_standardization_prefix <- function(x) {
+  paste0(standardization_prefix, x)
+}
 
 get_content_trust_score_appelman_cols <- function(){
-  return(c("z.Appelman_1", "z.Appelman_2", "z.Appelman_3"))
+  cols <- c("Appelman_1", "Appelman_2", "Appelman_3")
+  std_cols <- add_standardization_prefix(cols)
+  return(std_cols)
 }
 
 get_content_trust_score_behaviour_cols <- function(){
-  return(c("z.TrustBehaviour_1", "z.TrustBehaviour_2",  "z.TrustBehaviour_3" ,"z.TrustBehaviour_4r", "z.TrustBehaviour_5r", "z.TrustBehaviour_6", "z.TrustBehaviour_9"))
+  cols <- c("TrustBehaviour_1", "TrustBehaviour_2",  "TrustBehaviour_3" ,"TrustBehaviour_4r", "TrustBehaviour_5r", "TrustBehaviour_6", "TrustBehaviour_9")
+  std_cols <- add_standardization_prefix(cols)
+  return(std_cols)
 }
 
 get_content_trust_score_combined_cols <- function(){
@@ -315,33 +354,44 @@ get_content_trust_score_combined_cols <- function(){
 
 get_author_trust_score_behaviour_cols <- function(study){
   if (study == "s1"){
-    author_trust_score_behaviour_cols = c("z.TrustBehaviour_7", "z.TrustBehaviour_8")
+    author_trust_score_behaviour_cols = c("TrustBehaviour_7", "TrustBehaviour_8")
     
   } else if (study == "s2"){
-    author_trust_score_behaviour_cols = c("z.TrustBehaviour_7", "z.TrustBehaviour_8", "z.TrustBehaviour_10",  "z.TrustBehaviour_11")
+    author_trust_score_behaviour_cols = c("TrustBehaviour_7", "TrustBehaviour_8", "TrustBehaviour_10",  "TrustBehaviour_11")
   }
   
-  return(author_trust_score_behaviour_cols)
+  cols <- author_trust_score_behaviour_cols
+  std_cols <- add_standardization_prefix(cols)
+  return(std_cols)
 }
 
 get_expertise_score_METI_cols <- function(){
-  return(c("z.GodspeedMETI_10", "z.GodspeedMETI_13", "z.GodspeedMETI_15r", "z.GodspeedMETI_16r", "z.GodspeedMETI_17r", "z.GodspeedMETI_18r"))
+  cols <- c("GodspeedMETI_10", "GodspeedMETI_13", "GodspeedMETI_15r", "GodspeedMETI_16r", "GodspeedMETI_17r", "GodspeedMETI_18r")
+  std_cols <- add_standardization_prefix(cols)
+  return(std_cols)
 }
 
 get_integrity_score_METI_cols <- function(){
-  return(c("z.GodspeedMETI_19r", "z.GodspeedMETI_20r", "z.GodspeedMETI_21r", "z.GodspeedMETI_22r"))
+  cols <- c("GodspeedMETI_19r", "GodspeedMETI_20r", "GodspeedMETI_21r", "GodspeedMETI_22r")
+  std_cols <- add_standardization_prefix(cols)
+  return(std_cols)
 }
 get_benevolence_score_METI_cols <- function(){
-  return(c("z.GodspeedMETI_23r", "z.GodspeedMETI_24r", "z.GodspeedMETI_25r", "z.GodspeedMETI_26r"))
+  cols <- c("GodspeedMETI_23r", "GodspeedMETI_24r", "GodspeedMETI_25r", "GodspeedMETI_26r")
+  std_cols <- add_standardization_prefix(cols)
+  return(std_cols)
 }
 get_author_trust_score_METI_cols <- function(){
   return(append(append(get_expertise_score_METI_cols(), get_integrity_score_METI_cols()), get_benevolence_score_METI_cols()))
 }
 get_author_trust_score_combined_cols <- function(study){
   return(append(get_author_trust_score_behaviour_cols(study), get_author_trust_score_METI_cols()))
+
 }
 get_anthropomorphism_score_godspeed_cols <- function(){
-  return(c("z.GodspeedMETI_1", "z.GodspeedMETI_2", "z.GodspeedMETI_3", "z.GodspeedMETI_4"))
+  cols <- c("GodspeedMETI_1", "GodspeedMETI_2", "GodspeedMETI_3", "GodspeedMETI_4")
+  std_cols <- add_standardization_prefix(cols)
+  return(std_cols)
 }
 get_likeability_score_godspeed_cols <- function(){
   return(c("z.GodspeedMETI_5", "z.GodspeedMETI_6", "z.GodspeedMETI_7", "z.GodspeedMETI_8", "z.GodspeedMETI_9"))
@@ -376,9 +426,16 @@ get_chatbots_used_cols <- function(){
   return(c("AIChatbotsUsed_ChatGPT", "AIChatbotsUsed_Grok", "AIChatbotsUsed_Gemini", "AIChatbotsUsed_Copilot", "AIChatbotsUsed_Claude", "AIChatbotsUsed_Other"))
 }
 
+test_call <- function(){
+  print("Test")
+}
 
+# TODO: update to calc z and mm.
 # Calculate scores for Content Trust, Author Trust, Anthropomorphism, Likeability, Competence, Expertise, Integrity, Benevolence
 compute_scores <- function(data, study){
+  
+  set_standardization_method("")
+  
   content_trust_score_appelman_cols = get_content_trust_score_appelman_cols()
   content_trust_score_behaviour_cols = get_content_trust_score_behaviour_cols()
   content_trust_score_combined_cols =  get_content_trust_score_combined_cols()
@@ -452,9 +509,162 @@ compute_scores <- function(data, study){
         dplyr::select(data, all_of(chatbots_used_cols)), na.rm = TRUE)
     )
   
+  
+  set_standardization_method("min-max")
+  
+  content_trust_score_appelman_cols = get_content_trust_score_appelman_cols()
+  content_trust_score_behaviour_cols = get_content_trust_score_behaviour_cols()
+  content_trust_score_combined_cols =  get_content_trust_score_combined_cols()
+  author_trust_score_behaviour_cols = get_author_trust_score_behaviour_cols(study)
+  
+  expertise_score_METI_cols = get_expertise_score_METI_cols()
+  integrity_score_METI_cols = get_integrity_score_METI_cols()
+  benevolence_score_METI_cols = get_benevolence_score_METI_cols()
+  
+  author_trust_score_METI_cols = get_author_trust_score_METI_cols()
+  
+  author_trust_score_combined_cols = get_author_trust_score_combined_cols(study)
+  
+  anthropomorphism_score_godspeed_cols = get_anthropomorphism_score_godspeed_cols()
+  likeability_score_godspeed_cols = get_likeability_score_godspeed_cols()
+  competence_score_godspeed_cols = get_competence_score_godspeed_cols()
+  
+  # intention to use AI 
+  intention_cols = get_intention_cols()
+  
+  changed_opinion_cols = get_changed_opinion_cols()
+  
+  fear_cols = get_fear_cols()
+  
+  writing_expertise_cols = get_writing_experience_cols()
+  science_expertise_cols = get_science_experience_cols()
+  
+  writing_quality_cols = get_writing_quality_cols()
+  
+  chatbots_used_cols = get_chatbots_used_cols()
+  
+  data <- data |>
+    mutate(
+      mm_content_trust_appelman_score = rowMeans(
+        dplyr::select(data, all_of(content_trust_score_appelman_cols)), na.rm = TRUE),
+      mm_content_trust_behaviour_score = rowMeans(
+        dplyr::select(data, all_of(content_trust_score_behaviour_cols)), na.rm = TRUE),
+      mm_content_trust_combined_score = rowMeans(
+        dplyr::select(data, all_of(content_trust_score_combined_cols)), na.rm = TRUE),
+      mm_author_trust_behaviour_score = rowMeans(
+        dplyr::select(data, all_of(author_trust_score_behaviour_cols)), na.rm = TRUE),
+      mm_author_trust_METI_score = rowMeans(
+        dplyr::select(data, all_of(author_trust_score_METI_cols)), na.rm = TRUE),
+      mm_author_trust_combined_score = rowMeans(
+        dplyr::select(data, all_of(author_trust_score_combined_cols)), na.rm = TRUE),
+      mm_anthropomorphism_score = rowMeans(
+        dplyr::select(data, all_of(anthropomorphism_score_godspeed_cols)), na.rm = TRUE),
+      mm_likeability_score = rowMeans(
+        dplyr::select(data, all_of(likeability_score_godspeed_cols)), na.rm = TRUE),
+      mm_competence_score = rowMeans(
+        dplyr::select(data, all_of(competence_score_godspeed_cols)), na.rm = TRUE), 
+      mm_expertise_score = rowMeans(
+        dplyr::select(data, all_of(expertise_score_METI_cols)), na.rm = TRUE), 
+      mm_integrity_score = rowMeans(
+        dplyr::select(data, all_of(integrity_score_METI_cols)), na.rm = TRUE), 
+      mm_benevolence_score = rowMeans(
+        dplyr::select(data, all_of(benevolence_score_METI_cols)), na.rm = TRUE), 
+      mm_intention_to_use_score = rowMeans(
+        dplyr::select(data, all_of(intention_cols)), na.rm = TRUE), 
+      mm_fear_of_ai_score = rowMeans(
+        dplyr::select(data, all_of(fear_cols)), na.rm = TRUE), 
+      mm_changed_opinion_of_ai_score = rowMeans(
+        dplyr::select(data, all_of(changed_opinion_cols)), na.rm = TRUE), 
+      mm_writing_expertise = rowMeans(
+        dplyr::select(data, all_of(writing_expertise_cols)), na.rm = TRUE), 
+      mm_science_expertise = rowMeans(
+        dplyr::select(data, all_of(science_expertise_cols)), na.rm = TRUE),
+      mm_writing_quality_score = rowMeans(
+        dplyr::select(data, all_of(writing_quality_cols)), na.rm = TRUE), 
+      mm_number_ai_chatbots_used = rowSums(
+        dplyr::select(data, all_of(chatbots_used_cols)), na.rm = TRUE)
+    )
+  
+  
+  set_standardization_method("z-score")
+  
+  content_trust_score_appelman_cols = get_content_trust_score_appelman_cols()
+  content_trust_score_behaviour_cols = get_content_trust_score_behaviour_cols()
+  content_trust_score_combined_cols =  get_content_trust_score_combined_cols()
+  author_trust_score_behaviour_cols = get_author_trust_score_behaviour_cols(study)
+  
+  expertise_score_METI_cols = get_expertise_score_METI_cols()
+  integrity_score_METI_cols = get_integrity_score_METI_cols()
+  benevolence_score_METI_cols = get_benevolence_score_METI_cols()
+  
+  author_trust_score_METI_cols = get_author_trust_score_METI_cols()
+  
+  author_trust_score_combined_cols = get_author_trust_score_combined_cols(study)
+  
+  anthropomorphism_score_godspeed_cols = get_anthropomorphism_score_godspeed_cols()
+  likeability_score_godspeed_cols = get_likeability_score_godspeed_cols()
+  competence_score_godspeed_cols = get_competence_score_godspeed_cols()
+  
+  # intention to use AI 
+  intention_cols = get_intention_cols()
+  
+  changed_opinion_cols = get_changed_opinion_cols()
+  
+  fear_cols = get_fear_cols()
+  
+  writing_expertise_cols = get_writing_experience_cols()
+  science_expertise_cols = get_science_experience_cols()
+  
+  writing_quality_cols = get_writing_quality_cols()
+  
+  chatbots_used_cols = get_chatbots_used_cols()
+  
+  data <- data |>
+    mutate(
+      z_content_trust_appelman_score = rowMeans(
+        dplyr::select(data, all_of(content_trust_score_appelman_cols)), na.rm = TRUE),
+      z_content_trust_behaviour_score = rowMeans(
+        dplyr::select(data, all_of(content_trust_score_behaviour_cols)), na.rm = TRUE),
+      z_content_trust_combined_score = rowMeans(
+        dplyr::select(data, all_of(content_trust_score_combined_cols)), na.rm = TRUE),
+      z_author_trust_behaviour_score = rowMeans(
+        dplyr::select(data, all_of(author_trust_score_behaviour_cols)), na.rm = TRUE),
+      z_author_trust_METI_score = rowMeans(
+        dplyr::select(data, all_of(author_trust_score_METI_cols)), na.rm = TRUE),
+      z_author_trust_combined_score = rowMeans(
+        dplyr::select(data, all_of(author_trust_score_combined_cols)), na.rm = TRUE),
+      z_anthropomorphism_score = rowMeans(
+        dplyr::select(data, all_of(anthropomorphism_score_godspeed_cols)), na.rm = TRUE),
+      z_likeability_score = rowMeans(
+        dplyr::select(data, all_of(likeability_score_godspeed_cols)), na.rm = TRUE),
+      z_competence_score = rowMeans(
+        dplyr::select(data, all_of(competence_score_godspeed_cols)), na.rm = TRUE), 
+      z_expertise_score = rowMeans(
+        dplyr::select(data, all_of(expertise_score_METI_cols)), na.rm = TRUE), 
+      z_integrity_score = rowMeans(
+        dplyr::select(data, all_of(integrity_score_METI_cols)), na.rm = TRUE), 
+      z_benevolence_score = rowMeans(
+        dplyr::select(data, all_of(benevolence_score_METI_cols)), na.rm = TRUE), 
+      z_intention_to_use_score = rowMeans(
+        dplyr::select(data, all_of(intention_cols)), na.rm = TRUE), 
+      z_fear_of_ai_score = rowMeans(
+        dplyr::select(data, all_of(fear_cols)), na.rm = TRUE), 
+      z_changed_opinion_of_ai_score = rowMeans(
+        dplyr::select(data, all_of(changed_opinion_cols)), na.rm = TRUE), 
+      z_writing_expertise = rowMeans(
+        dplyr::select(data, all_of(writing_expertise_cols)), na.rm = TRUE), 
+      z_science_expertise = rowMeans(
+        dplyr::select(data, all_of(science_expertise_cols)), na.rm = TRUE),
+      z_writing_quality_score = rowMeans(
+        dplyr::select(data, all_of(writing_quality_cols)), na.rm = TRUE), 
+      z_number_ai_chatbots_used = rowSums(
+        dplyr::select(data, all_of(chatbots_used_cols)), na.rm = TRUE)
+    )
+  
   return(data)
   
 }
+
 
 bin_scores <- function(data, study){
   data %>% 

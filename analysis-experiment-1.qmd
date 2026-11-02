@@ -196,8 +196,11 @@ s1_recoded_data <- s1_imputed_data |> recode_data(s1_study)
 
 ```{r}
 
-s1_cleaned_data <- s1_recoded_data |> standardize_data()
+s1_cleaned_data <- s1_recoded_data |> standardize_data(method = "z-score")
+s1_cleaned_data <- s1_cleaned_data |> standardize_data(method = "min-max")
 
+s1_cleaned_data |>
+  dplyr::select(ends_with("TrustBehaviour_1"))
 ```
 
 #### Regroup data
@@ -215,6 +218,7 @@ s1_cleaned_data <- s1_cleaned_data |> regroup_data()
 #### Define Score Components
 
 ```{r}
+
 s1_cleaned_data <- s1_cleaned_data |> compute_scores(s1_study)
 
 s1_cleaned_data <- s1_cleaned_data |> bin_scores(s1_study)
@@ -222,6 +226,12 @@ s1_cleaned_data <- s1_cleaned_data |> bin_scores(s1_study)
 
 ```{r}
 s1_cleaned_data <- s1_cleaned_data |> cast_variables(s1_study)
+```
+
+```{r}
+s1_cleaned_data |> 
+  dplyr::select(Condition, content_trust_combined_score, z_content_trust_combined_score, mm_content_trust_combined_score, author_trust_combined_score, z_author_trust_combined_score, mm_author_trust_combined_score, anthropomorphism_score, z_anthropomorphism_score, mm_anthropomorphism_score) |>
+write.csv(file = "s1_data.csv", row.names = TRUE)
 ```
 
 ### Scale Inter-item Reliability Analysis
@@ -537,6 +547,7 @@ s1_cleaned_data |> summarize_exploded_columns("LanguagesFluent", LanguagesFluent
 ##### Plot
 
 ```{r}
+
 
 violin_plot(s1_cleaned_data, 
             s1_study,
@@ -985,8 +996,8 @@ plot_correlation_author_anthro
 
 
 ```
-#### Interaction of Condition and Trust Type
 
+#### Interaction of Condition and Trust Type
 
 ```{r}
 require(tidyr)
@@ -1332,6 +1343,30 @@ plot_corr_vs_partial_bars(
   z_label = "Content"
 )
 
+
+plot_corr_vs_partial_bars(
+  s1_cleaned_data,
+  study = s1_study, 
+  name = "mm_anthro_content_author",
+  x = "mm_anthropomorphism_score",
+  y = "mm_author_trust_combined_score",
+  z = "mm_content_trust_combined_score",
+  x_label = "Anthro",
+  y_label = "Author",
+  z_label = "Content"
+)
+
+plot_corr_vs_partial_bars(
+  s1_cleaned_data,
+  study = s1_study, 
+  name = "z_anthro_content_author",
+  x = "z_anthropomorphism_score",
+  y = "z_author_trust_combined_score",
+  z = "z_content_trust_combined_score",
+  x_label = "Anthro",
+  y_label = "Author",
+  z_label = "Content"
+)
 
 ```
 
