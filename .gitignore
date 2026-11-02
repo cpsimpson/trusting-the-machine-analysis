@@ -11,3 +11,14 @@ data/raw
 **field_mapping**
 **test_data**
 
+
+# Generated outputs (recreate with run_pipeline.R)
+rendered/
+outputs/
+plots/
+*.html
+power-analysis.pdf
+s1_data.csv
+s2_data.csv
+*.zip
+.tmp-transfer/
