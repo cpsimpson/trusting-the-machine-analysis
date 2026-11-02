@@ -265,7 +265,7 @@ s2_cleaned_data <- s2_cleaned_data |> cast_variables(s2_study)
 
 
 s2_cleaned_data |> 
-  dplyr::select(Condition, content_trust_combined_score, z_content_trust_combined_score, mm_content_trust_combined_score, author_trust_combined_score, z_author_trust_combined_score, mm_author_trust_combined_score, anthropomorphism_score, z_anthropomorphism_score, mm_anthropomorphism_score) |>
+  dplyr::select(Condition, content_trust_combined_score, z_content_trust_combined_score, mm_content_trust_combined_score, raw_content_trust_combined_score, author_trust_combined_score, z_author_trust_combined_score, mm_author_trust_combined_score, raw_author_trust_combined_score, anthropomorphism_score, z_anthropomorphism_score, mm_anthropomorphism_score, raw_anthropomorphism_score) |>
 write.csv(file = "s2_data.csv", row.names = TRUE)
 
 

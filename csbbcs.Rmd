@@ -53,7 +53,7 @@ s1_presentation_data %>%
 comparisons_2 <- list(c("Low", "High"))
 s2_presentation_data %>%
     mutate(Condition = factor(Condition, levels=c("Low", "Medium", "High"))) %>%
-  ggplot( aes(x=Condition, y=content_trust_combined_score, fill=experiment)) +
+  ggplot( aes(x=Condition, y=raw_content_trust_combined_score, fill=experiment)) +
     geom_boxplot() +
   geom_violin() +
     scale_fill_viridis(discrete = TRUE, alpha=0.6) +
