@@ -118,7 +118,8 @@ robustness_table_rows <- function(rows) {
 
 # Experiment 1 results (Section 4.2) and Table 2 ----------------------------
 #
-# Condition labels: Low = low, Medium = high, High = human.
+# Condition labels: Low = low, Medium = high, High = human. All condition
+# effects are high minus low, human minus low, or human minus high.
 export_experiment1_stats <- function(store, s1, s1_cc) {
   conds <- c(low = "Low", high = "Medium", human = "High")
 
@@ -127,7 +128,7 @@ export_experiment1_stats <- function(store, s1, s1_cc) {
   for (nm in names(conds)) add_descriptives(store, s1, "anthro", conds[[nm]], paste0("e1-anthro-", nm))
   add_pairwise(store, s1, "anthro", "High", "Low", "e1-anthro-human-low")
   add_pairwise(store, s1, "anthro", "High", "Medium", "e1-anthro-human-high")
-  add_pairwise(store, s1, "anthro", "Low", "Medium", "e1-anthro-low-high")
+  add_pairwise(store, s1, "anthro", "Medium", "Low", "e1-anthro-high-low")
 
   # Likeability and perceived intelligence
   add_anova(store, s1, "likeability", "e1-like-anova")
@@ -143,12 +144,12 @@ export_experiment1_stats <- function(store, s1, s1_cc) {
   # Content and author trust
   add_anova(store, s1, "content", "e1-content-anova")
   add_pairwise(store, s1, "content", "High", "Low", "e1-content-human-low")
-  add_pairwise(store, s1, "content", "Low", "Medium", "e1-content-low-high")
+  add_pairwise(store, s1, "content", "Medium", "Low", "e1-content-high-low")
   add_anova(store, s1, "author", "e1-author-anova")
   for (nm in names(conds)) add_descriptives(store, s1, "author", conds[[nm]], paste0("e1-author-", nm))
   add_pairwise(store, s1, "author", "High", "Low", "e1-author-human-low")
   add_pairwise(store, s1, "author", "High", "Medium", "e1-author-human-high")
-  add_pairwise(store, s1, "author", "Low", "Medium", "e1-author-low-high")
+  add_pairwise(store, s1, "author", "Medium", "Low", "e1-author-high-low")
 
   # Author vs. content trust: mixed-model interaction (= difference-score test)
   diff_test <- trust_difference_test(s1)
@@ -176,12 +177,12 @@ export_experiment1_stats <- function(store, s1, s1_cc) {
   add_anova(store, s1, "writing_quality", "e1-wq-anova", p_digits = 2)
 
   # Equivalence tests
-  tost_high <- tost_table(s1, "content", "Low", "Medium")
+  tost_high <- tost_table(s1, "content", "Medium", "Low")
   tost_human <- tost_table(s1, "content", "High", "Low")
   t30 <- tost_high[tost_high$bound_d == 0.30, ]
-  store$add("e1-tost-content-low-high-d", fmt_num(t30$d))
-  store$add("e1-tost-content-low-high-ci90", fmt_ci(t30$ci90_low, t30$ci90_high))
-  store$add("e1-tost-content-low-high-p30", fmt_p(t30$p_tost))
+  store$add("e1-tost-content-high-low-d", fmt_num(t30$d))
+  store$add("e1-tost-content-high-low-ci90", fmt_ci(t30$ci90_low, t30$ci90_high))
+  store$add("e1-tost-content-high-low-p30", fmt_p(t30$p_tost))
   store$add("e1-tost-content-human-low-ci90", fmt_ci(tost_human$ci90_low[1], tost_human$ci90_high[1]))
 
   # Robustness (Table 2 and text)
@@ -223,4 +224,385 @@ export_experiment1_stats <- function(store, s1, s1_cc) {
   store$add("e1-williams-within-p", fmt_p(cs$williams_within$p))
 
   list(table2_rows = table_rows)
+}
+
+# Shared helpers for the remaining sections ---------------------------------
+
+# Whole numbers 0-99 as words, for numbers that begin a sentence.
+fmt_words <- function(n, capitalize = FALSE) {
+  ones <- c("zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+            "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
+            "seventeen", "eighteen", "nineteen")
+  tens <- c("", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety")
+  if (n < 0 || n > 99 || n != round(n)) stop("fmt_words handles whole numbers 0-99")
+  out <- if (n < 20) ones[n + 1] else if (n %% 10 == 0) tens[n %/% 10 + 1] else
+    paste0(tens[n %/% 10 + 1], "-", ones[n %% 10 + 1])
+  if (capitalize) paste0(toupper(substring(out, 1, 1)), substring(out, 2)) else out
+}
+
+fmt_pct <- function(x) formatC(round(100 * x), format = "d")
+
+# Largest value of x that is still below the smallest p, to 2 decimals
+# (for statements such as "all ps > .27").
+fmt_p_floor <- function(p) fmt_unit(floor(min(p) * 100) / 100)
+
+# Sample description shared by both experiments.
+add_sample <- function(store, data, key) {
+  store$add(paste0(key, "-n"), nrow(data))
+  store$add(paste0(key, "-age-min"), min(data$Age_1))
+  store$add(paste0(key, "-age-max"), max(data$Age_1))
+  store$add(paste0(key, "-age-m"), fmt_num(mean(data$Age_1)))
+  store$add(paste0(key, "-age-sd"), fmt_num(stats::sd(data$Age_1)))
+  store$add(paste0(key, "-females"), sum(data$Sex == "Female", na.rm = TRUE))
+}
+
+# Cronbach's alpha on raw (imputed, recoded) items, as in Tables 1 and 3.
+reliability_table_rows <- function(data, study) {
+  alpha <- function(cols) psych::alpha(dplyr::select(data, dplyr::all_of(sub("^z\\.", "", cols))),
+                                       discrete = FALSE, warnings = FALSE)$total$raw_alpha
+  rows <- list(
+    c("Anthropomorphism", "Godspeed", alpha(get_anthropomorphism_score_godspeed_cols())),
+    c("Author Trust", "METI", alpha(get_author_trust_score_METI_cols())),
+    c("Author Trust", "Novel", alpha(get_author_trust_score_behaviour_cols(study))),
+    c("Content Trust", "Appelman \\& Sundar", alpha(get_content_trust_score_appelman_cols())),
+    c("Content Trust", "Novel", alpha(get_content_trust_score_behaviour_cols())))
+  vapply(rows, function(r) sprintf("%s & %s & %s \\\\", r[1], r[2], fmt_unit(as.numeric(r[3]))),
+         character(1))
+}
+
+# Median survey duration at the point where clean_data() applies the
+# one-third-of-median rule.
+median_duration_at_exclusion <- function(raw, study) {
+  d <- raw
+  if (study == "s1") d <- dplyr::filter(d, EndDate >= "2024-12-04")
+  d <- dplyr::filter(d, Progress == 100, ConsentForm == 1, Status == 0, Q_RecaptchaScore >= 0.5)
+  stats::median(d$`Duration (in seconds)`, na.rm = TRUE)
+}
+
+flow_total <- function(flow, step) sum(unlist(flow[flow$step == step, -1]), na.rm = TRUE)
+flow_by_condition <- function(flow, condition) {
+  steps <- setdiff(flow$step, c("start", "final"))
+  sum(flow[flow$step %in% steps, condition], na.rm = TRUE)
+}
+
+# Experiment 1: participants, exclusions, missing data, reliability ---------
+export_experiment1_sample <- function(store, raw, filtered, s1) {
+  flow <- exclusion_flow_by_condition(raw, "s1")
+  store$add("e1-recruited", flow_total(flow, "start"))
+  add_sample(store, s1, "e1")
+  store$add("e1-fluent-english", sum(s1$LanguagesFluent_English == 1, na.rm = TRUE))
+  store$add("e1-english-first", sum(s1$English == "Yes", na.rm = TRUE))
+  store$add("e1-post-secondary", sum(s1$post_secondary))
+
+  # Design power analysis (pwr): per-group n for f = .25 and .10 with k = 3,
+  # and sensitivity of the final sample (n per group = N / 3).
+  n25 <- ceiling(pwr::pwr.anova.test(k = 3, f = 0.25, power = 0.80)$n)
+  n10 <- ceiling(pwr::pwr.anova.test(k = 3, f = 0.10, power = 0.80)$n)
+  store$add("e1-power-n-f25", n25); store$add("e1-power-total-f25", 3 * n25)
+  store$add("e1-power-n-f10", n10); store$add("e1-power-total-f10", 3 * n10)
+  n_group <- nrow(s1) / 3
+  store$add("e1-sensitivity-f", fmt_num(pwr::pwr.anova.test(k = 3, n = n_group, power = 0.80)$f))
+  store$add("e1-sensitivity-d", fmt_num(pwr::pwr.t.test(n = n_group, power = 0.80)$d))
+  store$add("e1-sensitivity-d-bonferroni",
+            fmt_num(pwr::pwr.t.test(n = n_group, power = 0.80, sig.level = 0.05 / 3)$d))
+
+  # Balance (8-point frequency scores, Kruskal-Wallis)
+  bal <- balance_tests(s1)
+  store$add("e1-balance-p-min", fmt_p_floor(bal$p[bal$characteristic != "science_media"]))
+  store$add("e1-balance-science-p", fmt_p(bal$p[bal$characteristic == "science_media"]))
+  weekly <- tapply(s1$science_frequency == "frequently", s1$Condition, mean)
+  store$add("e1-science-weekly-low", fmt_pct(weekly[["Low"]]))
+  store$add("e1-science-weekly-high", fmt_pct(weekly[["Medium"]]))
+  store$add("e1-science-weekly-human", fmt_pct(weekly[["High"]]))
+
+  # Exclusions
+  # Participants who failed the comprehension check once and were asked to
+  # reread, counted among those who completed the survey.
+  completed <- dplyr::filter(raw, EndDate >= "2024-12-04", Progress == 100)
+  store$add("e1-excluded-incomplete", flow_total(flow, "incomplete"))
+  store$add("e1-reread-words", fmt_words(sum(completed$Reread == 1, na.rm = TRUE), capitalize = TRUE))
+  store$add("e1-excluded-comprehension",
+            flow_total(flow, "comprehension check") + flow_total(flow, "agent type check"))
+  store$add("e1-excluded-attention", flow_total(flow, "attention checks"))
+  store$add("e1-excluded-too-fast", flow_total(flow, "too fast"))
+  store$add("e1-median-duration", round(median_duration_at_exclusion(raw, "s1")))
+  store$add("e1-excluded-low", flow_by_condition(flow, "Low"))
+  store$add("e1-excluded-high", flow_by_condition(flow, "Medium"))
+  store$add("e1-excluded-human", flow_by_condition(flow, "High"))
+
+  # Missing data and composite SDs
+  miss <- missing_item_summary(filtered, "s1")
+  store$add("e1-missing-words", fmt_words(miss$missing_responses))
+  store$add("e1-sd-author", fmt_num(stats::sd(s1$author)))
+  store$add("e1-sd-content", fmt_num(stats::sd(s1$content)))
+
+  list(reliability_rows = reliability_table_rows(s1, "s1"), flow = flow)
+}
+
+# Experiment 2 ------------------------------------------------------------
+#
+# Condition labels: Low = low, High = high. All condition effects are high
+# minus low.
+export_experiment2_stats <- function(store, raw_before_cleaning, raw, filtered, s2, s2_cc,
+                                     s2_retained, s2_prereg) {
+  flow <- exclusion_flow_by_condition(raw, "s2")
+  consented <- dplyr::filter(raw_before_cleaning, ConsentForm == 1)
+
+  # Participants
+  store$add("e2-recruited", nrow(raw))
+  store$add("e2-nonconsent-words", fmt_words(sum(raw_before_cleaning$ConsentForm != 1, na.rm = TRUE)))
+  store$add("e2-duplicates-words", fmt_words(nrow(consented) - nrow(raw)))
+  add_sample(store, s2, "e2")
+  store$add("e2-n-per-condition", min(table(droplevels(factor(s2$Condition)))))
+  store$add("e2-power-n-f25", ceiling(pwr::pwr.t.test(d = 0.50, power = 0.80)$n))
+  store$add("e2-power-n-f10", ceiling(pwr::pwr.t.test(d = 0.20, power = 0.80)$n))
+  pw <- interaction_power(s2)
+  store$add("e2-sensitivity-d", fmt_num(pw$detectable_d))
+  store$add("e2-ai-weekly-pct", fmt_pct(mean(s2$ai_frequency == "frequently")))
+  store$add("e2-balance-p-min", fmt_p_floor(balance_tests(s2)$p))
+
+  # Analysis notes, exclusions, missing data
+  store$add("e2-sd-author", fmt_num(stats::sd(s2$author)))
+  store$add("e2-sd-content", fmt_num(stats::sd(s2$content)))
+  store$add("e2-excluded-incomplete", flow_total(flow, "incomplete"))
+  store$add("e2-excluded-too-fast", flow_total(flow, "too fast"))
+  store$add("e2-excluded-comprehension", flow_total(flow, "comprehension check"))
+  store$add("e2-excluded-attention", flow_total(flow, "attention checks"))
+  store$add("e2-excluded-not-read", flow_total(flow, "did not read blog post"))
+  store$add("e2-excluded-per-condition", flow_by_condition(flow, "Low"))
+  if (flow_by_condition(flow, "Low") != flow_by_condition(flow, "High"))
+    stop("Experiment 2 exclusions differ by condition; the text says they were balanced.")
+  miss <- missing_item_summary(filtered, "s2")
+  store$add("e2-missing-words", fmt_words(miss$missing_responses, capitalize = TRUE))
+  store$add("e2-missing-participants", miss$participants_with_missing)
+  store$add("e2-complete-cases", nrow(s2_cc))
+  store$add("e2-prereg-n", nrow(s2_prereg))
+  store$add("e2-prereg-n-per-condition", min(table(droplevels(factor(s2_prereg$Condition)))))
+  pa <- welch_with_d(s2_prereg, "author", "High", "Low")
+  pc <- welch_with_d(s2_prereg, "content", "High", "Low")
+  store$add("e2-prereg-author-d", fmt_num(pa$d))
+  store$add("e2-prereg-author-ci", fmt_ci(pa$d_low, pa$d_high))
+  store$add("e2-prereg-author-p", fmt_p(pa$p))
+  store$add("e2-prereg-content-d", fmt_num(pc$d))
+  store$add("e2-prereg-content-ci", fmt_ci(pc$d_low, pc$d_high))
+  store$add("e2-prereg-content-p", fmt_p(pc$p, 2))
+
+  # Manipulation check and other perceptions
+  add_descriptives(store, s2, "anthro", "Low", "e2-anthro-low")
+  add_descriptives(store, s2, "anthro", "High", "e2-anthro-high")
+  add_pairwise(store, s2, "anthro", "High", "Low", "e2-anthro-high-low", n_comparisons = 1)
+  add_pairwise(store, s2, "likeability", "High", "Low", "e2-like-high-low", n_comparisons = 1)
+  add_pairwise(store, s2, "competence", "High", "Low", "e2-intel-high-low", n_comparisons = 1)
+
+  # Author and content trust
+  add_pairwise(store, s2, "content", "High", "Low", "e2-content-high-low", n_comparisons = 1)
+  add_descriptives(store, s2, "author", "Low", "e2-author-low")
+  add_descriptives(store, s2, "author", "High", "e2-author-high")
+  add_pairwise(store, s2, "author", "High", "Low", "e2-author-high-low", n_comparisons = 1)
+  diff_test <- trust_difference_test(s2)
+  store$add("e2-interaction-df", nrow(s2) - 2)
+  store$add("e2-interaction-t", fmt_num(diff_test["ConditionHigh", "t value"]))
+  store$add("e2-interaction-p", fmt_p(diff_test["ConditionHigh", "Pr(>|t|)"]))
+  store$add("e2-interaction-d-approx", fmt_num(abs(pw$interaction_d), 1))
+  store$add("e2-interaction-power-pct", fmt_pct(pw$interaction_power))
+  store$add("e2-interaction-n80-rounded", round(pw$n_for_80_power, -2))
+  m <- welch_with_d(s2, "author_meti", "High", "Low")
+  store$add("e2-meti-high-low-d", fmt_num(m$d))
+  store$add("e2-meti-high-low-ci", fmt_ci(m$d_low, m$d_high))
+  store$add("e2-meti-high-low-p", fmt_p(m$p))
+  mc <- welch_with_d(s2, "content_app", "High", "Low")
+  store$add("e2-msgcred-high-low-d", fmt_num(mc$d))
+  store$add("e2-msgcred-high-low-ci", fmt_ci(mc$d_low, mc$d_high))
+  store$add("e2-msgcred-high-low-p", fmt_p(mc$p, 2))
+  vd <- trust_difference_test(s2, "author_meti", "content_app")
+  store$add("e2-interaction-validated-t", fmt_num(vd["ConditionHigh", "t value"]))
+  store$add("e2-interaction-validated-p", fmt_p(vd["ConditionHigh", "Pr(>|t|)"]))
+  for (v in c("expertise", "integrity", "benevolence")) {
+    w <- welch_with_d(s2, v, "High", "Low")
+    store$add(paste0("e2-", v, "-high-low-d"), fmt_num(w$d))
+    store$add(paste0("e2-", v, "-high-low-ci"), fmt_ci(w$d_low, w$d_high))
+  }
+  wq <- welch_with_d(s2, "writing_quality", "High", "Low")
+  store$add("e2-wq-high-low-d", fmt_num(wq$d))
+  store$add("e2-wq-high-low-p", fmt_p(wq$p, 2))
+  ch <- welch_with_d(s2, "content", "High", "Low")
+  store$add("e2-content-ci-max-abs", fmt_num(max(abs(c(ch$d_low, ch$d_high))), 1))
+
+  # Robustness (Table 4 and text)
+  rows <- dplyr::bind_rows(
+    robustness_row(s2, "Primary"),
+    robustness_row(s2, "Validated scales only", scores = "validated"),
+    robustness_row(s2_cc, "Complete cases only"),
+    robustness_row(s2_retained, "Retaining the open-ended exclusion"),
+    robustness_row(s2, "Covariate-adjusted", covariates = robustness_covariates))
+  adj <- rows[rows$specification == "Covariate-adjusted" & rows$outcome == "author", ]
+  store$add("e2-adjusted-author-b", fmt_num(adj$B))
+  store$add("e2-adjusted-author-p", fmt_p(adj$p))
+  std <- composite_standardized_models(s2)
+  add_b(store, std$difference, "e2-std-diff", with_ci = FALSE)
+  store$add("e2-std-diff-p2", fmt_p(std$difference$p, 2))
+  stdv <- composite_standardized_models(s2, scores = "validated")
+  add_b(store, stdv$difference, "e2-std-validated-diff")
+
+  # Conversations
+  responses <- chatbot_responses(s2)
+  flags <- conversation_flags(s2)
+  turns <- conversation_turn_summary(flags)
+  rt <- chatbot_response_tests(responses)
+  ft <- conversation_flag_tests(flags)
+  store$add("e2-messages", turns$participant_messages)
+  med <- unique(turns$median_messages)
+  store$add("e2-messages-median-words", if (length(med) == 1) fmt_words(med) else NA)
+  store$add("e2-messages-mean-low", fmt_num(turns$mean_messages[["Low"]]))
+  store$add("e2-messages-mean-high", fmt_num(turns$mean_messages[["High"]]))
+  store$add("e2-messages-p", fmt_p(turns$welch_p_messages, 2))
+  store$add("e2-unanswered-words", fmt_words(turns$messages_without_reply, capitalize = TRUE))
+  store$add("e2-unanswered-participants", turns$participants_with_unanswered)
+  store$add("e2-responses", turns$chatbot_responses)
+  get <- function(measure, col) rt[rt$measure == measure, col]
+  store$add("e2-excl-high", fmt_num(get("exclamations", "mean_high")))
+  store$add("e2-excl-low", fmt_num(get("exclamations", "mean_low")))
+  store$add("e2-emo-high", fmt_num(get("emotion_words", "mean_high")))
+  store$add("e2-emo-low", fmt_num(get("emotion_words", "mean_low")))
+  store$add("e2-first-person-high", fmt_num(get("first_person_per_100", "mean_high"), 1))
+  store$add("e2-first-person-low", fmt_num(get("first_person_per_100", "mean_low"), 1))
+  store$add("e2-second-person-high", fmt_num(get("second_person_per_100", "mean_high")))
+  store$add("e2-second-person-low", fmt_num(get("second_person_per_100", "mean_low")))
+  store$add("e2-style-p-max", fmt_p(max(rt$p[rt$measure != "words"])))
+  store$add("e2-words-high", fmt_num(get("words", "mean_high"), 1))
+  store$add("e2-words-low", fmt_num(get("words", "mean_low"), 1))
+  store$add("e2-words-b", fmt_num(get("words", "B"), 1))
+  store$add("e2-words-df", get("words", "df"))
+  store$add("e2-words-t", fmt_num(get("words", "t")))
+  store$add("e2-words-p", fmt_p(get("words", "p")))
+  n_conv <- nrow(flags)
+  fl <- function(v) ft$n_true[ft$flag == v]
+  store$add("e2-conversations", n_conv)
+  store$add("e2-asked-post", fl("participant_asked_about_post"))
+  store$add("e2-asked-post-pct", fmt_pct(fl("participant_asked_about_post") / n_conv))
+  store$add("e2-bot-velocerin", fl("chatbot_mentioned_velocerin"))
+  store$add("e2-bot-velocerin-pct", fmt_pct(fl("chatbot_mentioned_velocerin") / n_conv))
+  store$add("e2-engagement-p-min", fmt_p_floor(ft$p_fisher[ft$flag %in% c(
+    "participant_asked_about_post", "chatbot_mentioned_velocerin")]))
+  store$add("e2-asked-identity", fl("participant_asked_identity"))
+  store$add("e2-asked-identity-pct", fmt_pct(fl("participant_asked_identity") / n_conv))
+  store$add("e2-fallback", fl("chatbot_fallback_reply"))
+  store$add("e2-fallback-pct", fmt_pct(fl("chatbot_fallback_reply") / n_conv))
+
+  # Correlations
+  cs <- correlation_summary(s2)
+  for (pair in cs$pooled$pair) {
+    add_r(store, cs$pooled[cs$pooled$pair == pair, ], paste0("e2-r-", gsub("_", "-", pair)))
+    add_r(store, cs$within[cs$within$pair == pair, ], paste0("e2-rw-", gsub("_", "-", pair)))
+  }
+  store$add("e2-williams-within-t", fmt_num(cs$williams_within$t))
+  store$add("e2-williams-within-df", cs$williams_within$df)
+  store$add("e2-williams-within-p", fmt_p(cs$williams_within$p, 2))
+
+  list(table4_rows = robustness_table_rows(rows),
+       reliability_rows = reliability_table_rows(s2, "s2"), flow = flow)
+}
+
+# Appendix B tables ------------------------------------------------------
+cell_b <- function(e, contrast = "High vs. Low") {
+  e <- e[e$contrast == contrast, ]
+  sprintf("\\makecell{$%s$ $%s$\\\\$p %s$}", fmt_num(e$B), fmt_ci(e$ci_low, e$ci_high), fmt_p(e$p))
+}
+
+export_appendix_tables <- function(s1, s2, s2_prereg, flow1, flow2) {
+  tables <- list()
+
+  # B.1 Exclusions by condition
+  step_row <- function(label, steps1, steps2) {
+    v1 <- sapply(c("Low", "Medium", "High"), function(cnd) sum(unlist(flow1[flow1$step %in% steps1, cnd])))
+    v2 <- sapply(c("Low", "High"), function(cnd) sum(unlist(flow2[flow2$step %in% steps2, cnd])))
+    fmt <- function(x, has) if (has) as.character(x) else "---"
+    sprintf("%s & %s \\\\", label, paste(c(sapply(v1, fmt, length(steps1) > 0),
+                                             sapply(v2, fmt, length(steps2) > 0)), collapse = " & "))
+  }
+  tables[["appendix-exclusions"]] <- c(
+    step_row("Participants at start", "start", "start"),
+    step_row("Incomplete survey", "incomplete", "incomplete"),
+    step_row("Under one third of median time", "too fast", "too fast"),
+    step_row("Failed content comprehension check", "comprehension check", "comprehension check"),
+    step_row("Misidentified author type", "agent type check", character(0)),
+    step_row("Failed attention check", "attention checks", "attention checks"),
+    step_row("Had not read the blog post (open-ended)", character(0), "did not read blog post"),
+    "\\midrule",
+    step_row("Final sample", "final", "final"))
+
+  # B.2 Equivalence tests (rows labelled as X vs. low)
+  tost_row <- function(label, d, dv, a) {
+    t <- tost_table(d, dv, a, "Low")
+    sprintf("%s & $%s$ & %s \\\\", label, fmt_ci(t$ci90_low[1], t$ci90_high[1]),
+            paste(sapply(t$p_tost, function(p) {
+              v <- fmt_p(p); if (startsWith(v, "<")) sprintf("$%s$", v) else sub("^= ", "", v) }),
+              collapse = " & "))
+  }
+  tables[["appendix-equivalence"]] <- c(
+    tost_row("Exp.~1 high vs.~low, content trust", s1, "content", "Medium"),
+    tost_row("Exp.~1 human vs.~low, content trust", s1, "content", "High"),
+    tost_row("Exp.~1 human vs.~low, message credibility", s1, "content_app", "High"),
+    tost_row("Exp.~2 high vs.~low, content trust", s2, "content", "High"),
+    tost_row("Exp.~2 high vs.~low, message credibility", s2, "content_app", "High"))
+
+  # B.3 Composite-standardized comparison
+  std_row <- function(label, d, contrast = "High vs. Low", covariates = character(0),
+                      scores = "combined", diff_only = FALSE) {
+    m <- composite_standardized_models(d, covariates, scores)
+    a <- if (diff_only) "---" else cell_b(m$author, contrast)
+    c <- if (diff_only) "---" else cell_b(m$content, contrast)
+    sprintf("%s & %s & %s & %s \\\\", label, a, c, cell_b(m$difference, contrast))
+  }
+  tables[["appendix-composite-standardized"]] <- c(
+    std_row("Exp.~1, human vs.~low", s1),
+    std_row("Exp.~1, human vs.~low, adjusted", s1, covariates = robustness_covariates),
+    std_row("Exp.~1, human vs.~low, validated scales", s1, scores = "validated"),
+    std_row("Exp.~1, high vs.~low", s1, contrast = "Medium vs. Low", diff_only = TRUE),
+    std_row("Exp.~2, high vs.~low", s2),
+    std_row("Exp.~2, high vs.~low, adjusted", s2, covariates = robustness_covariates),
+    std_row("Exp.~2, high vs.~low, validated scales", s2, scores = "validated"))
+
+  # B.4 METI subscales
+  subs <- c("expertise", "integrity", "benevolence")
+  d_cells <- function(d, a) sapply(subs, function(v) {
+    w <- welch_with_d(d, v, a, "Low"); sprintf("$%s$ $%s$", fmt_num(w$d), fmt_ci(w$d_low, w$d_high)) })
+  b_cells <- function(d, contrast, with_ci) sapply(subs, function(v) {
+    e <- robust_condition_model(d, v, character(0))$estimates
+    if (with_ci) cell_b(e, contrast) else {
+      e <- e[e$contrast == contrast, ]; sprintf("$%s$, $p %s$", fmt_num(e$B), fmt_p(e$p)) } })
+  meti_rows <- function(label, d, a, contrast, with_ci) c(
+    sprintf("\\makecell[l]{%s} & $d$ [$95\\%%$ CI] & %s \\\\", label, paste(d_cells(d, a), collapse = " & ")),
+    sprintf(" & $B$%s & %s \\\\", if (with_ci) " [$95\\%$ CI]" else "",
+            paste(b_cells(d, contrast, with_ci), collapse = " & ")))
+  tables[["appendix-meti"]] <- c(
+    meti_rows("Exp.~1,\\\\human vs.~low", s1, "High", "High vs. Low", TRUE), "\\addlinespace",
+    meti_rows("Exp.~1,\\\\high vs.~low", s1, "Medium", "Medium vs. Low", FALSE), "\\addlinespace",
+    meti_rows("Exp.~2,\\\\high vs.~low", s2, "High", "High vs. Low", TRUE))
+
+  # B.5 Experiment 2 with preregistered exclusions only
+  pr <- function(label, dv) {
+    w <- welch_with_d(s2_prereg, dv, "High", "Low")
+    sprintf("%s & $d = %s$ $%s$, $p %s$ \\\\", label, fmt_num(w$d), fmt_ci(w$d_low, w$d_high), fmt_p(w$p))
+  }
+  diff_prereg <- robust_trust_difference_model(s2_prereg, "author", "content", character(0))$estimates
+  tables[["appendix-preregistered-exclusions"]] <- c(
+    pr("Anthropomorphism", "anthro"), pr("Author trust", "author"), pr("Content trust", "content"),
+    pr("Author trust (METI only)", "author_meti"),
+    pr("Content trust (message credibility only)", "content_app"),
+    sprintf("Author minus content & $B = %s$ $%s$, $p %s$ \\\\", fmt_num(diff_prereg$B),
+            fmt_ci(diff_prereg$ci_low, diff_prereg$ci_high), fmt_p(diff_prereg$p)))
+
+  # B.6 Preregistered secondary correlations
+  stars <- function(p) if (p < .001) "^{***}" else if (p < .01) "^{**}" else if (p < .05) "^{*}" else ""
+  sc2 <- secondary_correlations(s2); sc1 <- secondary_correlations(s1)
+  labels <- c(age = "Age", female = "Female (sex)", woman = "Woman (gender)",
+              ai_use = "GenAI use frequency", science_media = "Consumption of similar media")
+  tables[["appendix-secondary-correlations"]] <- vapply(names(labels), function(ch) {
+    cells <- unlist(lapply(list(sc2, sc1), function(sc) sapply(c("anthro", "author", "content"), function(m) {
+      r <- sc[sc$characteristic == ch & sc$measure == m, ]; sprintf("$%s%s$", fmt_unit(r$rho), stars(r$p)) })))
+    sprintf("%s & %s \\\\", labels[[ch]], paste(cells, collapse = " & "))
+  }, character(1), USE.NAMES = FALSE)
+
+  tables
 }
