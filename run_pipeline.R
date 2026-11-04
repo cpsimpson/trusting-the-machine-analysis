@@ -1,39 +1,32 @@
 #!/usr/bin/env Rscript
 
 # run_pipeline.R
+#
+# Reproduces everything the manuscript reports. Run from the project root:
+#   Rscript run_pipeline.R
+# Set MANUSCRIPT_DIR to also copy the generated files into the manuscript
+# repository, e.g. MANUSCRIPT_DIR=../trusting-the-machine-manuscript.
 
-# Load required packages ----
-if (!requireNamespace("rmarkdown", quietly = TRUE)) {
-  stop("The 'rmarkdown' package is required. Install it with install.packages('rmarkdown').")
-}
-
-# Create rendered/ folder if it doesn't already exist ----
 out_dir <- "rendered"
-if (!dir.exists(out_dir)) {
-  dir.create(out_dir)
+if (!dir.exists(out_dir)) dir.create(out_dir)
+
+# 1. A priori power analysis (design of both experiments) ----
+if (requireNamespace("rmarkdown", quietly = TRUE)) {
+  tryCatch(rmarkdown::render(input = "power-analysis.Rmd", output_dir = out_dir),
+           error = function(e) message("power-analysis.Rmd was not rendered: ", conditionMessage(e)))
+} else {
+  message("Skipping power-analysis.Rmd: install the 'rmarkdown' package to render it.")
 }
 
-# 1. Knit power-analysis.Rmd ----
-rmarkdown::render(
-  input      = "power-analysis.Rmd",
-  output_dir = out_dir
-)
+# 2. Statistics, tables, and figures used in the manuscript ----
+source("export-manuscript-stats.R", local = new.env())
 
-# 2. Knit analysis-experiment-1.qmd ----
-rmarkdown::render(
-  input      = "analysis-experiment-1.qmd",
-  output_dir = out_dir
-)
+# 3. R and package versions and their citations ----
+source("export-software-citations.R", local = new.env())
 
-# 3. Knit analysis-experiment-2.qmd ----
-rmarkdown::render(
-  input      = "analysis-experiment-2.qmd",
-  output_dir = out_dir
-)
-
-# 4. Revision analyses (CHB Reports) ----
+# 4. Readable output of all revision analyses ----
 sink(file.path(out_dir, "revision-analyses-output.txt"))
-source("revision-analyses.R")
+source("revision-analyses.R", local = new.env())
 sink()
 
 cat("Pipeline finished successfully.\n")

@@ -1,24 +1,37 @@
-# Revision analyses (CHB Reports)
+# Trusting the Machine: analysis code
 
-Analyses added or changed for the Computers in Human Behavior Reports revision. They reuse the existing pipeline (`scripts/data-loading.R`, `scripts/data-cleaning.R`) and do not change any of its results.
+Analysis code for "Trusting the Machine: Separating Trust in GenAI Authors From Trust in Their Content". Everything the manuscript reports is produced by the scripts below from the anonymized data in `data/anonymized/`.
 
 Run from the project root:
 
 ```
-Rscript revision-analyses.R
+Rscript run_pipeline.R
 ```
 
-`run_pipeline.R` also runs it and writes the output to `rendered/revision-analyses-output.txt`. `revision-analyses-output.txt` in the project root is the output that the manuscript numbers were checked against.
+or the steps on their own:
 
-New packages: `lme4`, `lmerTest`, `sandwich`, `lmtest`, `car`, `pwr`, `jsonlite`.
+| Script | Output |
+|---|---|
+| `export-manuscript-stats.R` | `outputs/manuscript/`: every statistic in the text (`stats.tex`), table bodies (`tables/`), and figures (`figures/`, PDF and PNG). With `MANUSCRIPT_DIR` set, also copied to the manuscript repository's `generated/` folder |
+| `export-software-citations.R` | R and package versions (`software.tex`), their citations (`software.bib`), and `session-info.txt` |
+| `revision-analyses.R` | All analyses printed in manuscript order (`revision-analyses-output.txt` is a saved copy) |
+| `power-analysis.Rmd` | The a priori power analyses |
+
+Packages: `tidyverse`, `haven`, `qualtRics`, `psych`, `lme4`, `lmerTest`, `sandwich`, `lmtest`, `car`, `pwr`, `jsonlite`, `ggplot2`, `ggpubr`, and `rmarkdown` for the power analysis.
 
 ## Files
 
 | File | What it is |
 |---|---|
+| `scripts/data-loading.R` | Loads and labels the survey exports |
+| `scripts/data-cleaning.R` | Exclusions, imputation, recoding, standardization, and composite scores |
 | `scripts/analysis-robustness.R` | HC3 regression models: condition effects, author-minus-content difference, covariate adjustment |
-| `scripts/analysis-revision.R` | All other revision functions (below) |
-| `revision-analyses.R` | Runs everything in manuscript order and prints the results |
+| `scripts/analysis-revision.R` | All other analysis functions (below) |
+| `scripts/manuscript-stats.R` | Formats results and table rows for the manuscript |
+| `scripts/manuscript-figures.R` | The violin plots (Figures 3, 4, 6, 7) |
+| `scripts/preprocessing.py` | Anonymizes the raw Qualtrics downloads |
+
+Earlier exploratory analyses (notebooks, structural equation models, partial correlations, moderation and regression models) are not part of this version. They remain available at the `v1-jdm` and `v2-chb` tags.
 
 ## Condition labels
 
