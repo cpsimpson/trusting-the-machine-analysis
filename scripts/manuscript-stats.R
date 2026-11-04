@@ -352,8 +352,18 @@ export_experiment2_stats <- function(store, raw_before_cleaning, raw, filtered, 
   store$add("e2-recruited", nrow(raw))
   store$add("e2-nonconsent-words", fmt_words(sum(raw_before_cleaning$ConsentForm != 1, na.rm = TRUE)))
   store$add("e2-duplicates-words", fmt_words(nrow(consented) - nrow(raw)))
+  # Repeat participation: people with more than one consenting record, and
+  # how many of them abandoned their first attempt before completing one.
+  repeats <- consented |>
+    dplyr::group_by(id) |>
+    dplyr::filter(dplyr::n() > 1) |>
+    dplyr::arrange(RecordedDate, .by_group = TRUE) |>
+    dplyr::summarise(first_incomplete = dplyr::first(Progress) < 100,
+                     any_complete = any(Progress == 100), .groups = "drop")
+  store$add("e2-repeat-participants-words", fmt_words(nrow(repeats)))
+  store$add("e2-repeat-incomplete-first-words",
+            fmt_words(sum(repeats$first_incomplete & repeats$any_complete)))
   add_sample(store, s2, "e2")
-  store$add("e2-n-per-condition", min(table(droplevels(factor(s2$Condition)))))
   store$add("e2-power-n-f25", ceiling(pwr::pwr.t.test(d = 0.50, power = 0.80)$n))
   store$add("e2-power-n-f10", ceiling(pwr::pwr.t.test(d = 0.20, power = 0.80)$n))
   pw <- interaction_power(s2)
@@ -377,7 +387,12 @@ export_experiment2_stats <- function(store, raw_before_cleaning, raw, filtered, 
   store$add("e2-missing-participants", miss$participants_with_missing)
   store$add("e2-complete-cases", nrow(s2_cc))
   store$add("e2-prereg-n", nrow(s2_prereg))
-  store$add("e2-prereg-n-per-condition", min(table(droplevels(factor(s2_prereg$Condition)))))
+  store$add("e2-prereg-n-low", sum(s2_prereg$Condition == "Low"))
+  store$add("e2-prereg-n-high", sum(s2_prereg$Condition == "High"))
+  # Student's t (equivalent to the preregistered ANOVA) vs. Welch's t.
+  tests <- do.call(rbind, lapply(c("anthro", "author", "content"),
+                                 function(v) compare_two_group_tests(s2, v)))
+  store$add("e2-student-welch-p-maxdiff", fmt_p(max(abs(tests$student_p - tests$welch_p))))
   pa <- welch_with_d(s2_prereg, "author", "High", "Low")
   pc <- welch_with_d(s2_prereg, "content", "High", "Low")
   store$add("e2-prereg-author-d", fmt_num(pa$d))
@@ -436,6 +451,12 @@ export_experiment2_stats <- function(store, raw_before_cleaning, raw, filtered, 
     robustness_row(s2_retained, "Retaining the open-ended exclusion"),
     robustness_row(s2, "Covariate-adjusted", covariates = robustness_covariates))
   adj <- rows[rows$specification == "Covariate-adjusted" & rows$outcome == "author", ]
+  author_rows <- rows[rows$outcome == "author", ]
+  n_sig <- sum(author_rows$p < .05)
+  store$add("e2-author-sig-specs", if (n_sig == nrow(author_rows)) sprintf("all %s", fmt_words(n_sig))
+            else sprintf("%s of %s", fmt_words(n_sig), fmt_words(nrow(author_rows))))
+  store$add("e2-author-robust-b-min", fmt_num(min(author_rows$B)))
+  store$add("e2-author-robust-b-max", fmt_num(max(author_rows$B)))
   store$add("e2-adjusted-author-b", fmt_num(adj$B))
   store$add("e2-adjusted-author-p", fmt_p(adj$p))
   std <- composite_standardized_models(s2)
