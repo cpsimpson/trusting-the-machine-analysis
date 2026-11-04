@@ -5,7 +5,7 @@
 # across the three comparisons in Experiment 1), the same tests as the text.
 # Source after scripts/analysis-revision.R. Requires ggplot2 and ggpubr.
 
-# Colours from scripts/plotting.R (fill_pal): low, high, human.
+# Condition colours (fills with 50% alpha): low, high, human.
 figure_fills <- c("#7F254350", "#19638950", "#2f258950")
 
 figure_theme <- ggplot2::theme_minimal() +
