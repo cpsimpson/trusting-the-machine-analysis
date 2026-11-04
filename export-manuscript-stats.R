@@ -51,7 +51,8 @@ e2 <- quiet(export_experiment2_stats(store, s2_loaded, s2_raw, s2_filtered, s2, 
 appendix <- quiet(export_appendix_tables(s1, s2, s2_prereg, e1s$flow, e2$flow))
 quiet(export_figures(store, s1, s2, file.path(out_dir, "figures")))
 
-tables <- c(list("e1-alternative-specifications" = e1$table2_rows,
+tables <- c(list("demographics" = demographics_table_rows(s1, s2),
+                 "e1-alternative-specifications" = e1$table2_rows,
                  "e1-reliability" = e1s$reliability_rows,
                  "e2-reliability" = e2$reliability_rows,
                  "e2-alternative-specifications" = e2$table4_rows),

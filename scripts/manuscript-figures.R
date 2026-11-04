@@ -62,7 +62,7 @@ violin_figure <- function(data, dv, y_label, conditions, comparisons) {
   list(plot = plot, tests = tests)
 }
 
-# Writes the six violin plots as PDFs and adds a significance-legend stat for
+# Writes the six violin plots (PDF and PNG) and adds a significance-legend stat for
 # each figure caption.
 export_figures <- function(store, s1, s2, out_dir) {
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
@@ -81,8 +81,11 @@ export_figures <- function(store, s1, s2, out_dir) {
     comparisons <- if (study == "e1") e1_comparisons else e2_comparisons
     for (outcome in names(outcomes)) {
       fig <- violin_figure(data, columns[[outcome]], outcomes[[outcome]], conditions, comparisons)
-      ggplot2::ggsave(file.path(out_dir, paste0(study, "-", outcome, ".pdf")), fig$plot,
-                      width = 7, height = 7)
+      # PDF for the LaTeX manuscript, PNG for the Word version (build-docx.sh).
+      for (ext in c("pdf", "png")) {
+        ggplot2::ggsave(file.path(out_dir, paste0(study, "-", outcome, ".", ext)), fig$plot,
+                        width = 7, height = 7, dpi = 300)
+      }
       symbols[[paste(study, outcome)]] <- fig$tests$p.signif
     }
     store$add(paste0("fig-", study, "-anthropomorphism-signif"),

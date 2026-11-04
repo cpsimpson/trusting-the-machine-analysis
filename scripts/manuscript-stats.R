@@ -606,3 +606,40 @@ export_appendix_tables <- function(s1, s2, s2_prereg, flow1, flow2) {
 
   tables
 }
+
+# Table 1: sample characteristics by condition ------------------------------
+#
+# Two panels (Experiment 1, Experiment 2), one row per characteristic, with
+# the Kruskal-Wallis balance test from balance_tests() (ordinal frequency
+# scores for GenAI use and similar-media consumption).
+demographics_table_rows <- function(s1, s2) {
+  count_cell <- function(x) sprintf("%d (%s)", sum(x), fmt_pct(mean(x)))
+  characteristics <- list(
+    list("$n$", function(d) as.character(nrow(d)), NULL),
+    list("Age, $M$ ($\\mathit{SD}$)", function(d) sprintf("%s (%s)", fmt_num(mean(d$Age_1), 1),
+                                                         fmt_num(stats::sd(d$Age_1), 1)), "age"),
+    list("Female, $n$ (\\%)", function(d) count_cell(d$female == 1), "female"),
+    list("Post-secondary education, $n$ (\\%)", function(d) count_cell(d$post_secondary == 1),
+         "post_secondary"),
+    list("GenAI use weekly or more, $n$ (\\%)",
+         function(d) count_cell(d$ai_frequency %in% "frequently"), "ai_use"),
+    list("Similar media weekly or more, $n$ (\\%)",
+         function(d) count_cell(d$science_frequency %in% "frequently"), "science_media"))
+  panel <- function(data, conditions, title) {
+    b <- balance_tests(data)
+    rows <- vapply(characteristics, function(ch) {
+      vals <- vapply(conditions, function(cnd) {
+        if (is.na(cnd)) "---" else ch[[2]](data[data$Condition == cnd, ])
+      }, character(1))
+      p <- if (is.null(ch[[3]])) "" else {
+        v <- b$p[b$characteristic == ch[[3]]]
+        if (v < .001) "$< .001$" else fmt_unit(v, 3)
+      }
+      sprintf("%s & %s & %s \\\\", ch[[1]], paste(vals, collapse = " & "), p)
+    }, character(1))
+    c(sprintf("\\multicolumn{5}{@{}l}{\\textit{%s}} \\\\", title), rows)
+  }
+  c(panel(s1, c(Low = "Low", High = "Medium", Human = "High"), "Experiment 1"),
+    "\\addlinespace",
+    panel(s2, c(Low = "Low", High = "High", Human = NA), "Experiment 2"))
+}
