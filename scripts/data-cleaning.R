@@ -13,17 +13,16 @@ count_duplicate_participants <- function(data) {
 }
 
 deduplicate_participants <- function(data) {
-  # Filtering out responses from participants who completed the survey multiple times.
-  # Only keeping the first complete one for each.
-  
-  #TODO: fix this to consider if they completed one after a partial attempt.
-  deduped_data <- data |>
-    group_by(id) |>  # Group by participant ID
-    filter(RecordedDate == min(RecordedDate)) |>  #  keep only the first recorded entry for each group
-    ungroup() |>  # Remove the grouping
-    distinct(id, .keep_all = TRUE)  #  select only distinct rows (i.e. remove any duplicates)
-  
-  return(deduped_data)
+  # Keeps one record per participant who took the survey more than once:
+  # their first complete attempt, or, if none was complete, their first
+  # attempt. (Keeping the first attempt regardless of completion dropped four
+  # participants whose abandoned first attempt, which stopped at the consent
+  # form, preceded a complete one.)
+  data |>
+    dplyr::group_by(id) |>
+    dplyr::arrange(dplyr::desc(Progress == 100), RecordedDate, .by_group = TRUE) |>
+    dplyr::slice(1) |>
+    dplyr::ungroup()
 }
 
 # data filtering ----------------------------------------------------------
